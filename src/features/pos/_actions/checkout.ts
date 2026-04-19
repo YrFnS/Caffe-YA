@@ -1,11 +1,11 @@
 "use server"
 
 import { checkoutOrder } from '../_services/orderService'
-import { auth } from '@/lib/auth'
+import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 
 export async function processCheckout(formData: FormData) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user) redirect('/sign-in')
 
   const orderId = formData.get('orderId') as string

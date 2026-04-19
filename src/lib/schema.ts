@@ -27,6 +27,7 @@ export const orderStatusEnum = pgEnum('order_status', [
   'closed',
   'cancelled',
   'transferred',
+  'draft',
 ])
 
 export const paymentMethodEnum = pgEnum('payment_method', [

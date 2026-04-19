@@ -1,11 +1,11 @@
 "use server"
 
 import { voidOrderItem, refundTransaction } from '../_services/voidService'
-import { auth } from '@/lib/auth'
+import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 
 export async function voidItem(formData: FormData) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user) redirect('/sign-in')
 
   const itemId = formData.get('itemId') as string
@@ -25,7 +25,7 @@ export async function voidItem(formData: FormData) {
 }
 
 export async function refundTx(formData: FormData) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user) redirect('/sign-in')
 
   const transactionId = formData.get('transactionId') as string

@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import { orders, orderItems, transactions, resources } from '@/lib/schema'
+import { orders, orderItems, transactions, resources, shifts } from '@/lib/schema'
 import { eq, and, isNull } from 'drizzle-orm'
 
 export async function getOrCreateDraftOrder(shiftId: string, userId: string) {

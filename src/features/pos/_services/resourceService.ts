@@ -72,9 +72,11 @@ export async function stopTimer(orderId: string) {
 
   if (!resource) return null
 
-  const { hourlyRate, minimumMinutes = 0, graceMinutes = 0 } = resource.category
+  const { hourlyRate, minimumMinutes = 0, graceMinutes = 0 } = resource.category ?? {}
+  const minMin = minimumMinutes ?? 0
+  const graceMin = graceMinutes ?? 0
 
-  const chargeableMinutes = Math.max(elapsedMinutes - graceMinutes, minimumMinutes)
+  const chargeableMinutes = Math.max(elapsedMinutes - graceMin, minMin)
   const charge = (chargeableMinutes / 60) * Number(hourlyRate)
 
   await db.update(orders)
@@ -107,10 +109,15 @@ export async function transferOrder(orderId: string, newResourceId: string) {
       const startTime = new Date(order.timerStartedAt)
       const endTime = new Date()
       const elapsedMinutes = Math.floor((endTime.getTime() - startTime.getTime()) / 60000)
-      const oldResource = await tx.query.resources.findFirst({ where: eq(resources.id, order.resourceId!) })
-      if (oldResource?.category.isTimed) {
-        const { hourlyRate, minimumMinutes = 0, graceMinutes = 0 } = oldResource.category
-        const chargeableMinutes = Math.max(elapsedMinutes - graceMinutes, minimumMinutes)
+      const oldResource = await tx.query.resources.findFirst({
+        where: eq(resources.id, order.resourceId!),
+        with: { category: true },
+      })
+      if (oldResource?.category?.isTimed) {
+        const { hourlyRate, minimumMinutes = 0, graceMinutes = 0 } = oldResource.category ?? {}
+        const minMin = minimumMinutes ?? 0
+        const graceMin = graceMinutes ?? 0
+        const chargeableMinutes = Math.max(elapsedMinutes - graceMin, minMin)
         timerCharge = ((chargeableMinutes / 60) * Number(hourlyRate)).toFixed(3)
       }
     }

@@ -25,3 +25,8 @@ export const auth = betterAuth({
     updateAge: 60 * 60 * 24,
   },
 })
+
+export async function getSession() {
+  const { headers } = await import('next/headers')
+  return auth.api.getSession({ headers: await headers() })
+}

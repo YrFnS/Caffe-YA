@@ -1,12 +1,12 @@
 import { redirect } from 'next/navigation'
-import { auth } from '@/lib/auth'
+import { getSession } from '@/lib/auth'
 import { getActiveShift, getOrCreateDraftOrder } from '@/features/pos/_services/orderService'
 import { getAllActiveProducts, getCategories } from '@/features/pos/_services/productService'
 import { getResourcesWithCategories } from '@/features/pos/_services/resourceService'
 import POSClientView from './_components/POSClientView'
 
 export default async function POSPage() {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user) redirect('/sign-in')
 
   const userId = session.user.id as string

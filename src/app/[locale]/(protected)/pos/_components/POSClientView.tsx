@@ -62,6 +62,14 @@ export default function POSClientView({
     setCartItems(prev => prev.filter(i => i.productId !== productId))
   }, [])
 
+  const handleIncrementItem = useCallback((productId: string) => {
+    setCartItems(prev => prev.map(i =>
+      i.productId === productId
+        ? { ...i, quantity: i.quantity + 1, totalPrice: (Number(i.unitPrice) * (i.quantity + 1)).toFixed(3) }
+        : i
+    ))
+  }, [])
+
   const handleUpdateQuantity = useCallback((productId: string, quantity: number) => {
     if (quantity <= 0) {
       handleRemoveItem(productId)
@@ -129,7 +137,7 @@ export default function POSClientView({
           subtotal={subtotal.toFixed(3)}
           timerCharge="0"
           total={subtotal.toFixed(3)}
-          onAddItem={handleAddProduct}
+          onAddItem={handleIncrementItem}
           onRemoveItem={handleRemoveItem}
           onUpdateQuantity={handleUpdateQuantity}
           onCheckout={() => setShowCheckout(true)}
