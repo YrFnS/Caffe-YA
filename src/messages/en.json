@@ -1,0 +1,46 @@
+{
+  "common": {
+    "appName": "Caffe-YA",
+    "loading": "Loading...",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "noResults": "No results found"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "pos": "POS",
+    "resources": "Resources",
+    "shifts": "Shifts",
+    "inventory": "Inventory",
+    "procurement": "Procurement",
+    "expenses": "Expenses",
+    "employees": "Employees",
+    "payroll": "Payroll",
+    "accounting": "Accounting",
+    "partners": "Partners",
+    "admin": "Admin",
+    "reports": "Reports",
+    "todaySales": "Today's Sales",
+    "activeOrders": "Active Orders",
+    "activeTimers": "Active Timers",
+    "shiftStatus": "Shift Status",
+    "closed": "Closed"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidEmail": "Invalid email address"
+  }
+}

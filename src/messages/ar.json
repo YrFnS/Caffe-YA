@@ -1,0 +1,46 @@
+{
+  "common": {
+    "appName": "كافي يا",
+    "loading": "جاري التحميل...",
+    "error": "خطأ",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "create": "إنشاء",
+    "search": "بحث",
+    "noResults": "لا توجد نتائج"
+  },
+  "nav": {
+    "dashboard": "لوحة التحكم",
+    "pos": "نقاط البيع",
+    "resources": "الموارد",
+    "shifts": "الورديات",
+    "inventory": "المخزون",
+    "procurement": "المشتريات",
+    "expenses": "المصروفات",
+    "employees": "الموظفين",
+    "payroll": "الرواتب",
+    "accounting": "المحاسبة",
+    "partners": "الشركاء",
+    "admin": "الإدارة",
+    "reports": "التقارير",
+    "todaySales": "مبيعات اليوم",
+    "activeOrders": "الطلبات النشطة",
+    "activeTimers": "المؤقتات النشطة",
+    "shiftStatus": "حالة الوردية",
+    "closed": "مغلقة"
+  },
+  "auth": {
+    "signIn": "تسجيل الدخول",
+    "signUp": "إنشاء حساب",
+    "signOut": "تسجيل الخروج",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "name": "الاسم"
+  },
+  "validation": {
+    "required": "هذا الحقل مطلوب",
+    "invalidEmail": "بريد إلكتروني غير صالح"
+  }
+}
