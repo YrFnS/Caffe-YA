@@ -93,26 +93,28 @@ async function recalculateOrderTotals(orderId: string) {
 }
 
 export async function checkoutOrder(orderId: string, paymentMethod: string, amount: string, reference?: string) {
-  const order = await db.query.orders.findFirst({ where: eq(orders.id, orderId) })
-  if (!order) throw new Error('ORDER_NOT_FOUND')
+  return db.transaction(async (tx) => {
+    const order = await tx.query.orders.findFirst({ where: eq(orders.id, orderId) })
+    if (!order) throw new Error('ORDER_NOT_FOUND')
 
-  await db.update(orders)
-    .set({ status: 'closed', closedAt: new Date() })
-    .where(eq(orders.id, orderId))
+    await tx.update(orders)
+      .set({ status: 'closed', closedAt: new Date() })
+      .where(eq(orders.id, orderId))
 
-  await db.insert(transactions).values({
-    orderId,
-    shiftId: order.shiftId,
-    paymentMethod: paymentMethod as 'cash' | 'card' | 'mobile_wallet',
-    amount,
-    reference,
+    await tx.insert(transactions).values({
+      orderId,
+      shiftId: order.shiftId,
+      paymentMethod: paymentMethod as 'cash' | 'card' | 'mobile_wallet',
+      amount,
+      reference,
+    })
+
+    if (order.resourceId) {
+      await tx.update(resources)
+        .set({ status: 'available' })
+        .where(eq(resources.id, order.resourceId))
+    }
   })
-
-  if (order.resourceId) {
-    await db.update(resources)
-      .set({ status: 'available' })
-      .where(eq(resources.id, order.resourceId))
-  }
 }
 
 export async function clearOrder(orderId: string) {

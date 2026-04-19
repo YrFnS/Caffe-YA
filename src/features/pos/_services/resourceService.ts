@@ -20,9 +20,10 @@ export async function getResourceCategories() {
 
 export async function assignResourceToOrder(resourceId: string, orderId: string) {
   return db.transaction(async (tx) => {
-    const resource = await tx.query.resources.findFirst({
-      where: eq(resources.id, resourceId),
-    })
+    const [resource] = await tx.select()
+      .from(resources)
+      .where(eq(resources.id, resourceId))
+      .for('update')
 
     if (!resource || resource.status !== 'available') {
       throw new Error('RESOURCE_NOT_AVAILABLE')
