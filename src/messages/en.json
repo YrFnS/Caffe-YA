@@ -3,6 +3,7 @@
     "appName": "Caffe-YA",
     "loading": "Loading...",
     "error": "Error",
+    "retry": "Retry",
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
@@ -72,6 +73,7 @@
     "shiftClosed": "Shift Closed",
     "all": "All",
     "backToProducts": "Back to products",
-    "processing": "Processing..."
+    "processing": "Processing...",
+    "loadingPos": "Loading POS..."
   }
 }
