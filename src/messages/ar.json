@@ -42,5 +42,36 @@
   "validation": {
     "required": "هذا الحقل مطلوب",
     "invalidEmail": "بريد إلكتروني غير صالح"
+  },
+  "pos": {
+    "title": "نقاط البيع",
+    "noActiveShift": "لا توجد وردية مفتوحة. يرجى فتح وردية أولاً.",
+    "noProducts": "لا توجد منتجات متاحة",
+    "addToOrder": "إضافة للطلب",
+    "checkout": "الدفع",
+    "clearOrder": "مسح الطلب",
+    "quantity": "الكمية",
+    "subtotal": "المجموع الفرعي",
+    "total": "المجموع",
+    "timer": "المؤقت",
+    "resourceOccupied": "المورد مشغول",
+    "paymentMethod": "طريقة الدفع",
+    "cash": "نقدي",
+    "card": "بطاقة",
+    "mobileWallet": "محفظة إلكترونية",
+    "confirmPayment": "تأكيد الدفع",
+    "orderComplete": "اكتمل الطلب",
+    "printReceipt": "طباعة الإيصال",
+    "newOrder": "طلب جديد",
+    "emptyCart": "لا توجد أصناف في الطلب",
+    "selectResource": "اختر طاولة أو محطة",
+    "available": "متاح",
+    "occupied": "مشغول",
+    "maintenance": "صيانة",
+    "shiftOpen": "الوردية مفتوحة",
+    "shiftClosed": "الوردية مغلقة",
+    "all": "الكل",
+    "backToProducts": "العودة للمنتجات",
+    "processing": "جاري المعالجة..."
   }
 }

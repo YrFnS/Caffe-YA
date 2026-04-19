@@ -42,5 +42,36 @@
   "validation": {
     "required": "This field is required",
     "invalidEmail": "Invalid email address"
+  },
+  "pos": {
+    "title": "Point of Sale",
+    "noActiveShift": "No active shift. Please open a shift first.",
+    "noProducts": "No products available",
+    "addToOrder": "Add to order",
+    "checkout": "Checkout",
+    "clearOrder": "Clear order",
+    "quantity": "Qty",
+    "subtotal": "Subtotal",
+    "total": "Total",
+    "timer": "Timer",
+    "resourceOccupied": "Resource is occupied",
+    "paymentMethod": "Payment method",
+    "cash": "Cash",
+    "card": "Card",
+    "mobileWallet": "Mobile Wallet",
+    "confirmPayment": "Confirm payment",
+    "orderComplete": "Order complete",
+    "printReceipt": "Print receipt",
+    "newOrder": "New Order",
+    "emptyCart": "No items in order",
+    "selectResource": "Select a table or station",
+    "available": "Available",
+    "occupied": "Occupied",
+    "maintenance": "Maintenance",
+    "shiftOpen": "Shift Open",
+    "shiftClosed": "Shift Closed",
+    "all": "All",
+    "backToProducts": "Back to products",
+    "processing": "Processing..."
   }
 }
