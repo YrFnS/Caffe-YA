@@ -1,16 +1,37 @@
-"use client"
+import { redirect } from 'next/navigation'
+import { auth } from '@/lib/auth'
+import { getActiveShift, getOrCreateDraftOrder } from '@/features/pos/_services/orderService'
+import { getAllActiveProducts, getCategories } from '@/features/pos/_services/productService'
+import { getResourcesWithCategories } from '@/features/pos/_services/resourceService'
+import POSClientView from './_components/POSClientView'
 
-import { useTranslations } from 'next-intl'
-import POSLayout from './_components/POSLayout'
+export default async function POSPage() {
+  const session = await auth()
+  if (!session?.user) redirect('/sign-in')
 
-export default function POSPage() {
-  const t = useTranslations('pos')
+  const userId = session.user.id as string
+
+  const activeShift = await getActiveShift(userId)
+  if (!activeShift) {
+    redirect('/shifts')
+  }
+
+  const draftOrder = await getOrCreateDraftOrder(activeShift.id, userId)
+
+  const [products, categories, resources] = await Promise.all([
+    getAllActiveProducts(),
+    getCategories(),
+    getResourcesWithCategories(),
+  ])
 
   return (
-    <POSLayout shiftStatus="open" cashierName="Cashier">
-      <div className="flex items-center justify-center h-full text-on-surface-variant">
-        <p>{t('loadingPos')}</p>
-      </div>
-    </POSLayout>
+    <POSClientView
+      products={products}
+      categories={categories}
+      resources={resources}
+      shiftId={activeShift.id}
+      orderId={draftOrder.id}
+      cashierName={session.user.name || 'Cashier'}
+    />
   )
 }
