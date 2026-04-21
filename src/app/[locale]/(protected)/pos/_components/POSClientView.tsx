@@ -7,6 +7,8 @@ import ProductGrid from '@/features/pos/_components/ProductGrid'
 import OrderSummary from '@/features/pos/_components/OrderSummary'
 import ResourceGrid from '@/features/pos/_components/ResourceGrid'
 import CheckoutModal from '@/features/pos/_components/CheckoutModal'
+import { addItemAction, removeItemAction, updateQuantityAction, clearOrderAction } from '@/features/pos/_actions/cart'
+import { processCheckout } from '@/features/pos/_actions/checkout'
 import { Button } from '@/components/ui/button'
 import type { Product, Category, Resource, CartItem } from '@/features/pos/_types'
 
@@ -23,7 +25,7 @@ export default function POSClientView({
   products,
   categories,
   resources,
-  shiftId: _shiftId,
+  shiftId: _shiftId, // eslint-disable-line @typescript-eslint/no-unused-vars
   orderId,
   cashierName,
 }: POSClientViewProps) {
@@ -33,10 +35,27 @@ export default function POSClientView({
   const [showCheckout, setShowCheckout] = useState(false)
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_timerDisplay, setTimerDisplay] = useState<string>('')
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_timerRunning, setTimerRunning] = useState(false)
 
   const handleAddProduct = useCallback(async (product: Product) => {
     setIsLoading(true)
     try {
+      const formData = new FormData()
+      formData.set('orderId', orderId)
+      formData.set('productId', product.id)
+      formData.set('quantity', '1')
+      formData.set('unitPrice', product.price)
+
+      const result = await addItemAction(formData)
+      if (result.error) {
+        console.error('Failed to add item:', result.error)
+        return
+      }
+
+      // Add to local cart with the orderItemId from the response
       const existing = cartItems.find(i => i.productId === product.id)
       if (existing) {
         setCartItems(prev => prev.map(i =>
@@ -51,51 +70,110 @@ export default function POSClientView({
           quantity: 1,
           unitPrice: product.price,
           totalPrice: product.price,
+          orderItemId: result.item?.id,
         }])
       }
     } finally {
       setIsLoading(false)
     }
+  }, [cartItems, orderId])
+
+  const handleRemoveItem = useCallback(async (productId: string) => {
+    const item = cartItems.find(i => i.productId === productId)
+    if (!item?.orderItemId) return
+
+    setIsLoading(true)
+    try {
+      const formData = new FormData()
+      formData.set('itemId', item.orderItemId)
+      await removeItemAction(formData)
+      setCartItems(prev => prev.filter(i => i.productId !== productId))
+    } finally {
+      setIsLoading(false)
+    }
   }, [cartItems])
 
-  const handleRemoveItem = useCallback((productId: string) => {
-    setCartItems(prev => prev.filter(i => i.productId !== productId))
-  }, [])
+  const handleIncrementItem = useCallback(async (productId: string) => {
+    const item = cartItems.find(i => i.productId === productId)
+    if (!item?.orderItemId) return
 
-  const handleIncrementItem = useCallback((productId: string) => {
-    setCartItems(prev => prev.map(i =>
-      i.productId === productId
-        ? { ...i, quantity: i.quantity + 1, totalPrice: (Number(i.unitPrice) * (i.quantity + 1)).toFixed(3) }
-        : i
-    ))
-  }, [])
+    setIsLoading(true)
+    try {
+      const formData = new FormData()
+      formData.set('itemId', item.orderItemId)
+      formData.set('quantity', String(item.quantity + 1))
+      await updateQuantityAction(formData)
+      setCartItems(prev => prev.map(i =>
+        i.productId === productId
+          ? { ...i, quantity: i.quantity + 1, totalPrice: (Number(i.unitPrice) * (i.quantity + 1)).toFixed(3) }
+          : i
+      ))
+    } finally {
+      setIsLoading(false)
+    }
+  }, [cartItems])
 
-  const handleUpdateQuantity = useCallback((productId: string, quantity: number) => {
+  const handleUpdateQuantity = useCallback(async (productId: string, quantity: number) => {
     if (quantity <= 0) {
       handleRemoveItem(productId)
       return
     }
-    setCartItems(prev => prev.map(i =>
-      i.productId === productId
-        ? { ...i, quantity, totalPrice: (Number(i.unitPrice) * quantity).toFixed(3) }
-        : i
-    ))
-  }, [handleRemoveItem])
 
-  const handleClearOrder = useCallback(() => {
-    setCartItems([])
-  }, [])
+    const item = cartItems.find(i => i.productId === productId)
+    if (!item?.orderItemId) return
 
-  const handleSelectResource = useCallback((resourceId: string) => {
+    setIsLoading(true)
+    try {
+      const formData = new FormData()
+      formData.set('itemId', item.orderItemId)
+      formData.set('quantity', String(quantity))
+      await updateQuantityAction(formData)
+      setCartItems(prev => prev.map(i =>
+        i.productId === productId
+          ? { ...i, quantity, totalPrice: (Number(i.unitPrice) * quantity).toFixed(3) }
+          : i
+      ))
+    } finally {
+      setIsLoading(false)
+    }
+  }, [cartItems, handleRemoveItem])
+
+  const handleClearOrder = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const formData = new FormData()
+      formData.set('orderId', orderId)
+      await clearOrderAction(formData)
+      setCartItems([])
+    } finally {
+      setIsLoading(false)
+    }
+  }, [orderId])
+
+  const handleSelectResource = useCallback(async (resourceId: string) => {
     console.log('Resource selected:', resourceId)
+    // TODO: Wire to assignResourceToOrder server action
     setShowResourceGrid(false)
   }, [])
 
   const handleCheckout = useCallback(async (method: string, reference?: string) => {
-    console.log('Checkout:', method, reference, orderId)
+    const total = cartItems.reduce((sum, i) => sum + Number(i.totalPrice), 0).toFixed(3)
+
+    const formData = new FormData()
+    formData.set('orderId', orderId)
+    formData.set('paymentMethod', method)
+    formData.set('amount', total)
+    if (reference) formData.set('reference', reference)
+
+    const result = await processCheckout(formData)
+    if (result.error) {
+      console.error('Checkout failed:', result.error)
+      return
+    }
+
     setShowCheckout(false)
     setCartItems([])
-  }, [orderId])
+  }, [cartItems, orderId])
 
   const subtotal = cartItems.reduce((sum, i) => sum + Number(i.totalPrice), 0)
 
@@ -137,6 +215,8 @@ export default function POSClientView({
           subtotal={subtotal.toFixed(3)}
           timerCharge="0"
           total={subtotal.toFixed(3)}
+          timerRunning={_timerRunning}
+          timerDisplay={_timerDisplay}
           onAddItem={handleIncrementItem}
           onRemoveItem={handleRemoveItem}
           onUpdateQuantity={handleUpdateQuantity}

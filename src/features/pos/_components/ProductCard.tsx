@@ -26,6 +26,7 @@ export default function ProductCard({ product, onAdd }: ProductCardProps) {
     >
       <div className="w-full aspect-square mb-3 rounded-md bg-surface-container-low flex items-center justify-center">
         {product.localImageName ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={`/uploads/products/${product.localImageName}`}
             alt={product.name}

@@ -74,6 +74,19 @@
     "all": "All",
     "backToProducts": "Back to products",
     "processing": "Processing...",
-    "loadingPos": "Loading POS..."
+    "loadingPos": "Loading POS...",
+    "voidItem": "Void item",
+    "voidReason": "Reason for void"
+  },
+  "resources": {
+    "title": "Resources",
+    "description": "Manage gaming stations, tables, and timed resources",
+    "noResources": "No resources configured",
+    "assign": "Assign to order",
+    "available": "Available",
+    "occupied": "Occupied",
+    "maintenance": "Maintenance",
+    "all": "All",
+    "loading": "Loading resources..."
   }
 }
