@@ -32,6 +32,7 @@ export default async function POSPage() {
       shiftId={activeShift.id}
       orderId={draftOrder.id}
       cashierName={session.user.name || 'Cashier'}
+      shiftOpenedAt={activeShift.openedAt}
     />
   )
 }

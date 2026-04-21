@@ -19,6 +19,7 @@ interface POSClientViewProps {
   shiftId: string
   orderId: string
   cashierName: string
+  shiftOpenedAt?: Date
 }
 
 export default function POSClientView({
@@ -28,6 +29,7 @@ export default function POSClientView({
   shiftId: _shiftId, // eslint-disable-line @typescript-eslint/no-unused-vars
   orderId,
   cashierName,
+  shiftOpenedAt,
 }: POSClientViewProps) {
   const t = useTranslations('pos')
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
@@ -178,7 +180,7 @@ export default function POSClientView({
   const subtotal = cartItems.reduce((sum, i) => sum + Number(i.totalPrice), 0)
 
   return (
-    <POSLayout shiftStatus="open" cashierName={cashierName}>
+    <POSLayout shiftStatus="open" cashierName={cashierName} shiftOpenedAt={shiftOpenedAt}>
       <div className="flex gap-6 h-full px-6 py-4">
         {/* Left: Product grid or Resource grid */}
         <div className="flex-1">

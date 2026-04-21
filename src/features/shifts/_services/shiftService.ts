@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import { and, desc, eq, isNull } from 'drizzle-orm'
+import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm'
 import { expenses, orders, shifts, transactions } from '@/lib/schema'
 import type { ShiftSummary } from '../_types'
 
@@ -121,9 +121,9 @@ export async function getActiveResources(
   const activeOrders = await db.query.orders.findMany({
     where: and(
       eq(orders.shiftId, shiftId),
-      eq(orders.status, 'occupied'),
+      eq(orders.status, 'open'),
+      isNotNull(orders.timerStartedAt),
       isNull(orders.timerEndedAt),
-      isNull(orders.closedAt),
     ),
     with: { resource: { columns: { id: true, name: true } } },
   })
