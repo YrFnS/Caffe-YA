@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p __TRACKED_VAR__/.claude/commands)",
+      "Bash(cp .claude/commands/research-claude-md.md __TRACKED_VAR__/.claude/commands/research-claude-md.md)"
+    ]
+  }
+}

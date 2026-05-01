@@ -1,64 +1,90 @@
-<!-- BEGIN:nextjs-agent-rules -->
-# Caffe-YA Agent Guide
+# AGENTS.md
 
-**Last updated:** 2026-04-19
+Drop-in operating instructions for coding agents. Read before every task.
 
-## Critical setup
+**Working code only. Plausibility is not correctness.**
 
-- Database runs on `localhost:5432` via Docker. Run `docker compose up -d` before anything else.
-- Environment required: `DATABASE_URL`, `BETTER_AUTH_SECRET` (≥32 chars), `BETTER_AUTH_URL`. Validated at runtime in `src/lib/env.ts`.
-- After changing schema, run migrations: `npx drizzle-kit generate && npx drizzle-kit push`.
-- Always start dev server from repo root: `npm run dev`.
+---
 
-## Project structure
+## 0. Non-negotiables
 
-- Single Next.js 16 App Router package. Routes use **route groups**:
-  - `(auth)` — auth-only routes, currently redirects to `/[locale]`
-  - `(protected)` — all protected dashboard routes under `/[locale]/(protected)/*`
-  - `[locale]` — i18n segment (`en` or `ar`). Locale routing defined in `src/lib/routing.ts`.
-- Middleware (`src/proxy.ts`) uses `next-intl` and excludes `api|trpc|_next|_vercel|.*\..*` paths.
-- Authentication uses Better Auth with Drizzle adapter (`src/lib/auth.ts`). Only `users` table is mapped; `session`, `account`, `verification` are `undefined`.
-- Database: Drizzle ORM, schema in `src/lib/schema.ts` (~600 lines, all domain tables + enums + relations). Migrations output to `./drizzle/`.
+1. **No flattery, no filler.** Skip "Great question", "I'd be happy to help". Start with the answer.
+2. **Disagree when you disagree.** If the premise is wrong, say so before doing the work.
+3. **Never fabricate.** Not paths, not APIs, not versions. Read the file, run the command, or say "I don't know."
+4. **Stop when confused.** Two plausible interpretations? Ask. Don't pick silently.
+5. **Touch only what you must.** Every changed line traces to the user's request. No drive-by refactors.
 
-## Available commands
+---
 
-| Command | Purpose |
-|---------|---------|
-| `npm run dev` | Start dev server on `localhost:3000` |
-| `npm run build` | Production build |
-| `npm run lint` | ESLint (uses `eslint.config.mjs`, extends Next.js core-web-vitals + typescript) |
-| `npx drizzle-kit generate` | Generate migration from schema changes |
-| `npx drizzle-kit push` | Apply migrations to local DB |
+## 1. Before writing code
 
-**No test command exists** (no Jest/Vitest configured).
+- State your plan in one or two sentences before editing. For non-trivial tasks, a numbered list with verification check for each step.
+- Read files you'll touch. Use subagents for exploration to keep context clean.
+- Match existing patterns. If the project uses pattern X, use X even if you'd do it differently.
 
-## Configuration quirks
+---
 
-- `next.config.ts`: `reactCompiler: true` enabled. `next-intl` plugin wraps config (`src/lib/i18n.ts`).
-- `tsconfig.json`: path alias `@/*` → `./src/*`.
-- Tailwind v4 with `@tailwindcss/postcss`. MD 3 Material Design-inspired tokens used in components (e.g. `text-on-surface`, `bg-surface-container-high`).
-- `eslint.config.mjs` uses flat config and explicitly re-imports `nextVitals` and `nextTs`. Global ignores cover `.next/`, `out/`, `build/`, `next-env.d.ts`.
+## 2. Simplicity first
 
-## Important files
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No error handling for impossible scenarios.
+- If 200 lines could be 50, rewrite it.
 
-- `src/lib/env.ts` — Zod env validation; throws on startup if invalid.
-- `src/lib/db.ts` — Drizzle instance with schema reference.
-- `src/app/[locale]/layout.tsx` — Root layout with RTL handling for Arabic. Loads fonts for both locales.
-- `src/app/[locale]/(protected)/layout.tsx` — Sidebar navigation; hardcoded "Admin User" until auth UI is built.
-- `src/proxy.ts` — Middleware, must be at `src/` (root) for Next.js to pick it up.
+---
 
-## How to work with the codebase
+## 3. Surgical changes
 
-- Run `npm run lint` before commits. Type checking is implicit via TypeScript + Next.js build.
-- UI components use `class-variance-authority` (`src/components/ui/button.tsx`). Use `cn()` utility for class merging.
-- All financial amounts use `numeric` with 3 decimal places precision in schema.
-- Locale: `en` is default; Arabic requires RTL. All translations in `src/messages/*.json`.
-- PRs/branches: none configured. No CI workflows exist yet.
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that work.
+- Don't delete pre-existing dead code unless asked.
+- Clean up orphans your changes created (unused imports, variables).
 
-## What's NOT here (don't assume)
+---
 
-- No unit test framework.
-- No pre-commit hooks.
-- No CI/CD.
-- No monorepo — single package only.
-- `features/` directory doesn't exist (per README it's planned, not implemented).<!-- END:nextjs-agent-rules -->
+## 4. Goal-driven execution
+
+Transform vague asks into verifiable goals:
+- "Add validation" → Write tests for invalid inputs, then make them pass.
+- "Fix the bug" → Write a failing test that reproduces it, then make it pass.
+- "Make it work" is weak. Define success criteria upfront.
+
+---
+
+## 5. Verification
+
+- Run the actual tests, linter, type checker. Not just a plausible-looking diff.
+- Never report "done" without checking.
+- For UI changes: verify visually or describe what should change.
+
+---
+
+## 6. Communication style
+
+- Direct, not diplomatic. "This won't scale" beats "interesting approach."
+- Concise. Two or three short paragraphs unless depth is asked for.
+- No excessive bullet points, no emoji, no ceremonial closings.
+
+---
+
+## 7. When to ask, when to proceed
+
+**Ask before proceeding when:**
+- Request has two plausible interpretations that materially affect output.
+- Change touches load-bearing infrastructure.
+- You need credentials you don't have.
+
+**Proceed without asking when:**
+- Task is trivial and reversible (typo, rename, log line).
+- Ambiguity resolved by reading code or running a command.
+
+---
+
+## 8. Self-improvement loop
+
+After every session where something went wrong:
+1. Was the mistake because this file lacks a rule, or because a rule was ignored?
+2. If lacking: add concretely to Project Learnings below ("Always use X for Y").
+3. If ignored: the rule may be too long, too vague, or buried. Tighten it.
+
+Keep this file under 300 lines. Over 500 and you're fighting your own config.
