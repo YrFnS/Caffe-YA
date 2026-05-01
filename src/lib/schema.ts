@@ -79,13 +79,52 @@ export const journalLineTypeEnum = pgEnum('journal_line_type', ['debit', 'credit
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const users = pgTable('users', {
-  id:           uuid('id').primaryKey().defaultRandom(),
+  id:           text('id').primaryKey(),
   name:         text('name').notNull(),
   email:        text('email').notNull().unique(),
-  passwordHash: text('password_hash').notNull(),
+  passwordHash: text('password_hash'),  // nullable — better-auth stores credentials in accounts table
+  emailVerified: boolean('email_verified').notNull().default(false),
   isActive:     boolean('is_active').notNull().default(true),
   createdAt:    timestamp('created_at').notNull().defaultNow(),
   updatedAt:    timestamp('updated_at').notNull().defaultNow(),
+})
+
+// Better Auth: sessions table
+export const sessions = pgTable('sessions', {
+  id:        text('id').primaryKey(),
+  userId:    text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  expiresAt: timestamp('expires_at').notNull(),
+  token:     text('token').notNull().unique(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+})
+
+// Better Auth: accounts table (OAuth accounts)
+export const accounts = pgTable('accounts', {
+  id:               text('id').primaryKey(),
+  userId:           text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  accountId:        text('account_id').notNull(),
+  providerId:       text('provider_id').notNull(),
+  accessToken:      text('access_token'),
+  refreshToken:     text('refresh_token'),
+  idToken:          text('id_token'),
+  accessTokenExpiresAt: timestamp('access_token_expires_at'),
+  refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
+  scope:            text('scope'),
+  password:         text('password'),
+  createdAt:        timestamp('created_at').notNull().defaultNow(),
+  updatedAt:        timestamp('updated_at').notNull().defaultNow(),
+})
+
+// Better Auth: verification tokens (email verification, etc.)
+export const verifications = pgTable('verifications', {
+  id:         text('id').primaryKey(),
+  identifier: text('identifier').notNull(),
+  value:      text('value').notNull(),
+  expiresAt:  timestamp('expires_at').notNull(),
+  createdAt:  timestamp('created_at').notNull().defaultNow(),
 })
 
 // Roles are created by admins at runtime — nothing hardcoded
@@ -113,7 +152,7 @@ export const rolePermissions = pgTable('role_permissions', {
 
 // Which roles are assigned to which user
 export const userRoles = pgTable('user_roles', {
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   roleId: uuid('role_id').notNull().references(() => roles.id, { onDelete: 'cascade' }),
 })
 
@@ -123,7 +162,7 @@ export const userRoles = pgTable('user_roles', {
 
 export const partners = pgTable('partners', {
   id:               uuid('id').primaryKey().defaultRandom(),
-  userId:           uuid('user_id').notNull().references(() => users.id),
+  userId:           text('user_id').notNull().references(() => users.id),
   ownershipPercent: numeric('ownership_percent', { precision: 5, scale: 2 }).notNull(), // e.g. 50.00
   createdAt:        timestamp('created_at').notNull().defaultNow(),
 })
@@ -136,7 +175,7 @@ export const partnerEquityEntries = pgTable('partner_equity_entries', {
   type:      equityEntryTypeEnum('type').notNull(),
   amount:    numeric('amount', { precision: 14, scale: 3 }).notNull(),
   note:      text('note'),
-  createdBy: uuid('created_by').references(() => users.id),
+  createdBy: text('created_by').references(() => users.id),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
@@ -173,7 +212,7 @@ export const resources = pgTable('resources', {
 
 export const shifts = pgTable('shifts', {
   id:                   uuid('id').primaryKey().defaultRandom(),
-  cashierId:            uuid('cashier_id').notNull().references(() => users.id),
+  cashierId:            text('cashier_id').notNull().references(() => users.id),
   status:               shiftStatusEnum('status').notNull().default('open'),
   openedAt:             timestamp('opened_at').notNull().defaultNow(),
   closedAt:             timestamp('closed_at'),
@@ -188,7 +227,7 @@ export const shifts = pgTable('shifts', {
   cashVariance:         numeric('cash_variance',          { precision: 12, scale: 3 }),
 
   notes:      text('notes'),
-  approvedBy: uuid('approved_by').references(() => users.id),
+  approvedBy: text('approved_by').references(() => users.id),
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -259,7 +298,7 @@ export const stockMovements = pgTable('stock_movements', {
   note:         text('note'),
   orderId:      uuid('order_id'),    // set if triggered by a sale
   purchaseId:   uuid('purchase_id'), // set if triggered by a purchase receipt
-  createdBy:    uuid('created_by').references(() => users.id),
+  createdBy:    text('created_by').references(() => users.id),
   createdAt:    timestamp('created_at').notNull().defaultNow(),
 }, (t) => ({
   ingredientIdx: index('sm_ingredient_idx').on(t.ingredientId),
@@ -275,7 +314,7 @@ export const orders = pgTable('orders', {
   shiftId:          uuid('shift_id').notNull().references(() => shifts.id),
   // null = takeaway / no assigned table
   resourceId:       uuid('resource_id').references(() => resources.id),
-  cashierId:        uuid('cashier_id').notNull().references(() => users.id),
+  cashierId:        text('cashier_id').notNull().references(() => users.id),
   status:           orderStatusEnum('status').notNull().default('open'),
 
   // Timer fields — only populated when resource is timed
@@ -307,7 +346,7 @@ export const orderItems = pgTable('order_items', {
 
   // Void fields — voids before checkout don't delete the row, they mark it
   voidedAt:   timestamp('voided_at'),
-  voidedBy:   uuid('voided_by').references(() => users.id),
+  voidedBy:   text('voided_by').references(() => users.id),
   voidReason: text('void_reason'),
 })
 
@@ -324,7 +363,7 @@ export const transactions = pgTable('transactions', {
   // Refund fields — refunds after checkout create a new row with isRefund = true
   isRefund:     boolean('is_refund').notNull().default(false),
   refundReason: text('refund_reason'),
-  refundedBy:   uuid('refunded_by').references(() => users.id),
+  refundedBy:   text('refunded_by').references(() => users.id),
 
   createdAt: timestamp('created_at').notNull().defaultNow(),
 }, (t) => ({
@@ -349,7 +388,7 @@ export const expenses = pgTable('expenses', {
   categoryId:       uuid('category_id').notNull().references(() => expenseCategories.id),
   amount:           numeric('amount', { precision: 12, scale: 3 }).notNull(),
   description:      text('description'),
-  paidBy:           uuid('paid_by').references(() => users.id),
+  paidBy:           text('paid_by').references(() => users.id),
   receiptImageName: text('receipt_image_name'),
   createdAt:        timestamp('created_at').notNull().defaultNow(),
 })
@@ -375,7 +414,7 @@ export const purchases = pgTable('purchases', {
   paidAt:           timestamp('paid_at'),
   receiptImageName: text('receipt_image_name'),
   note:             text('note'),
-  createdBy:        uuid('created_by').references(() => users.id),
+  createdBy:        text('created_by').references(() => users.id),
   createdAt:        timestamp('created_at').notNull().defaultNow(),
 })
 
@@ -397,7 +436,7 @@ export const purchaseItems = pgTable('purchase_items', {
 export const employees = pgTable('employees', {
   id:           uuid('id').primaryKey().defaultRandom(),
   // userId is optional — not every employee needs a system login
-  userId:       uuid('user_id').references(() => users.id),
+  userId:       text('user_id').references(() => users.id),
   name:         text('name').notNull(),
   phone:        text('phone'),
   salaryType:   text('salary_type').notNull(), // "hourly" | "fixed"
@@ -419,7 +458,7 @@ export const payrollEntries = pgTable('payroll_entries', {
   isPaid:      boolean('is_paid').notNull().default(false),
   paidAt:      timestamp('paid_at'),
   note:        text('note'),
-  createdBy:   uuid('created_by').references(() => users.id),
+  createdBy:   text('created_by').references(() => users.id),
   createdAt:   timestamp('created_at').notNull().defaultNow(),
 })
 
@@ -449,7 +488,7 @@ export const journalEntries = pgTable('journal_entries', {
   // Which module created this automatically
   sourceType:  text('source_type'), // "order" | "purchase" | "payroll" | "expense" | "manual"
   sourceId:    uuid('source_id'),
-  createdBy:   uuid('created_by').references(() => users.id),
+  createdBy:   text('created_by').references(() => users.id),
   createdAt:   timestamp('created_at').notNull().defaultNow(),
 })
 
@@ -475,7 +514,7 @@ export const journalEntryLines = pgTable('journal_entry_lines', {
 export const systemSettings = pgTable('system_settings', {
   key:       text('key').primaryKey(),
   value:     jsonb('value').notNull(),
-  updatedBy: uuid('updated_by').references(() => users.id),
+  updatedBy: text('updated_by').references(() => users.id),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
@@ -484,7 +523,7 @@ export const systemSettings = pgTable('system_settings', {
 export const systemModules = pgTable('system_modules', {
   module:    text('module').primaryKey(),
   isActive:  boolean('is_active').notNull().default(false),
-  updatedBy: uuid('updated_by').references(() => users.id),
+  updatedBy: text('updated_by').references(() => users.id),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
@@ -496,7 +535,7 @@ export const systemModules = pgTable('system_modules', {
 // Examples: "VOID_ITEM", "CLOSE_SHIFT", "UPDATE_PRICE", "CHANGE_PERMISSION"
 export const auditLogs = pgTable('audit_logs', {
   id:          uuid('id').primaryKey().defaultRandom(),
-  userId:      uuid('user_id').references(() => users.id),
+  userId:      text('user_id').references(() => users.id),
   action:      text('action').notNull(),
   targetTable: text('target_table'),
   targetId:    uuid('target_id'),

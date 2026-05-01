@@ -1,6 +1,8 @@
 import { db } from '@/lib/db'
 import { orders, orderItems, transactions, resources, shifts } from '@/lib/schema'
 import { eq, and, isNull } from 'drizzle-orm'
+import { getProductIngredients } from '@/features/inventory/_services/productService'
+import { logMovement } from '@/features/inventory/_services/stockMovementService'
 
 export async function getOrCreateDraftOrder(shiftId: string, userId: string) {
   const existing = await db.query.orders.findFirst({
@@ -92,7 +94,7 @@ async function recalculateOrderTotals(orderId: string) {
     .where(eq(orders.id, orderId))
 }
 
-export async function checkoutOrder(orderId: string, paymentMethod: string, amount: string, reference?: string) {
+export async function checkoutOrder(orderId: string, paymentMethod: string, amount: string, reference?: string, userId?: string) {
   return db.transaction(async (tx) => {
     const order = await tx.query.orders.findFirst({ where: eq(orders.id, orderId) })
     if (!order) throw new Error('ORDER_NOT_FOUND')
@@ -113,6 +115,29 @@ export async function checkoutOrder(orderId: string, paymentMethod: string, amou
       await tx.update(resources)
         .set({ status: 'available' })
         .where(eq(resources.id, order.resourceId))
+    }
+
+    // Deduct recipe ingredients
+    const items = await tx.query.orderItems.findMany({
+      where: and(eq(orderItems.orderId, orderId), isNull(orderItems.voidedAt)),
+      with: { product: true },
+    })
+
+    for (const item of items) {
+      if (item.product && item.product.type === 'recipe') {
+        const recipeIngredients = await getProductIngredients(item.productId)
+        for (const ri of recipeIngredients) {
+          const deduction = (Number(ri.quantityUsed) * Number(item.quantity)).toFixed(3)
+          await logMovement({
+            type: 'sale_deduction',
+            quantity: (-Number(deduction)).toFixed(3),
+            ingredientId: ri.ingredientId,
+            productId: item.productId,
+            orderId,
+            createdBy: userId,
+          })
+        }
+      }
     }
   })
 }

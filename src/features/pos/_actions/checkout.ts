@@ -18,7 +18,7 @@ export async function processCheckout(formData: FormData) {
   }
 
   try {
-    await checkoutOrder(orderId, paymentMethod, amount, reference || undefined)
+    await checkoutOrder(orderId, paymentMethod, amount, reference || undefined, session.user.id as string)
     return { success: true }
   } catch (error) {
     console.error('Checkout failed:', error)

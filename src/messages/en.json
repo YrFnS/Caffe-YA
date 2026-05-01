@@ -30,7 +30,8 @@
     "activeOrders": "Active Orders",
     "activeTimers": "Active Timers",
     "shiftStatus": "Shift Status",
-    "closed": "Closed"
+    "closed": "Closed",
+    "signOut": "Sign Out"
   },
   "auth": {
     "signIn": "Sign In",
@@ -119,5 +120,50 @@
     "activeResourcesDesc": "The following resources have running timers. Stop or transfer them before closing the shift.",
     "stopTimer": "Stop Timer",
     "float": "Float"
+  },
+  "inventory": {
+    "title": "Inventory",
+    "products": "Products",
+    "categories": "Categories",
+    "ingredients": "Ingredients",
+    "stockHistory": "Stock History",
+    "lowStockAlert": "Low Stock Alert",
+    "lowStockWarning": "Low Stock Warning",
+    "outOfStock": "Out of Stock",
+    "all": "All",
+    "name": "Name",
+    "nameAr": "Arabic Name",
+    "price": "Price",
+    "type": "Type",
+    "standard": "Standard",
+    "recipe": "Recipe",
+    "service": "Service",
+    "tracked": "Tracked",
+    "stock": "Stock",
+    "lowThreshold": "Low Threshold",
+    "costPerUnit": "Cost per Unit",
+    "unit": "Unit",
+    "actions": "Actions",
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "noResults": "No results found",
+    "search": "Search"
+  },
+  "admin": {
+    "title": "Admin",
+    "products": "Products",
+    "categories": "Categories",
+    "ingredients": "Ingredients",
+    "units": "Units",
+    "stockMovements": "Stock Movements",
+    "lowStockAlerts": "Low Stock Alerts",
+    "productsDescription": "Manage product catalog, pricing, and categories",
+    "categoriesDescription": "Organize products into hierarchical categories",
+    "ingredientsDescription": "Track raw materials and inventory levels",
+    "unitsDescription": "Define measurement units for ingredients"
   }
 }

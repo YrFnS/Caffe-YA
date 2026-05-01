@@ -30,7 +30,8 @@
     "activeOrders": "الطلبات النشطة",
     "activeTimers": "المؤقتات النشطة",
     "shiftStatus": "حالة الوردية",
-    "closed": "مغلقة"
+    "closed": "مغلقة",
+    "signOut": "تسجيل الخروج"
   },
   "auth": {
     "signIn": "تسجيل الدخول",
@@ -119,5 +120,50 @@
     "activeResourcesDesc": "الموارد التالية لديها مؤقتات تعمل. أوقف أو انقل قبل إغلاق الوردية.",
     "stopTimer": "إيقاف المؤقت",
     "float": "الرصيد"
+  },
+  "inventory": {
+    "title": "المخزون",
+    "products": "المنتجات",
+    "categories": "الفئات",
+    "ingredients": "المكونات",
+    "stockHistory": "سجل المخزون",
+    "lowStockAlert": "تنبيه انخفاض المخزون",
+    "lowStockWarning": "تحذير انخفاض المخزون",
+    "outOfStock": "نفذ من المخزون",
+    "all": "الكل",
+    "name": "الاسم",
+    "nameAr": "الاسم بالعربية",
+    "price": "السعر",
+    "type": "النوع",
+    "standard": "قياسي",
+    "recipe": "وصفة",
+    "service": "خدمة",
+    "tracked": "متتبع",
+    "stock": "المخزون",
+    "lowThreshold": "الحد الأدنى",
+    "costPerUnit": "التكلفة لكل وحدة",
+    "unit": "الوحدة",
+    "actions": "الإجراءات",
+    "add": "إضافة",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "loading": "جاري التحميل...",
+    "noResults": "لا توجد نتائج",
+    "search": "بحث"
+  },
+  "admin": {
+    "title": "الإدارة",
+    "products": "المنتجات",
+    "categories": "الفئات",
+    "ingredients": "المكونات",
+    "units": "الوحدات",
+    "stockMovements": "حركات المخزون",
+    "lowStockAlerts": "تنبيهات انخفاض المخزون",
+    "productsDescription": "إدارة كتالوج المنتجات والأسعار والفئات",
+    "categoriesDescription": "تنظيم المنتجات في فئات هرمية",
+    "ingredientsDescription": "تتبع المواد الخام ومستويات المخزون",
+    "unitsDescription": "تعريف وحدات القياس للمكونات"
   }
 }
