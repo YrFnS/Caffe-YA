@@ -12,6 +12,9 @@ Build the product and inventory management system: CRUD for products, categories
 - Low-stock alerts on dashboard
 - Product type handling: standard (tracked), recipe (calculated), service (non-inventory)
 
+## Status
+✅ Complete — commit `71ec82d`
+
 ## Steps
 
 ### Step 1: Product Management

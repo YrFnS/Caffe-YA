@@ -17,9 +17,8 @@ Build the primary POS screen with product grid, cart, checkout flow, and the res
 - Refund transactions after checkout (new row with `isRefund: true`)
 - Active order persisted in DB as `status = 'draft'` while in progress
 
-## Completed On
-
-- 2026-04-19
+## Status
+✅ Complete — commits `2e69fd4`–`71ec82d`
 
 ---
 

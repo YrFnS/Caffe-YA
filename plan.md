@@ -89,39 +89,38 @@ Each feature folder follows a consistent internal structure:
 
 ## 5. Phase Overview
 
-| Phase | Focus | Key Deliverables |
-|-------|-------|-----------------|
-| **Phase 1** | Project Setup & Foundation | Next.js app, DB, auth, base layout, i18n |
-| **Phase 2** | POS Core & Timed Resources | Product grid, cart, checkout, resource grid, timer logic |
-| **Phase 3** | Shift Management | Open/close shift, variance tracking, cash handling |
-| **Phase 4** | Inventory & Products | Product CRUD, ingredients, stock, low-stock alerts |
-| **Phase 5** | Admin & Permissions | User management, roles, permissions, settings |
-| **Phase 6** | Procurement & Expenses | Vendors, purchases, expense tracking |
-| **Phase 7** | Accounting & Partners | Chart of accounts, journals, partner equity |
-| **Phase 8** | Reports & Polish | Dashboard, summaries, final UI polish |
+| Phase | Focus | Key Deliverables | Status |
+|-------|-------|-------------------|--------|
+| **Phase 1** | Project Setup & Foundation | Next.js app, DB, auth, base layout, i18n | ✅ Complete — commit `c026dd5` |
+| **Phase 2** | POS Core & Timed Resources | Product grid, cart, checkout, resource grid, timer logic | ✅ Complete — commits `2e69fd4`–`71ec82d` |
+| **Phase 3** | Shift Management | Open/close shift, variance tracking, cash handling | ✅ Complete — commit `a48f6f3` |
+| **Phase 4** | Inventory & Products | Product CRUD, ingredients, stock, low-stock alerts | ✅ Complete — commit `71ec82d` |
+| **Phase 5** | Admin & Permissions | User management, roles, permissions, settings | ❌ Scaffold only — schema tables exist, no feature module |
+| **Phase 6** | Procurement & Expenses | Vendors, purchases, expense tracking | ❌ Scaffold only — schema tables exist, no feature module |
+| **Phase 7** | Accounting & Partners | Chart of accounts, journals, partner equity | ❌ Scaffold only — schema tables exist, no feature module |
+| **Phase 8** | Reports & Polish | Dashboard, summaries, final UI polish | ❌ Not started |
 
 ---
 
 ## 6. Current State
 
-- **schema.ts** — exists (v0 reference, will be refined during Phase 1)
+- **Phases 1–4**: ✅ Complete (foundation, POS, shifts, inventory)
+- **Phases 5–7**: ❌ Scaffold only — schema tables defined but no feature modules implemented
+- **Phase 8**: ❌ Not started
 - **DESIGN.md** — updated with detailed UI/UX specs, responsive layouts, Arabic RTL rules
 - **Rule.md** — complete with code quality, architecture, financial, security, i18n, and workflow rules
 
----
-
 ## 7. Next Steps
 
-1. **Phase 1** — Initialize Next.js project with the chosen stack
-2. Set up PostgreSQL + Drizzle
-3. Configure Better Auth
-4. Set up next-intl with Arabic/English
-5. Create the base layout with sidebar and responsive shell
+1. **Phase 5** — Implement admin feature module (users, roles, permissions, settings)
+2. Set up PostgreSQL + Drizzle (already in place from Phase 1)
+3. Configure Better Auth (already in place from Phase 1)
+4. Set up next-intl with Arabic/English (already in place from Phase 1)
+5. Create the base layout with sidebar and responsive shell (already in place from Phase 1)
 6. Verify: build passes, diagnostics clean, auth flow works
 
-After Phase 1 is complete, the app will have:
-- A running Next.js app accessible in the browser
-- Working login/logout
-- A visible sidebar with navigation
-- Language toggle between Arabic and English
-- The foundation ready to receive POS and resource features
+After Phase 5 is complete, the app will have:
+- Working admin user and role management
+- Fine-grained permission system
+- System settings UI
+- The foundation ready to receive procurement and accounting features

@@ -3,6 +3,9 @@
 ## Goal
 Build the dashboard, operational reports, and perform final UI polish to complete the initial release.
 
+## Status
+❌ Not started
+
 ## What Ships
 - Dashboard: today's sales, order count, active timers, shift status
 - Low stock alerts banner

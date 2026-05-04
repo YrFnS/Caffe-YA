@@ -12,6 +12,11 @@ Implement shift open/close workflow with blind cash counting, variance tracking,
 - Shift history view for audit
 - Cash drawer reconciliation per shift
 
+## Status
+✅ Complete — commit `a48f6f3`
+
+---
+
 ## Steps
 
 ### Step 1: Shift Open Flow

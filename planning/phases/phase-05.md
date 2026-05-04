@@ -3,6 +3,9 @@
 ## Goal
 Build the admin control panel: user management, role creation, permission configuration, and system settings.
 
+## Status
+❌ Scaffold only — schema tables defined, no feature module implemented
+
 ## What Ships
 - User CRUD: create, edit, delete users (no public signup — admin-only)
 - Role CRUD: create roles, assign permissions

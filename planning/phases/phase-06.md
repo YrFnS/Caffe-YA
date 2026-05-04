@@ -3,6 +3,9 @@
 ## Goal
 Build vendor management, purchase order tracking, goods receipt, and expense logging with petty cash.
 
+## Status
+❌ Scaffold only — schema tables defined, no feature module implemented
+
 ## What Ships
 - Vendor CRUD: name, phone, address, isActive
 - Purchase orders: create PO, mark as received (GRN)

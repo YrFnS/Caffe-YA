@@ -3,6 +3,9 @@
 ## Goal
 Build the double-entry accounting system with Chart of Accounts, journal entries, and partner equity tracking for the two owners.
 
+## Status
+❌ Scaffold only — schema tables defined, no feature module implemented
+
 ## What Ships
 - Chart of Accounts: tree structure with account types (asset, liability, equity, revenue, cogs, expense)
 - Journal entries: automatic from POS sales, manual entries, linked to source
