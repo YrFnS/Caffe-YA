@@ -37,7 +37,7 @@ const navItems = [
   { href: '/payroll', icon: CreditCard, label: 'payroll' },
   { href: '/accounting', icon: PieChart, label: 'accounting' },
   { href: '/partners', icon: Handshake, label: 'partners' },
-  { href: '/admin', icon: Settings, label: 'admin' },
+  { href: '/admin/users', icon: Settings, label: 'admin' },
   { href: '/reports', icon: FileText, label: 'reports' },
 ]
 
@@ -49,6 +49,7 @@ export default function ProtectedLayout({
   const router = useRouter()
   const pathname = usePathname()
   const t = useTranslations('nav')
+  const tCommon = useTranslations('common')
   
   const locale = pathname.split('/')[1] || 'en'
   const [currentLocale, setCurrentLocale] = useState(locale)
@@ -64,7 +65,7 @@ export default function ProtectedLayout({
       <aside className="w-60 h-screen bg-surface-container-low border-s border-outline-variant/15 flex flex-col">
         <div className="p-4 border-b border-outline-variant/15">
           <h1 className="font-display text-xl font-bold text-on-surface">Caffe-YA</h1>
-          <p className="text-sm text-on-surface-variant">Coffee & Gaming</p>
+          <p className="text-sm text-on-surface-variant">{tCommon('tagline')}</p>
         </div>
 
         <nav className="flex-1 overflow-y-auto p-2 space-y-1">

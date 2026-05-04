@@ -5,15 +5,20 @@ import { getAllActiveProducts, getCategories } from '@/features/pos/_services/pr
 import { getResourcesWithCategories } from '@/features/pos/_services/resourceService'
 import POSClientView from './_components/POSClientView'
 
-export default async function POSPage() {
+export default async function POSPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}) {
+  const { locale } = await params
   const session = await getSession()
-  if (!session?.user) redirect('/sign-in')
+  if (!session?.user) redirect(`/${locale}/sign-in`)
 
   const userId = session.user.id as string
 
   const activeShift = await getActiveShift(userId)
   if (!activeShift) {
-    redirect('/shifts')
+    redirect(`/${locale}/shifts`)
   }
 
   const draftOrder = await getOrCreateDraftOrder(activeShift.id, userId)

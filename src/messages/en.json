@@ -1,6 +1,7 @@
 {
   "common": {
     "appName": "Caffe-YA",
+    "tagline": "Coffee & Gaming",
     "loading": "Loading...",
     "error": "Error",
     "retry": "Retry",
@@ -155,6 +156,11 @@
   },
   "admin": {
     "title": "Admin",
+    "users": "Users",
+    "roles": "Roles",
+    "permissions": "Permissions",
+    "settings": "Settings",
+    "modules": "Modules",
     "products": "Products",
     "categories": "Categories",
     "ingredients": "Ingredients",

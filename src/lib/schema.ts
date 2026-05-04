@@ -85,6 +85,7 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash'),  // nullable — better-auth stores credentials in accounts table
   emailVerified: boolean('email_verified').notNull().default(false),
   isActive:     boolean('is_active').notNull().default(true),
+  isDisabled:   boolean('is_disabled').notNull().default(false),
   createdAt:    timestamp('created_at').notNull().defaultNow(),
   updatedAt:    timestamp('updated_at').notNull().defaultNow(),
 })

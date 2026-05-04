@@ -30,6 +30,9 @@ const cairo = Cairo({
 export const metadata = {
   title: 'Caffe-YA',
   description: 'Hybrid coffee shop + gaming center POS system',
+  icons: {
+    icon: '/favicon.ico',
+  },
 }
 
 export default async function RootLayout({
@@ -52,6 +55,7 @@ export default async function RootLayout({
   return (
     <html lang={locale} dir={isRTL ? 'rtl' : 'ltr'}>
       <body
+        suppressHydrationWarning
         className={`
           ${inter.variable} ${manrope.variable}
           ${ibmPlexArabic.variable} ${cairo.variable}

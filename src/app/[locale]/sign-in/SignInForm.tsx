@@ -84,7 +84,7 @@ export default function SignInForm({ locale }: SignInFormProps) {
 
       <Button
         type="submit"
-        disabled={loading || !email || !password}
+        disabled={loading || !email || !password ? true : false}
         className="w-full h-12"
       >
         {loading ? tCommon('loading') : t('signIn')}
