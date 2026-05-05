@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl'
 import { TrendingUp, Clock, ShoppingCart, DoorOpen, AlertTriangle } from 'lucide-react'
-import { formatIQD } from '../_services/reportService'
+import { formatIQD } from '@/lib/format'
 import type { TodaySummary } from '../_types'
 
 interface StatCardProps {

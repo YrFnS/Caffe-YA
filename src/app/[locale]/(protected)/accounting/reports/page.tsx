@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { getPLReport, getBalanceSheetReport } from '@/features/accounting/_services/reportService'
 import type { PLReport, BalanceSheetReport } from '@/features/accounting/_types'
 
 export default function ReportsPage() {
@@ -22,11 +21,15 @@ export default function ReportsPage() {
     try {
       if (reportType === 'pl') {
         if (!periodStart || !periodEnd) { setError('Period dates required'); return }
-        const data = await getPLReport(new Date(periodStart), new Date(periodEnd))
+        const res = await fetch(`/api/accounting/reports/pl?periodStart=${periodStart}&periodEnd=${periodEnd}`)
+        if (!res.ok) throw new Error((await res.json()).error || 'Failed to fetch P&L report')
+        const data = await res.json()
         setPlData(data)
         setBsData(null)
       } else {
-        const data = await getBalanceSheetReport(new Date(asOfDate))
+        const res = await fetch(`/api/accounting/reports/balance-sheet?asOfDate=${asOfDate}`)
+        if (!res.ok) throw new Error((await res.json()).error || 'Failed to fetch balance sheet')
+        const data = await res.json()
         setBsData(data)
         setPlData(null)
       }

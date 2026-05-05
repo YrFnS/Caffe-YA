@@ -1,0 +1,5 @@
+name: test-local-override
+description: Test local command loading
+nodes:
+  - id: test
+    command: test-local

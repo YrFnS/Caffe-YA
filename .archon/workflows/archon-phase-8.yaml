@@ -1,45 +1,52 @@
 name: archon-phase-8
 description: |
   Implement Phase 8 (Reports & Polish) for Caffe-YA from existing plan.md.
-  Plan is already created — this workflow implements it end-to-end.
+  Uses Pi (MiniMax-M2.7) for AI execution.
 
 nodes:
   - id: plan-setup
     command: archon-plan-setup
+    provider: pi
     context: fresh
 
   - id: confirm-plan
     command: archon-confirm-plan
+    provider: pi
     depends_on: [plan-setup]
     context: fresh
 
   - id: implement-tasks
     command: archon-implement-tasks
+    provider: pi
     depends_on: [confirm-plan]
     context: fresh
-    model: opus[1m]
 
   - id: validate
     command: archon-validate
+    provider: pi
     depends_on: [implement-tasks]
     context: fresh
 
   - id: finalize-pr
     command: archon-finalize-pr
+    provider: pi
     depends_on: [validate]
     context: fresh
 
   - id: code-review
     command: archon-code-review-agent
+    provider: pi
     depends_on: [finalize-pr]
     context: fresh
 
   - id: implement-fixes
     command: archon-implement-review-fixes
+    provider: pi
     depends_on: [code-review]
     context: fresh
 
   - id: workflow-summary
     command: archon-workflow-summary
+    provider: pi
     depends_on: [implement-fixes]
     context: fresh

@@ -1,0 +1,6 @@
+name: test-pi
+description: Test pi via archon workflow
+nodes:
+  - id: echo
+    command: pi
+    args: -p --no-session --provider minimax --model MiniMax-M2.7 "Say hello in 10 words"

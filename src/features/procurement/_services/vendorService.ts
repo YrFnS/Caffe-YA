@@ -9,7 +9,8 @@ export async function getAllVendors(includeInactive = false): Promise<VendorRow[
 }
 
 export async function getVendorById(id: string): Promise<VendorRow | null> {
-  return db.query.vendors.findFirst({ where: eq(vendors.id, id) })
+  const result = await db.query.vendors.findFirst({ where: eq(vendors.id, id) })
+  return result ?? null
 }
 
 export async function createVendor(data: {

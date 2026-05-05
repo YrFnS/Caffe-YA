@@ -1,0 +1,8 @@
+# Archon configuration for Caffe-YA
+assistants:
+  pi:
+    model: minimax/MiniMax-M2.7
+    enableExtensions: true
+
+# Set pi as default (omit this if you want to keep claude as default)
+defaultAssistant: pi

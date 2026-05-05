@@ -1,0 +1,6 @@
+name: test-override
+description: Test local command override
+nodes:
+  - id: test
+    command: archon-plan-setup
+    args: plan.md
