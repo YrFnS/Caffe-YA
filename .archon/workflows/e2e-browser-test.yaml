@@ -1,0 +1,59 @@
+name: e2e-browser-test
+description: "E2E browser testing of Caffe-YA using Playwright MCP + Claude"
+provider: claude
+
+env:
+  ANTHROPIC_AUTH_TOKEN: "$ANTHROPIC_AUTH_TOKEN"
+  ANTHROPIC_BASE_URL: "$ANTHROPIC_BASE_URL"
+
+nodes:
+  - id: open-app
+    prompt: |
+      Open the Caffe-YA web app at http://213.199.56.120:3000 using the Playwright MCP browser.
+      Use the mcp__playwright__* tools to navigate and interact.
+      
+      Take a snapshot of the page and describe what you see. Check for:
+      - Page loads correctly (no blank screen)
+      - Sign-in form is visible with email and password fields
+      - No console errors
+      
+      Report: page title, form state, any visible issues.
+    mcp: .archon/mcp/playwright.json
+    allowed_tools: [mcp__playwright__*]
+
+  - id: login
+    prompt: |
+      Sign in to the app using:
+      - Email: test_admin@caffe.ya
+      - Password: test1234
+      
+      After signing in, take a snapshot and verify:
+      - Dashboard page loads
+      - No redirect to error page
+      - Navigation sidebar is visible
+      
+      Report: login success/failure, page state after login.
+    mcp: .archon/mcp/playwright.json
+    allowed_tools: [mcp__playwright__*]
+    depends_on: [open-app]
+
+  - id: test-nav
+    prompt: |
+      Navigate through: Dashboard, POS (/ar/pos), Inventory (/ar/inventory), Accounting (/ar/accounting/reports).
+      For each page: take a snapshot, check it loads, note any errors.
+      
+      Report each page's status (PASS/FAIL) and any issues found.
+    mcp: .archon/mcp/playwright.json
+    allowed_tools: [mcp__playwright__*]
+    depends_on: [login]
+
+  - id: summary
+    prompt: |
+      You tested: App landing, Login flow, Dashboard, POS, Inventory, Accounting.
+      
+      Summarize:
+      1. Each page: PASS/FAIL
+      2. Console errors (exact messages)
+      3. Any bugs or visual issues
+      4. Overall health
+    depends_on: [test-nav]

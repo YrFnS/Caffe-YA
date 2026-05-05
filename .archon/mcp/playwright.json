@@ -1,0 +1,12 @@
+{
+  "playwright": {
+    "command": "npx",
+    "args": [
+      "-y",
+      "@playwright/mcp",
+      "--no-sandbox",
+      "--executable-path",
+      "/home/lich/.cache/ms-playwright/chromium-1217/chrome-linux64/chrome"
+    ]
+  }
+}
