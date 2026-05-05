@@ -1,0 +1,10 @@
+name: archon-phase-7-direct
+description: |
+  Implement Phase 7 (Accounting & Partners) for Caffe-YA using direct claude -p.
+  Bypasses broken bundled commands that fail with auth errors.
+
+nodes:
+  - id: implement
+    command: claude-direct
+    context: fresh
+    model: opus
