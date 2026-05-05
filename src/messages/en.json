@@ -32,6 +32,7 @@
     "activeTimers": "Active Timers",
     "shiftStatus": "Shift Status",
     "closed": "Closed",
+    "open": "Open",
     "signOut": "Sign Out"
   },
   "auth": {

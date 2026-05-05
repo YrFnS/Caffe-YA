@@ -2,12 +2,15 @@
 
 import { useTranslations } from 'next-intl'
 import { AlertTriangle } from 'lucide-react'
+import DashboardWidgets from '@/features/reports/_components/DashboardWidgets'
+import type { TodaySummary } from '@/features/reports/_types'
 
 interface DashboardContentProps {
+  summary: TodaySummary
   lowStockItems: Array<{ id: string; name: string; stockQty: string; unitName: string }>
 }
 
-export default function DashboardContent({ lowStockItems }: DashboardContentProps) {
+export default function DashboardContent({ summary, lowStockItems }: DashboardContentProps) {
   const t = useTranslations('nav')
   const tInventory = useTranslations('inventory')
 
@@ -16,8 +19,9 @@ export default function DashboardContent({ lowStockItems }: DashboardContentProp
       <h1 className="font-display text-2xl font-semibold text-on-surface mb-6">
         {t('dashboard')}
       </h1>
+
       {lowStockItems.length > 0 && (
-        <div className="bg-warning-container text-warning-on p-4 rounded-lg mb-6 flex items-start gap-3">
+        <div className="bg-warning/15 text-warning border border-warning/20 p-4 rounded-lg mb-6 flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0" />
           <div>
             <p className="font-medium">{tInventory('lowStockAlert')}</p>
@@ -31,24 +35,8 @@ export default function DashboardContent({ lowStockItems }: DashboardContentProp
           </div>
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-surface-container-lowest p-6 rounded-lg">
-          <p className="text-sm text-on-surface-variant">{t('todaySales')}</p>
-          <p className="text-2xl font-display font-bold text-on-surface mt-2">0 IQD</p>
-        </div>
-        <div className="bg-surface-container-lowest p-6 rounded-lg">
-          <p className="text-sm text-on-surface-variant">{t('activeOrders')}</p>
-          <p className="text-2xl font-display font-bold text-on-surface mt-2">0</p>
-        </div>
-        <div className="bg-surface-container-lowest p-6 rounded-lg">
-          <p className="text-sm text-on-surface-variant">{t('activeTimers')}</p>
-          <p className="text-2xl font-display font-bold text-on-surface mt-2">0</p>
-        </div>
-        <div className="bg-surface-container-lowest p-6 rounded-lg">
-          <p className="text-sm text-on-surface-variant">{t('shiftStatus')}</p>
-          <p className="text-2xl font-display font-bold text-tertiary mt-2">{t('closed')}</p>
-        </div>
-      </div>
+
+      <DashboardWidgets summary={summary} />
     </div>
   )
 }

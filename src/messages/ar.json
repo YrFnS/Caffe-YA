@@ -32,6 +32,7 @@
     "activeTimers": "المؤقتات النشطة",
     "shiftStatus": "حالة الوردية",
     "closed": "مغلقة",
+    "open": "مفتوحة",
     "signOut": "تسجيل الخروج"
   },
   "auth": {
