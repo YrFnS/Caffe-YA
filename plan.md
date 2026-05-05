@@ -98,7 +98,7 @@ Each feature folder follows a consistent internal structure:
 | **Phase 5** | Admin & Permissions | User management, roles, permissions, settings | ✅ Complete — `admin/` feature module with `userService`, `permissionService`, `settingsService`, `PermissionGate` |
 | **Phase 6** | Procurement & Expenses | Vendors, purchases, expense tracking | ✅ Complete — `procurement/` + `expenses/` feature modules |
 | **Phase 7** | Accounting & Partners | Chart of accounts, journals, partner equity | ✅ Complete — commit `2356173` |
-| **Phase 8** | Reports & Polish | Dashboard, summaries, final UI polish | ❌ Not started |
+| **Phase 8** | Reports & Polish | Dashboard, summaries, final UI polish | ✅ Complete — commit `25b95c5` |
 
 ---
 
