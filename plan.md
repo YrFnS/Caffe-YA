@@ -95,32 +95,27 @@ Each feature folder follows a consistent internal structure:
 | **Phase 2** | POS Core & Timed Resources | Product grid, cart, checkout, resource grid, timer logic | ✅ Complete — commits `2e69fd4`–`71ec82d` |
 | **Phase 3** | Shift Management | Open/close shift, variance tracking, cash handling | ✅ Complete — commit `a48f6f3` |
 | **Phase 4** | Inventory & Products | Product CRUD, ingredients, stock, low-stock alerts | ✅ Complete — commit `71ec82d` |
-| **Phase 5** | Admin & Permissions | User management, roles, permissions, settings | ❌ Scaffold only — schema tables exist, no feature module |
-| **Phase 6** | Procurement & Expenses | Vendors, purchases, expense tracking | ❌ Scaffold only — schema tables exist, no feature module |
-| **Phase 7** | Accounting & Partners | Chart of accounts, journals, partner equity | ❌ Scaffold only — schema tables exist, no feature module |
+| **Phase 5** | Admin & Permissions | User management, roles, permissions, settings | ✅ Complete — `admin/` feature module with `userService`, `permissionService`, `settingsService`, `PermissionGate` |
+| **Phase 6** | Procurement & Expenses | Vendors, purchases, expense tracking | ✅ Complete — `procurement/` + `expenses/` feature modules |
+| **Phase 7** | Accounting & Partners | Chart of accounts, journals, partner equity | ✅ Complete — commit `2356173` |
 | **Phase 8** | Reports & Polish | Dashboard, summaries, final UI polish | ❌ Not started |
 
 ---
 
 ## 6. Current State
 
-- **Phases 1–4**: ✅ Complete (foundation, POS, shifts, inventory)
-- **Phases 5–7**: ❌ Scaffold only — schema tables defined but no feature modules implemented
+- **Phases 1–6**: ✅ Complete (foundation, POS, shifts, inventory, admin, procurement/expenses)
+- **Phase 7**: ✅ Complete — accounting + partners pages, services, and actions
 - **Phase 8**: ❌ Not started
 - **DESIGN.md** — updated with detailed UI/UX specs, responsive layouts, Arabic RTL rules
 - **Rule.md** — complete with code quality, architecture, financial, security, i18n, and workflow rules
 
 ## 7. Next Steps
 
-1. **Phase 5** — Implement admin feature module (users, roles, permissions, settings)
-2. Set up PostgreSQL + Drizzle (already in place from Phase 1)
-3. Configure Better Auth (already in place from Phase 1)
-4. Set up next-intl with Arabic/English (already in place from Phase 1)
-5. Create the base layout with sidebar and responsive shell (already in place from Phase 1)
-6. Verify: build passes, diagnostics clean, auth flow works
+1. **Phase 7** — Implement accounting + partners feature modules (chart of accounts, journal entries, partner equity)
+2. **Phase 8** — Reports & Polish (dashboard, summaries, final UI polish)
 
-After Phase 5 is complete, the app will have:
-- Working admin user and role management
-- Fine-grained permission system
-- System settings UI
-- The foundation ready to receive procurement and accounting features
+After Phase 8 is complete, the app will have:
+- Full accounting with chart of accounts and journal entries
+- Partner equity tracking and profit sharing
+- Complete reports and dashboard
