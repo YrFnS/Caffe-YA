@@ -1,5 +1,5 @@
 name: e2e-browser-test
-description: "E2E browser testing of Caffe-YA using Playwright MCP + Claude"
+description: "E2E browser testing of Caffe-YA using agent-browser CLI + Claude"
 provider: claude
 
 env:
@@ -9,51 +9,56 @@ env:
 nodes:
   - id: open-app
     prompt: |
-      Open the Caffe-YA web app at http://213.199.56.120:3000 using the Playwright MCP browser.
-      Use the mcp__playwright__* tools to navigate and interact.
-      
-      Take a snapshot of the page and describe what you see. Check for:
-      - Page loads correctly (no blank screen)
-      - Sign-in form is visible with email and password fields
-      - No console errors
-      
-      Report: page title, form state, any visible issues.
-    mcp: .archon/mcp/playwright.json
-    allowed_tools: [mcp__playwright__*]
+      Use agent-browser to open the Caffe-YA app and take screenshots.
+      Run these commands:
+      1. agent-browser open http://213.199.56.120:3000 --args "--no-sandbox,--disable-gpu" --screenshot /tmp/caffe-ya-landing.png
+      2. agent-browser snapshot --screenshot /tmp/caffe-ya-signin.png
+
+      Then analyze the screenshots using the vision tool:
+      - /tmp/caffe-ya-landing.png: Describe what you see. Check for: page loads, sign-in form visible, no errors.
+      - /tmp/caffe-ya-signin.png: Confirm sign-in form fields visible.
+
+      Report page title, form state, any visible issues.
+    allowed_tools: []
 
   - id: login
     prompt: |
-      Sign in to the app using:
-      - Email: test_admin@caffe.ya
-      - Password: test1234
-      
-      After signing in, take a snapshot and verify:
-      - Dashboard page loads
-      - No redirect to error page
-      - Navigation sidebar is visible
-      
-      Report: login success/failure, page state after login.
-    mcp: .archon/mcp/playwright.json
-    allowed_tools: [mcp__playwright__*]
-    depends_on: [open-app]
+      Use agent-browser to sign in to the app.
+      Run: agent-browser fill --selector "input[type='email'],input[name='email']" "test_admin@caffe.ya" && agent-browser fill --selector "input[type='password']" "test1234"
+      Then: agent-browser click --selector "button[type='submit']"
+      Wait 5 seconds, then: agent-browser snapshot --screenshot /tmp/caffe-ya-dashboard.png
+      Then: agent-browser close
+
+      Analyze /tmp/caffe-ya-dashboard.png:
+      - Dashboard loaded?
+      - Navigation sidebar visible?
+      - Any error messages?
+
+      Report login success/failure and page state.
+    allowed_tools: []
 
   - id: test-nav
     prompt: |
-      Navigate through: Dashboard, POS (/ar/pos), Inventory (/ar/inventory), Accounting (/ar/accounting/reports).
-      For each page: take a snapshot, check it loads, note any errors.
-      
-      Report each page's status (PASS/FAIL) and any issues found.
-    mcp: .archon/mcp/playwright.json
-    allowed_tools: [mcp__playwright__*]
-    depends_on: [login]
+      For each page, run: agent-browser open <URL> --args "--no-sandbox,--disable-gpu" --screenshot /tmp/<page>.png
+      Then analyze the screenshot.
+
+      Pages to test:
+      1. http://213.199.56.120:3000/ar/dashboard → /tmp/dashboard.png
+      2. http://213.199.56.120:3000/ar/pos → /tmp/pos.png
+      3. http://213.199.56.120:3000/ar/inventory → /tmp/inventory.png
+      4. http://213.199.56.120:3000/ar/accounting/reports → /tmp/accounting.png
+
+      For each: report PASS/FAIL, visible elements, any errors.
+    allowed_tools: []
 
   - id: summary
     prompt: |
-      You tested: App landing, Login flow, Dashboard, POS, Inventory, Accounting.
-      
+      Analyze all screenshots from the test:
+      /tmp/caffe-ya-landing.png, /tmp/caffe-ya-signin.png, /tmp/caffe-ya-dashboard.png
+      /tmp/dashboard.png, /tmp/pos.png, /tmp/inventory.png, /tmp/accounting.png
+
       Summarize:
-      1. Each page: PASS/FAIL
-      2. Console errors (exact messages)
-      3. Any bugs or visual issues
-      4. Overall health
+      1. Each page: PASS/FAIL with evidence from screenshots
+      2. Any bugs or visual issues
+      3. Overall app health
     depends_on: [test-nav]
