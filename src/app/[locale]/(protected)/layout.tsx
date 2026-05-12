@@ -62,9 +62,9 @@ export default function ProtectedLayout({
 
   return (
     <div className="flex h-screen bg-surface">
-      <aside className="w-60 h-screen bg-surface-container-low border-s border-outline-variant/15 flex flex-col">
+      <aside className="w-60 h-screen bg-surface-container-low flex flex-col">
         <div className="p-4 border-b border-outline-variant/15">
-          <h1 className="font-display text-xl font-bold text-on-surface">Caffe-YA</h1>
+          <h1 className="font-display text-xl font-bold text-on-surface mb-0.5">Caffe-YA</h1>
           <p className="text-sm text-on-surface-variant">{tCommon('tagline')}</p>
         </div>
 

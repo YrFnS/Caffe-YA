@@ -8,11 +8,11 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-on-primary hover:bg-primary-dim shadow-sm",
+          "bg-gradient-to-br from-primary to-primary-dim text-on-primary",
         destructive:
           "bg-tertiary text-on-primary hover:bg-tertiary-fixed-dim",
         outline:
-          "border border-outline bg-transparent hover:bg-surface-container-high",
+          "border border-outline-variant/50 bg-transparent hover:bg-surface-container-high",
         secondary:
           "bg-surface-container-high text-on-surface hover:bg-surface-container-high/80",
         ghost: "hover:bg-surface-container-high text-on-surface-variant",
@@ -21,9 +21,9 @@ const buttonVariants = cva(
           "bg-secondary text-on-primary hover:bg-secondary/90",
       },
       size: {
-        default: "h-11 px-6 py-2",
-        sm: "h-9 px-3 text-xs",
-        lg: "h-12 px-8",
+        default: "h-14 px-6 py-3",
+        sm: "h-11 px-4 text-sm",
+        lg: "h-16 px-8",
         icon: "h-12 w-12",
       },
     },

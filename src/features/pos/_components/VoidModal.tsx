@@ -42,7 +42,7 @@ export default function VoidModal({ isOpen, itemName, onClose, onConfirm }: Void
       />
 
       {/* Modal */}
-      <div className="relative bg-surface-container-lowest rounded-xl shadow-2xl w-full max-w-sm mx-4">
+      <div className="relative bg-surface-container-lowest rounded-xl shadow-lg w-full max-w-sm mx-4">
         {/* Header */}
         <div className="flex items-center gap-3 p-4 border-b border-outline-variant/15">
           <div className="p-2 rounded-lg bg-tertiary/10">

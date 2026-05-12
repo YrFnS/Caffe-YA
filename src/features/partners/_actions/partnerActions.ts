@@ -1,10 +1,12 @@
 'use server'
 
-import { z } from 'zod'
 import { createPartner } from '../_services/partnerService'
 import { addCapitalInjection, addProfitDistribution, addDraw } from '../_services/partnerService'
+import { partners, partnerEquityEntries } from '@/lib/schema'
+import { createInsertSchema } from 'drizzle-zod'
+import { z } from 'zod'
 
-const partnerSchema = z.object({
+const partnerSchema = createInsertSchema(partners, {
   userId: z.string().min(1),
   ownershipPercent: z.string().min(1),
 })

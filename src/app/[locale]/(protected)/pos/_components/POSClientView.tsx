@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
+import { dinero as Dinero, multiply, add, toDecimal, IQD } from 'dinero.js'
 import POSLayout from './POSLayout'
 import ProductGrid from '@/features/pos/_components/ProductGrid'
 import OrderSummary from '@/features/pos/_components/OrderSummary'
@@ -60,9 +61,13 @@ export default function POSClientView({
       // Add to local cart with the orderItemId from the response
       const existing = cartItems.find(i => i.productId === product.id)
       if (existing) {
+        const newAmount = multiply(
+          Dinero({ amount: Math.round(Number(existing.unitPrice) * 1000), currency: IQD }),
+          existing.quantity + 1
+        ).toJSON().amount
         setCartItems(prev => prev.map(i =>
           i.productId === product.id
-            ? { ...i, quantity: i.quantity + 1, totalPrice: (Number(i.unitPrice) * (i.quantity + 1)).toFixed(3) }
+            ? { ...i, quantity: i.quantity + 1, totalPrice: (newAmount / 1000).toFixed(3) }
             : i
         ))
       } else {
@@ -105,9 +110,13 @@ export default function POSClientView({
       formData.set('itemId', item.orderItemId)
       formData.set('quantity', String(item.quantity + 1))
       await updateQuantityAction(formData)
+      const newAmount = multiply(
+        Dinero({ amount: Math.round(Number(item.unitPrice) * 1000), currency: IQD }),
+        item.quantity + 1
+      ).toJSON().amount
       setCartItems(prev => prev.map(i =>
         i.productId === productId
-          ? { ...i, quantity: i.quantity + 1, totalPrice: (Number(i.unitPrice) * (i.quantity + 1)).toFixed(3) }
+          ? { ...i, quantity: i.quantity + 1, totalPrice: (newAmount / 1000).toFixed(3) }
           : i
       ))
     } finally {
@@ -130,9 +139,13 @@ export default function POSClientView({
       formData.set('itemId', item.orderItemId)
       formData.set('quantity', String(quantity))
       await updateQuantityAction(formData)
+      const newAmount = multiply(
+        Dinero({ amount: Math.round(Number(item.unitPrice) * 1000), currency: IQD }),
+        quantity
+      ).toJSON().amount
       setCartItems(prev => prev.map(i =>
         i.productId === productId
-          ? { ...i, quantity, totalPrice: (Number(i.unitPrice) * quantity).toFixed(3) }
+          ? { ...i, quantity, totalPrice: (newAmount / 1000).toFixed(3) }
           : i
       ))
     } finally {
@@ -152,19 +165,22 @@ export default function POSClientView({
     }
   }, [orderId])
 
-  const handleSelectResource = useCallback(async (resourceId: string) => {
-    console.log('Resource selected:', resourceId)
+  const handleSelectResource = useCallback(async (_resourceId: string) => {
     // TODO: Wire to assignResourceToOrder server action
     setShowResourceGrid(false)
   }, [])
 
   const handleCheckout = useCallback(async (method: string, reference?: string) => {
-    const total = cartItems.reduce((sum, i) => sum + Number(i.totalPrice), 0).toFixed(3)
+    const totalAmount = cartItems.reduce((sum, i) => {
+      const item = Dinero({ amount: Math.round(Number(i.totalPrice) * 1000), currency: IQD })
+      return add(sum, item)
+    }, Dinero({ amount: 0, currency: IQD }))
+    const totalStr = toDecimal(totalAmount)
 
     const formData = new FormData()
     formData.set('orderId', orderId)
     formData.set('paymentMethod', method)
-    formData.set('amount', total)
+    formData.set('amount', totalStr)
     if (reference) formData.set('reference', reference)
 
     const result = await processCheckout(formData)
@@ -177,7 +193,11 @@ export default function POSClientView({
     setCartItems([])
   }, [cartItems, orderId])
 
-  const subtotal = cartItems.reduce((sum, i) => sum + Number(i.totalPrice), 0)
+  const subtotalAmount = cartItems.reduce((sum, i) => {
+    const item = Dinero({ amount: Math.round(Number(i.totalPrice) * 1000), currency: IQD })
+    return add(sum, item)
+  }, Dinero({ amount: 0, currency: IQD }))
+  const subtotal = toDecimal(subtotalAmount)
 
   return (
     <POSLayout shiftStatus="open" cashierName={cashierName} shiftOpenedAt={shiftOpenedAt}>
@@ -214,9 +234,9 @@ export default function POSClientView({
         {/* Right: Order summary */}
         <OrderSummary
           items={cartItems}
-          subtotal={subtotal.toFixed(3)}
+          subtotal={subtotal}
           timerCharge="0"
-          total={subtotal.toFixed(3)}
+          total={subtotal}
           timerRunning={_timerRunning}
           timerDisplay={_timerDisplay}
           onAddItem={handleIncrementItem}
@@ -240,7 +260,7 @@ export default function POSClientView({
 
       {/* Checkout modal */}
       <CheckoutModal
-        total={subtotal.toFixed(3)}
+        total={subtotal}
         isOpen={showCheckout}
         onClose={() => setShowCheckout(false)}
         onConfirm={handleCheckout}

@@ -80,7 +80,7 @@ export default function CloseShiftOverlay({
       {/* Glassmorphism backdrop — restricted to shift overlay per DESIGN.md */}
       <div className="absolute inset-0 bg-surface/60 backdrop-blur-xl" />
 
-      <div className="relative bg-surface-container-lowest rounded-2xl p-8 w-full max-w-lg shadow-2xl">
+      <div className="relative bg-surface-container-lowest rounded-2xl p-8 w-full max-w-lg shadow-lg">
         {!showExpected ? (
           <>
             {/* BLIND COUNT ENTRY — expected amount NOT shown */}

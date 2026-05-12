@@ -8,7 +8,7 @@ const badgeVariants = cva(
     variants: {
       variant: {
         success: "bg-secondary/20 text-secondary",
-        warning: "bg-tertiary/20 text-tertiary",
+        warning: "bg-warning/20 text-warning",
         error: "bg-tertiary/20 text-on-primary", // tertiary on dark
         neutral: "bg-surface-container text-on-surface",
       },

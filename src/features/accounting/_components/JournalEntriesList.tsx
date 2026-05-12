@@ -10,7 +10,7 @@ interface JournalEntriesListProps {
   accounts: AccountRow[]
 }
 
-interface LineInput { accountId: string; type: 'debit' | 'credit'; amount: string; note: string }
+interface LineInput { accountId: string; type: 'debit' | 'credit'; amount: string; note: string; journalEntryId?: string }
 
 export default function JournalEntriesList({ entries, accounts }: JournalEntriesListProps) {
   const t = useTranslations('accounting')

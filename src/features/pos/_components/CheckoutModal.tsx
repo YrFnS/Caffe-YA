@@ -51,13 +51,13 @@ export default function CheckoutModal({
       {/* Backdrop */}
       <button
         type="button"
-        className="absolute inset-0 bg-surface-container-high/80 backdrop-blur-sm cursor-default"
+        className="absolute inset-0 bg-surface-container-high/80 cursor-default"
         onClick={onClose}
         aria-label="Close modal"
       />
 
       {/* Modal */}
-      <div className="relative bg-surface-container-lowest rounded-xl shadow-2xl w-full max-w-md mx-4">
+      <div className="relative bg-surface-container-lowest rounded-xl shadow-lg w-full max-w-md mx-4">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-outline-variant/15">
           <h2 className="text-headline-sm font-semibold text-on-surface">
