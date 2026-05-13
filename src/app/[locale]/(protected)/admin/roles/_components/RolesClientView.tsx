@@ -145,7 +145,7 @@ export default function RolesClientView({ roles: initialRoles, groupedPermission
       {editingRoleId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={() => setEditingRoleId(null)} />
-          <div className="relative z-10 w-full max-w-2xl max-h-[80vh] overflow-auto rounded-2xl bg-surface-container-lowest p-6 shadow-lg">
+          <div className="relative z-10 w-full max-w-2xl max-h-[80vh] overflow-auto rounded-2xl bg-surface-container-lowest p-6 outline outline-1 outline-outline/15">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-medium text-on-surface">
                 Permissions — {roles.find(r => r.id === editingRoleId)?.name}

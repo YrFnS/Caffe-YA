@@ -23,10 +23,10 @@ function Modal({ open, onClose, title, children, footer }: ModalProps) {
       onKeyDown={handleKeyDown}
     >
       <div
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-surface-container-highest/80 backdrop-blur-xl"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-lg rounded-2xl bg-surface-container-lowest p-6 shadow-lg">
+      <div className="relative z-10 w-full max-w-lg rounded-2xl bg-surface-container-lowest p-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-medium text-on-surface">{title}</h2>
           <button

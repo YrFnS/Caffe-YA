@@ -1,6 +1,9 @@
 "use client"
 
+import { useTranslations } from 'next-intl'
+import { Gamepad2 } from 'lucide-react'
 import ResourceCard from './ResourceCard'
+import { EmptyState } from '@/components/ui/EmptyState'
 import type { Resource } from '../_types'
 
 interface ResourceGridProps {
@@ -10,11 +13,14 @@ interface ResourceGridProps {
 }
 
 export default function ResourceGrid({ resources, onSelectResource, disabled }: ResourceGridProps) {
+  const t = useTranslations('resources')
+
   if (resources.length === 0) {
     return (
-      <div className="flex items-center justify-center h-32 text-on-surface-variant">
-        <p className="text-body-md">No resources configured</p>
-      </div>
+      <EmptyState
+        icon={Gamepad2}
+        title={t('noResources')}
+      />
     )
   }
 

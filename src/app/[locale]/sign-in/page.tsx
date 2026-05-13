@@ -27,7 +27,7 @@ export default async function SignInPage({
           </div>
         </div>
 
-        <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-lg">
+        <div className="bg-surface-container-lowest rounded-2xl p-6">
           <SignInForm locale={locale} />
         </div>
       </div>

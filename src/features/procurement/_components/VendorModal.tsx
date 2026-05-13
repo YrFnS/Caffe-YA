@@ -32,7 +32,7 @@ export default function VendorModal({ vendor, onSuccess, onClose }: VendorModalP
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-surface-container-high rounded-2xl p-6 w-full max-w-md shadow-md">
+      <div className="bg-surface-container-high rounded-2xl p-6 w-full max-w-md">
         <h2 className="text-headline-sm font-semibold mb-4">
           {vendor ? t('editVendor') : t('addVendor')}
         </h2>

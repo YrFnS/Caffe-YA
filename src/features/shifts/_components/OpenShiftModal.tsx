@@ -38,7 +38,7 @@ export default function OpenShiftModal({ onSuccess }: OpenShiftModalProps) {
       <div className="absolute inset-0 bg-surface-container-highest/80 backdrop-blur-xl" />
 
       {/* Modal */}
-      <div className="relative bg-surface-container-lowest rounded-2xl p-8 w-full max-w-md shadow-lg">
+      <div className="relative bg-surface-container-lowest rounded-2xl p-8 w-full max-w-md">
         <h2 className="text-headline-md font-semibold text-on-surface mb-2">
           {t('openShift')}
         </h2>

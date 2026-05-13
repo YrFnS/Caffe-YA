@@ -36,13 +36,13 @@ export default function VoidModal({ isOpen, itemName, onClose, onConfirm }: Void
       {/* Backdrop */}
       <button
         type="button"
-        className="absolute inset-0 bg-surface-container-high/80 cursor-default"
+        className="absolute inset-0 bg-surface-container-highest/80 backdrop-blur-xl cursor-default"
         onClick={onClose}
         aria-label="Close"
       />
 
       {/* Modal */}
-      <div className="relative bg-surface-container-lowest rounded-xl shadow-lg w-full max-w-sm mx-4">
+      <div className="relative bg-surface-container-lowest rounded-xl w-full max-w-sm mx-4">
         {/* Header */}
         <div className="flex items-center gap-3 p-4">
           <div className="p-2 rounded-lg bg-tertiary/10">

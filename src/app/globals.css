@@ -29,6 +29,12 @@
 
   --radius-lg: 0.5rem;
   --radius-full: 9999px;
+
+  --text-display-md: 2.5rem;
+  --font-weight-display: 700;
+  --line-height-display: 1.2;
+
+  --shadow-ambient: 0 0 32px 6px rgba(0, 52, 94, 0.06);
 }
 
 :root {

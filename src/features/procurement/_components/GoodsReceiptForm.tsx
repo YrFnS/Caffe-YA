@@ -16,7 +16,7 @@ export default function GoodsReceiptForm({ purchase, onClose }: GoodsReceiptForm
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-surface-container-high rounded-2xl p-6 w-full max-w-lg shadow-md">
+      <div className="bg-surface-container-high rounded-2xl p-6 w-full max-w-lg">
         <h2 className="text-headline-sm font-semibold mb-4">{t('receiveGoods')}</h2>
         <p className="text-body-sm text-on-surface-variant mb-4">
           {t('vendor')}: {purchase.vendorName ?? '—'} — {Number(purchase.totalAmount).toLocaleString()}

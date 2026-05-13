@@ -2,8 +2,9 @@
 
 import { useTranslations } from 'next-intl'
 import { useState, useEffect } from 'react'
-import { Minus, Plus, Trash2, Clock } from 'lucide-react'
+import { Minus, Plus, Trash2, Clock, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/EmptyState'
 import type { CartItem } from '../_types'
 
 const WARNING_THRESHOLD_MS = 10 * 60 * 1000 // 10 minutes
@@ -77,7 +78,7 @@ export default function OrderSummary({
         {timerRunning && (
           <div className={`flex items-center gap-2 mt-2 ${isOverdue ? 'text-warning animate-pulse-warning' : 'text-warning'}`}>
             <Clock className="w-4 h-4" />
-            <span className="font-mono text-display-sm">
+            <span className="font-mono text-display-md">
               {timerDisplay || formatElapsed(elapsedMs)}
             </span>
           </div>
@@ -87,9 +88,11 @@ export default function OrderSummary({
       {/* Items list */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full">
-            <p className="text-body-md text-on-surface-variant">{t('emptyCart')}</p>
-          </div>
+          <EmptyState
+            icon={Package}
+            title={t('emptyCart')}
+            className="h-full"
+          />
         ) : (
           items.map((item) => (
             <div key={item.productId} className="flex items-start gap-3 p-3 bg-surface rounded-lg">
