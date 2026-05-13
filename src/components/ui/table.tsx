@@ -59,7 +59,7 @@ function Table<T>({
               <th
                 key={col.key}
                 className={cn(
-                  "px-4 py-3 text-left text-sm font-medium text-on-surface-variant",
+                  "px-4 py-3 text-start text-sm font-medium text-on-surface-variant",
                   col.sortable && "cursor-pointer select-none hover:text-on-surface"
                 )}
                 onClick={() => handleSort(col.key, col)}

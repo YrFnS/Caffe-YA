@@ -2,7 +2,7 @@
 
 import { createPartner } from '../_services/partnerService'
 import { addCapitalInjection, addProfitDistribution, addDraw } from '../_services/partnerService'
-import { partners, partnerEquityEntries } from '@/lib/schema'
+import { partners } from '@/lib/schema'
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
 

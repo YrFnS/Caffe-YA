@@ -11,9 +11,11 @@ interface PurchasesListProps {
 }
 
 export default function PurchasesList({ purchases, onNewPurchase, onViewReceipt }: PurchasesListProps) {
+  void onNewPurchase // provided for parent use
+  void onViewReceipt // provided for parent use
   const t = useTranslations('procurement')
   const [filterPaid, setFilterPaid] = useState<boolean | null>(null)
-  const [filterVendor, setFilterVendor] = useState<string>('')
+  const [filterVendor] = useState<string>('')
 
   const filtered = purchases.filter(p => {
     if (filterPaid !== null && p.isPaid !== filterPaid) return false
@@ -27,7 +29,7 @@ export default function PurchasesList({ purchases, onNewPurchase, onViewReceipt 
         <select
           value={filterPaid === null ? '' : filterPaid ? 'paid' : 'unpaid'}
           onChange={e => setFilterPaid(e.target.value === '' ? null : e.target.value === 'paid')}
-          className="px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-low text-on-surface"
+          className="px-3 py-2 rounded-lg border border-outline bg-surface-container-low text-on-surface"
         >
           <option value="">{t('all')}</option>
           <option value="paid">{t('paid')}</option>
@@ -54,7 +56,7 @@ export default function PurchasesList({ purchases, onNewPurchase, onViewReceipt 
                 <td className="p-3 text-on-surface">{p.vendorName ?? '—'}</td>
                 <td className="p-3 text-on-surface">{Number(p.totalAmount).toLocaleString()}</td>
                 <td className="p-3">
-                  <span className={`px-2 py-1 rounded-full text-body-sm ${p.isPaid ? 'bg-green-10 text-green-30' : 'bg-orange-10 text-orange-30'}`}>
+                  <span className={`px-2 py-1 rounded-full text-body-sm ${p.isPaid ? 'bg-secondary/10 text-secondary' : 'bg-warning/10 text-warning'}`}>
                     {p.isPaid ? t('paid') : t('unpaid')}
                   </span>
                 </td>

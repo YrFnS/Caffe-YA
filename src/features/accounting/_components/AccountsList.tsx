@@ -47,7 +47,7 @@ export default function AccountsList({ accounts }: AccountsListProps) {
         </td>
         <td className="p-3 text-body-sm">{t(`type.${acc.type}`)}</td>
         <td className="p-3">
-          <span className={`px-2 py-1 rounded-full text-body-sm ${acc.isActive ? 'bg-green-10 text-green-30' : 'bg-error/10 text-error'}`}>
+          <span className={`px-2 py-1 rounded-full text-body-sm ${acc.isActive ? 'bg-secondary/10 text-secondary' : 'bg-error/10 text-error'}`}>
             {acc.isActive ? t('active') : t('inactive')}
           </span>
         </td>
@@ -90,30 +90,30 @@ export default function AccountsList({ accounts }: AccountsListProps) {
       </div>
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-surface-container-high rounded-2xl p-6 w-full max-w-md shadow-xl">
+          <div className="bg-surface-container-high rounded-2xl p-6 w-full max-w-md">
             <h2 className="text-headline-sm font-semibold mb-4">{editAccount ? t('editAccount') : t('addAccount')}</h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-body-sm text-on-surface-variant mb-1">{t('code')}</label>
-                <input value={code} onChange={e => setCode(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface" required />
+                <input value={code} onChange={e => setCode(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface" required />
               </div>
               <div>
                 <label className="block text-body-sm text-on-surface-variant mb-1">{t('name')}</label>
-                <input value={name} onChange={e => setName(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface" required />
+                <input value={name} onChange={e => setName(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface" required />
               </div>
               <div>
                 <label className="block text-body-sm text-on-surface-variant mb-1">{t('nameAr')}</label>
-                <input value={nameAr} onChange={e => setNameAr(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface" />
+                <input value={nameAr} onChange={e => setNameAr(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface" />
               </div>
               <div>
                 <label className="block text-body-sm text-on-surface-variant mb-1">{t('type')}</label>
-                <select value={type} onChange={e => setType(e.target.value as AccountType)} className="w-full px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface">
+                <select value={type} onChange={e => setType(e.target.value as AccountType)} className="w-full px-3 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface">
                   {ACCOUNT_TYPES.map(tp => <option key={tp} value={tp}>{t(tp === 'cogs' ? 'type.cogs' : `type.${tp}`)}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-body-sm text-on-surface-variant mb-1">{t('parentAccount')}</label>
-                <select value={parentId} onChange={e => setParentId(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface">
+                <select value={parentId} onChange={e => setParentId(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface">
                   <option value="">—</option>
                   {accounts.map(a => <option key={a.id} value={a.id}>{a.code} {a.name}</option>)}
                 </select>

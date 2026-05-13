@@ -3,10 +3,12 @@
 import { addItemToOrder, removeItemFromOrder, updateItemQuantity, clearOrder } from '../_services/orderService'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
+import { requirePermission } from '@/features/admin/_actions/adminActions'
 
 export async function addItemAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'pos.modify_order')
 
   const orderId = formData.get('orderId') as string
   const productId = formData.get('productId') as string
@@ -29,6 +31,7 @@ export async function addItemAction(formData: FormData) {
 export async function removeItemAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'pos.modify_order')
 
   const itemId = formData.get('itemId') as string
 
@@ -48,6 +51,7 @@ export async function removeItemAction(formData: FormData) {
 export async function updateQuantityAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'pos.modify_order')
 
   const itemId = formData.get('itemId') as string
   const quantity = parseInt(formData.get('quantity') as string, 10)
@@ -68,6 +72,7 @@ export async function updateQuantityAction(formData: FormData) {
 export async function clearOrderAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'pos.modify_order')
 
   const orderId = formData.get('orderId') as string
 

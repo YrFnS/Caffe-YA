@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import { eq, desc, and } from 'drizzle-orm'
+import { eq, desc } from 'drizzle-orm'
 import { users, roles, userRoles } from '@/lib/schema'
 import type { UserWithRoles } from '../_types'
 

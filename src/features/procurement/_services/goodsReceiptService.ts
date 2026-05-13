@@ -7,7 +7,7 @@ export async function getAllGoodsReceipts(): Promise<GoodsReceiptRow[]> {
   return []
 }
 
-export async function getGoodsReceiptById(_id: string): Promise<GoodsReceiptRow | null> {
+export async function getGoodsReceiptById(): Promise<GoodsReceiptRow | null> {
   // TODO: Replace with actual query when goodsReceipts table is added
   return null
 }

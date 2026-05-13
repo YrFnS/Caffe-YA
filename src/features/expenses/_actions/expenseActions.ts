@@ -2,11 +2,12 @@
 
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
+import { requirePermission } from '@/features/admin/_actions/adminActions'
 import {
-  getAllCategories, getCategoryById, createCategory, updateCategory, deleteCategory,
+  getAllCategories, createCategory, updateCategory, deleteCategory,
 } from '../_services/expenseCategoryService'
 import {
-  getAllExpenses, getExpenseById, createExpense, deleteExpense,
+  getAllExpenses, createExpense, deleteExpense,
 } from '../_services/expenseService'
 import { revalidatePath } from 'next/cache'
 
@@ -68,6 +69,7 @@ export async function getExpensesAction(filters?: { categoryId?: string }) {
 export async function createExpenseAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'expenses.create')
   const shiftId = formData.get('shiftId') as string
   const categoryId = formData.get('categoryId') as string
   const amount = formData.get('amount') as string
@@ -89,6 +91,7 @@ export async function createExpenseAction(formData: FormData) {
 export async function deleteExpenseAction(id: string) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'expenses.delete')
   try {
     await deleteExpense(id)
     revalidatePath('/expenses')

@@ -1,9 +1,12 @@
 "use client"
 
 import { useTranslations } from 'next-intl'
+import { useState, useEffect } from 'react'
 import { Minus, Plus, Trash2, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { CartItem } from '../_types'
+
+const WARNING_THRESHOLD_MS = 10 * 60 * 1000 // 10 minutes
 
 interface OrderSummaryProps {
   items: CartItem[]
@@ -12,6 +15,7 @@ interface OrderSummaryProps {
   total: string
   timerRunning?: boolean
   timerDisplay?: string
+  orderCreatedAt?: Date
   onAddItem: (productId: string) => void
   onRemoveItem: (productId: string) => void
   onUpdateQuantity: (productId: string, quantity: number) => void
@@ -28,6 +32,7 @@ export default function OrderSummary({
   total,
   timerRunning,
   timerDisplay,
+  orderCreatedAt,
   onAddItem,
   onRemoveItem,
   onUpdateQuantity,
@@ -37,16 +42,44 @@ export default function OrderSummary({
   disabled,
 }: OrderSummaryProps) {
   const t = useTranslations('pos')
+  const [elapsedMs, setElapsedMs] = useState(0)
+
+  // Update elapsed time every second when timer is running
+  useEffect(() => {
+    if (!orderCreatedAt || !timerRunning) {
+      return
+    }
+
+    const updateElapsed = () => {
+      setElapsedMs(Date.now() - orderCreatedAt.getTime())
+    }
+
+    updateElapsed()
+    const interval = setInterval(updateElapsed, 1000)
+    return () => clearInterval(interval)
+  }, [orderCreatedAt, timerRunning])
+
+  const isOverdue = elapsedMs > WARNING_THRESHOLD_MS
+
+  // Format elapsed time as MM:SS
+  const formatElapsed = (ms: number): string => {
+    const totalSeconds = Math.floor(ms / 1000)
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+  }
 
   return (
     <div className="w-80 flex flex-col bg-surface-container-lowest rounded-lg h-full">
       {/* Header */}
-      <div className="p-4 border-b border-outline-variant/15">
+      <div className="p-4">
         <h2 className="text-headline-sm font-semibold text-on-surface">{t('title')}</h2>
         {timerRunning && (
-          <div className="flex items-center gap-2 mt-2 text-warning">
+          <div className={`flex items-center gap-2 mt-2 ${isOverdue ? 'text-warning animate-pulse-warning' : 'text-warning'}`}>
             <Clock className="w-4 h-4" />
-            <span className="font-mono text-display-sm">{timerDisplay}</span>
+            <span className="font-mono text-display-sm">
+              {timerDisplay || formatElapsed(elapsedMs)}
+            </span>
           </div>
         )}
       </div>
@@ -54,8 +87,8 @@ export default function OrderSummary({
       {/* Items list */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-on-surface-variant">
-            <p className="text-body-md">{t('emptyCart')}</p>
+          <div className="flex flex-col items-center justify-center h-full">
+            <p className="text-body-md text-on-surface-variant">{t('emptyCart')}</p>
           </div>
         ) : (
           items.map((item) => (
@@ -108,7 +141,7 @@ export default function OrderSummary({
 
       {/* Timer charge line */}
       {Number(timerCharge) > 0 && (
-        <div className="px-4 py-2 border-t border-outline-variant/15">
+        <div className="px-4 py-2">
           <div className="flex justify-between text-body-sm text-on-surface-variant">
             <span>{t('timer')}</span>
             <span className="font-mono">{Number(timerCharge).toLocaleString()} IQD</span>
@@ -117,7 +150,7 @@ export default function OrderSummary({
       )}
 
       {/* Totals */}
-      <div className="p-4 border-t border-outline-variant/15 space-y-2">
+      <div className="p-4 space-y-2">
         <div className="flex justify-between text-body-sm">
           <span className="text-on-surface-variant">{t('subtotal')}</span>
           <span className="font-mono">{Number(subtotal).toLocaleString()} IQD</span>
@@ -129,7 +162,7 @@ export default function OrderSummary({
       </div>
 
       {/* Actions */}
-      <div className="p-4 pt-0 space-y-2">
+      <div className="p-4 space-y-2">
         <Button
           variant="default"
           size="lg"

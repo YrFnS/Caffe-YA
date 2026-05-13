@@ -2,16 +2,13 @@
 
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
-import {
-  getAllVendors, getVendorById, createVendor, updateVendor, deleteVendor,
-} from '../_services/vendorService'
+import { requirePermission } from '@/features/admin/_actions/adminActions'
+import { getAllVendors, getVendorById, createVendor, updateVendor, deleteVendor } from '../_services/vendorService'
 import {
   getAllPurchases, getPurchaseById, getPurchaseItems,
-  createPurchase, markPurchasePaid, deletePurchase, getUnpaidPurchases,
+  createPurchase, markPurchasePaid, deletePurchase,
 } from '../_services/purchaseService'
-import {
-  getAllGoodsReceipts, getGoodsReceiptById,
-} from '../_services/goodsReceiptService'
+import { getAllGoodsReceipts } from '../_services/goodsReceiptService'
 import { revalidatePath } from 'next/cache'
 
 // ─── Vendor Actions ─────────────────────────────────────────────────────────
@@ -104,6 +101,7 @@ export async function getPurchaseItemsAction(purchaseId: string) {
 export async function createPurchaseAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'procurement.create_po')
 
   const vendorId = formData.get('vendorId') as string | null
   const isPaid = formData.get('isPaid') === 'true'
@@ -125,7 +123,7 @@ export async function createPurchaseAction(formData: FormData) {
 
   if (!items.length) return { error: 'NO_ITEMS' }
 
-  const totalAmount = items.reduce((sum, i) => sum + Number(i.totalCost), 0).toFixed(3)
+  const totalAmount = String(items.reduce((sum, i) => sum + Number(i.totalCost), 0)) // stored as numeric, no toFixed
 
   try {
     const result = await createPurchase({
@@ -146,6 +144,7 @@ export async function createPurchaseAction(formData: FormData) {
 export async function markPurchasePaidAction(id: string) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'procurement.approve_invoice')
   try {
     await markPurchasePaid(id)
     revalidatePath('/procurement/purchases')
@@ -158,6 +157,7 @@ export async function markPurchasePaidAction(id: string) {
 export async function deletePurchaseAction(id: string) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'procurement.delete_po')
   try {
     await deletePurchase(id)
     revalidatePath('/procurement/purchases')

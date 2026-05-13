@@ -1,7 +1,7 @@
 "use client"
 
 import { useTranslations } from 'next-intl'
-import { TrendingUp, Clock, ShoppingCart, DoorOpen, AlertTriangle } from 'lucide-react'
+import { TrendingUp, Clock, ShoppingCart, DoorOpen } from 'lucide-react'
 import { formatIQD } from '@/lib/format'
 import type { TodaySummary } from '../_types'
 

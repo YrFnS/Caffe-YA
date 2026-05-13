@@ -3,10 +3,12 @@
 import { voidOrderItem, refundTransaction } from '../_services/voidService'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
+import { requirePermission } from '@/features/admin/_actions/adminActions'
 
 export async function voidItem(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'pos.void_item')
 
   const itemId = formData.get('itemId') as string
   const reason = formData.get('reason') as string
@@ -27,6 +29,7 @@ export async function voidItem(formData: FormData) {
 export async function refundTx(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'pos.void_order')
 
   const transactionId = formData.get('transactionId') as string
   const reason = formData.get('reason') as string

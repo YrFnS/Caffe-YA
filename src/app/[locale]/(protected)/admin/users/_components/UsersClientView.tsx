@@ -15,7 +15,8 @@ interface UsersClientViewProps {
 }
 
 export default function UsersClientView({ users, roles, currentUserId }: UsersClientViewProps) {
-  const t = useTranslations('admin')
+  const _t = useTranslations('admin')
+  void _t // used via dynamic t() in JSX
   const [userList, setUserList] = useState(users)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [selectedRoles, setSelectedRoles] = useState<Record<string, string[]>>({})

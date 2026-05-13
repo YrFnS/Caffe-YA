@@ -4,10 +4,12 @@ import { openShift, closeShift } from '../_services/shiftService'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { requirePermission } from '@/features/admin/_actions/adminActions'
 
 export async function openShiftAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'shifts.open')
 
   const openingFloat = formData.get('openingFloat') as string
   if (!openingFloat || isNaN(Number(openingFloat))) {
@@ -30,6 +32,7 @@ export async function openShiftAction(formData: FormData) {
 export async function closeShiftAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'shifts.close')
 
   const shiftId = formData.get('shiftId') as string
   const countedCash = formData.get('countedCash') as string

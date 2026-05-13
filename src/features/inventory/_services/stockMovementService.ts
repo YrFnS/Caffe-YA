@@ -37,7 +37,7 @@ export async function logMovement(data: {
       if (newStock < 0) throw new Error('INVALID_QUANTITY')
 
       await tx.update(ingredients)
-        .set({ stockQty: newStock.toFixed(3) })
+        .set({ stockQty: String(newStock) })
         .where(eq(ingredients.id, data.ingredientId))
     }
 
@@ -59,7 +59,7 @@ export async function logMovement(data: {
             const newStock = Number(ing.stockQty) - deduction
             if (newStock < 0) throw new Error('INVALID_QUANTITY')
             await tx.update(ingredients)
-              .set({ stockQty: newStock.toFixed(3) })
+              .set({ stockQty: String(newStock) })
               .where(eq(ingredients.id, ri.ingredientId))
           }
         }

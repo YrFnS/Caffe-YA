@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import { and, eq, desc, gte, inArray } from 'drizzle-orm'
+import { and, eq, gte, inArray, desc } from 'drizzle-orm'
 import { orders, shifts, transactions } from '@/lib/schema'
 import type { TodaySummary } from '../_types'
 

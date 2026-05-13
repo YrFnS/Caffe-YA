@@ -5,19 +5,18 @@ import type { PurchaseRow } from '../_types'
 
 interface GoodsReceiptFormProps {
   purchase: PurchaseRow
-  onSuccess: () => void
   onClose: () => void
 }
 
 // NOTE: Goods Receipts require goodsReceipts/goodsReceiptItems tables in schema.
 // This component is scaffolded and will be functional once those tables are added
 // via a schema migration, then uncomment the full implementation.
-export default function GoodsReceiptForm({ purchase, onSuccess, onClose }: GoodsReceiptFormProps) {
+export default function GoodsReceiptForm({ purchase, onClose }: GoodsReceiptFormProps) {
   const t = useTranslations('procurement')
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-surface-container-high rounded-2xl p-6 w-full max-w-lg shadow-xl">
+      <div className="bg-surface-container-high rounded-2xl p-6 w-full max-w-lg shadow-md">
         <h2 className="text-headline-sm font-semibold mb-4">{t('receiveGoods')}</h2>
         <p className="text-body-sm text-on-surface-variant mb-4">
           {t('vendor')}: {purchase.vendorName ?? '—'} — {Number(purchase.totalAmount).toLocaleString()}

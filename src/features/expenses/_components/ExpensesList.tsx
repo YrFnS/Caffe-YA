@@ -45,7 +45,7 @@ export default function ExpensesList({ expenses, categories, currentShiftId }: E
           <select
             value={filterCategory}
             onChange={e => setFilterCategory(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-low text-on-surface"
+            className="px-3 py-2 rounded-lg border border-outline bg-surface-container-low text-on-surface"
           >
             <option value="">{t('allCategories')}</option>
             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -86,23 +86,23 @@ export default function ExpensesList({ expenses, categories, currentShiftId }: E
       </div>
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-surface-container-high rounded-2xl p-6 w-full max-w-md shadow-xl">
+          <div className="bg-surface-container-high rounded-2xl p-6 w-full max-w-md">
             <h2 className="text-headline-sm font-semibold mb-4">{t('addExpense')}</h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-body-sm text-on-surface-variant mb-1">{t('category')}</label>
-                <select value={categoryId} onChange={e => setCategoryId(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface" required>
+                <select value={categoryId} onChange={e => setCategoryId(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface" required>
                   <option value="">{t('selectCategory')}</option>
                   {categories.filter(c => c.isActive).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-body-sm text-on-surface-variant mb-1">{t('amount')}</label>
-                <input type="number" step="0.001" value={amount} onChange={e => setAmount(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface" required />
+                <input type="number" step="0.001" value={amount} onChange={e => setAmount(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface" required />
               </div>
               <div>
                 <label className="block text-body-sm text-on-surface-variant mb-1">{t('description')}</label>
-                <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface" />
+                <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface" />
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowForm(false)} className="flex-1 px-4 py-2 rounded-lg border border-outline text-on-surface">{t('cancel')}</button>

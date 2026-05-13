@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
+import { getTranslations } from 'next-intl/server'
 import { getAllProducts } from '@/features/inventory/_services/productService'
 import { getAllCategories } from '@/features/inventory/_services/categoryService'
 import ProductTable from '@/features/inventory/_components/ProductTable'
@@ -12,6 +13,7 @@ interface ProductsPageProps {
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  const t = await getTranslations('common')
 
   const params = await searchParams
   const [products, categories] = await Promise.all([
@@ -24,7 +26,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-headline-lg font-semibold text-on-surface">Products</h1>
+        <h1 className="text-headline-lg font-semibold text-on-surface">{t('inventory.products')}</h1>
       </div>
       <ProductTable products={products} categories={categories} />
       {(params.modal === 'add' || params.modal === 'edit') && (

@@ -181,11 +181,11 @@ export async function createPermissionAction(formData: FormData) {
 
   const key = formData.get('key') as string
   const description = formData.get('description') as string | null
-  const module = formData.get('module') as string
-  if (!key || !module) return { error: 'INVALID_INPUT' }
+  const moduleName = formData.get('module') as string
+  if (!key || !moduleName) return { error: 'INVALID_INPUT' }
 
   try {
-    const perm = await createPermission({ key, description: description ?? undefined, module })
+    const perm = await createPermission({ key, description: description ?? undefined, module: moduleName })
     return { success: true, permission: perm }
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'CREATE_PERMISSION_FAILED' }

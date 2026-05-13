@@ -46,7 +46,7 @@ export default function VendorsList({ vendors }: VendorsListProps) {
                   <td className="p-3 text-on-surface text-body-sm">{v.phone ?? '—'}</td>
                   <td className="p-3 text-on-surface text-body-sm">{v.address ?? '—'}</td>
                   <td className="p-3">
-                    <span className={`px-2 py-1 rounded-full text-body-sm ${v.isActive ? 'bg-green-10 text-green-30' : 'bg-error/10 text-error'}`}>
+                    <span className={`px-2 py-1 rounded-full text-body-sm ${v.isActive ? 'bg-secondary/10 text-secondary' : 'bg-error/10 text-error'}`}>
                       {v.isActive ? t('active') : t('inactive')}
                     </span>
                   </td>

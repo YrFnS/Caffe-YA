@@ -59,7 +59,7 @@ export default function CheckoutModal({
       {/* Modal */}
       <div className="relative bg-surface-container-lowest rounded-xl shadow-lg w-full max-w-md mx-4">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-outline-variant/15">
+        <div className="flex items-center justify-between p-4">
           <h2 className="text-headline-sm font-semibold text-on-surface">
             {t('checkout')}
           </h2>
@@ -73,7 +73,7 @@ export default function CheckoutModal({
         </div>
 
         {/* Total display */}
-        <div className="p-6 text-center border-b border-outline-variant/15">
+        <div className="p-6 text-center">
           <p className="text-body-sm text-on-surface-variant mb-1">{t('total')}</p>
           <p className="text-display-lg font-bold text-secondary">
             {Number(total).toLocaleString()} IQD
@@ -115,7 +115,7 @@ export default function CheckoutModal({
         )}
 
         {/* Actions */}
-        <div className="p-4 border-t border-outline-variant/15">
+        <div className="p-4">
           <Button
             variant="default"
             size="lg"

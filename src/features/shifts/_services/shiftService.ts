@@ -2,6 +2,7 @@ import { db } from '@/lib/db'
 import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm'
 import { expenses, orders, shifts, transactions } from '@/lib/schema'
 import type { ShiftSummary } from '../_types'
+import { toCents, fromCents } from '@/lib/currency'
 
 // Get active shift for a user
 export async function getActiveShiftForUser(userId: string): Promise<ShiftSummary | null> {
@@ -76,16 +77,16 @@ export async function closeShift(
   const shift = await getShiftById(shiftId)
   if (!shift) throw new Error('SHIFT_NOT_FOUND')
 
-  const expected = (Number(shift.openingFloat) + Number(cashSales) - Number(cashExpenses)).toFixed(3)
-  const variance = (Number(countedCash) - Number(expected)).toFixed(3)
+  const expected = toCents(Number(shift.openingFloat) + Number(cashSales) - Number(cashExpenses))
+  const variance = toCents(Number(countedCash) - Number(expected))
 
   await db.update(shifts)
     .set({
       status: 'closed',
       closedAt: new Date(),
       closingCountedCash: countedCash,
-      closingExpectedCash: expected,
-      cashVariance: variance,
+      closingExpectedCash: fromCents(expected),
+      cashVariance: fromCents(variance),
       approvedBy: approvedBy ?? null,
       notes: notes ?? null,
     })
@@ -101,8 +102,8 @@ export async function getCashSales(shiftId: string): Promise<string> {
       eq(transactions.isRefund, false),
     ),
   })
-  const total = txs.reduce((sum, tx) => sum + Number(tx.amount), 0)
-  return total.toFixed(3)
+  const total = txs.reduce((sum, tx) => sum + toCents(Number(tx.amount)), 0)
+  return fromCents(total)
 }
 
 // Calculate total cash expenses for a shift
@@ -110,8 +111,8 @@ export async function getCashExpenses(shiftId: string): Promise<string> {
   const exps = await db.query.expenses.findMany({
     where: eq(expenses.shiftId, shiftId),
   })
-  const total = exps.reduce((sum, e) => sum + Number(e.amount), 0)
-  return total.toFixed(3)
+  const total = exps.reduce((sum, e) => sum + toCents(Number(e.amount)), 0)
+  return fromCents(total)
 }
 
 // Get orders with running timers for a shift

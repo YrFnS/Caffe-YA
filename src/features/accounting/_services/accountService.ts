@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import { eq, desc, isNull, and } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { chartOfAccounts } from '@/lib/schema'
 import type { AccountRow, AccountType } from '../_types'
 

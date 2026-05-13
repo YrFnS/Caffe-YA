@@ -83,14 +83,14 @@ export async function stopTimer(orderId: string) {
   await db.update(orders)
     .set({
       timerEndedAt: endTime,
-      timerChargeAmount: charge.toFixed(3),
+      timerChargeAmount: String(charge), // stored as numeric, no formatting needed
     })
     .where(eq(orders.id, orderId))
 
   return {
     elapsedMinutes,
     chargeableMinutes,
-    charge: charge.toFixed(3),
+    charge: Number(charge.toFixed(3)), // display only
   }
 }
 
@@ -119,7 +119,7 @@ export async function transferOrder(orderId: string, newResourceId: string) {
         const minMin = minimumMinutes ?? 0
         const graceMin = graceMinutes ?? 0
         const chargeableMinutes = Math.max(elapsedMinutes - graceMin, minMin)
-        timerCharge = ((chargeableMinutes / 60) * Number(hourlyRate)).toFixed(3)
+        timerCharge = String((chargeableMinutes / 60) * Number(hourlyRate)) // stored as numeric
       }
     }
 

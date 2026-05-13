@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { createPartnerAction, addCapitalInjectionAction, addDrawAction, addProfitDistributionAction } from '../_actions/partnerActions'
-import type { PartnerRow, PartnerEquityEntryRow, PartnerDashboard } from '../_types'
+import type { PartnerRow, PartnerDashboard } from '../_types'
 
 interface PartnersListProps {
   partners: PartnerRow[]
@@ -70,16 +70,16 @@ export default function PartnersList({ partners, dashboards }: PartnersListProps
 
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-surface-container-high rounded-2xl p-6 w-full max-w-md shadow-xl">
+          <div className="bg-surface-container-high rounded-2xl p-6 w-full max-w-md">
             <h2 className="text-headline-sm font-semibold mb-4">{t('addPartner')}</h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-body-sm text-on-surface-variant mb-1">{t('userId')}</label>
-                <input value={userId} onChange={e => setUserId(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface" />
+                <input value={userId} onChange={e => setUserId(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface" />
               </div>
               <div>
                 <label className="block text-body-sm text-on-surface-variant mb-1">{t('ownershipPercent')}</label>
-                <input type="number" value={ownershipPercent} onChange={e => setOwnershipPercent(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface" step="0.01" />
+                <input type="number" value={ownershipPercent} onChange={e => setOwnershipPercent(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface" step="0.01" />
               </div>
               <div className="flex gap-3 pt-2">
                 <button onClick={() => setShowAdd(false)} className="flex-1 px-4 py-2 rounded-lg border border-outline text-on-surface">{t('cancel')}</button>
@@ -92,12 +92,12 @@ export default function PartnersList({ partners, dashboards }: PartnersListProps
 
       {showEvent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-surface-container-high rounded-2xl p-6 w-full max-w-md shadow-xl">
+          <div className="bg-surface-container-high rounded-2xl p-6 w-full max-w-md">
             <h2 className="text-headline-sm font-semibold mb-4">{t('addEvent')}</h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-body-sm text-on-surface-variant mb-1">{t('type')}</label>
-                <select value={eventType} onChange={e => setEventType(e.target.value as typeof eventType)} className="w-full px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface">
+                <select value={eventType} onChange={e => setEventType(e.target.value as typeof eventType)} className="w-full px-3 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface">
                   <option value="capital_injection">{t('capitalInjection')}</option>
                   <option value="draw">{t('draw')}</option>
                   <option value="profit_allocation">{t('profitAllocation')}</option>
@@ -105,11 +105,11 @@ export default function PartnersList({ partners, dashboards }: PartnersListProps
               </div>
               <div>
                 <label className="block text-body-sm text-on-surface-variant mb-1">{t('amount')}</label>
-                <input type="number" value={eventAmount} onChange={e => setEventAmount(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface" step="0.001" />
+                <input type="number" value={eventAmount} onChange={e => setEventAmount(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface" step="0.001" />
               </div>
               <div>
                 <label className="block text-body-sm text-on-surface-variant mb-1">{t('note')}</label>
-                <input value={eventNote} onChange={e => setEventNote(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface" />
+                <input value={eventNote} onChange={e => setEventNote(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface" />
               </div>
               <div className="flex gap-3 pt-2">
                 <button onClick={() => setShowEvent(null)} className="flex-1 px-4 py-2 rounded-lg border border-outline text-on-surface">{t('cancel')}</button>

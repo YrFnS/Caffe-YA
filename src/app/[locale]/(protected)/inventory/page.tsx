@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
+import { getTranslations } from 'next-intl/server'
 import InventoryClientView from '@/features/inventory/_components/InventoryClientView'
 import AlertsBanner from '@/features/inventory/_components/AlertsBanner'
 import { getAllProducts } from '@/features/inventory/_services/productService'
@@ -17,6 +18,7 @@ interface LowStockAlert {
 export default async function InventoryPage() {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  const t = await getTranslations('common')
 
   const [products, categories, ingredients, lowStockAlerts] = await Promise.all([
     getAllProducts(),
@@ -30,7 +32,7 @@ export default async function InventoryPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-headline-lg font-semibold text-on-surface">Inventory</h1>
+        <h1 className="text-headline-lg font-semibold text-on-surface">{t('inventory.title')}</h1>
       </div>
       {typedLowStock.length > 0 && <AlertsBanner alerts={typedLowStock} />}
       <InventoryClientView

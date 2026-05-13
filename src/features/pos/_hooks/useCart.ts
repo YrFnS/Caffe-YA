@@ -31,7 +31,7 @@ export function useCart({ order, onAddItem, onRemoveItem, onUpdateQuantity, onCl
         await onUpdateQuantity(existing.orderItemId || existing.productId, existing.quantity + 1)
         setItems(prev => prev.map(i =>
           i.productId === product.id
-            ? { ...i, quantity: i.quantity + 1, totalPrice: (Number(i.unitPrice) * (i.quantity + 1)).toFixed(3) }
+            ? { ...i, quantity: i.quantity + 1, totalPrice: (Number(i.unitPrice) * (i.quantity + 1)).toFixed(3) } // local display only — server recalculates from unitPrice * quantity
             : i
         ))
       } else {
@@ -68,7 +68,7 @@ export function useCart({ order, onAddItem, onRemoveItem, onUpdateQuantity, onCl
     await onUpdateQuantity(item.orderItemId, quantity)
     setItems(prev => prev.map(i =>
       i.productId === productId
-        ? { ...i, quantity, totalPrice: (Number(i.unitPrice) * quantity).toFixed(3) }
+        ? { ...i, quantity, totalPrice: (Number(i.unitPrice) * quantity).toFixed(3) } // local display only — server recalculates from unitPrice * quantity
         : i
     ))
   }, [items, onUpdateQuantity])

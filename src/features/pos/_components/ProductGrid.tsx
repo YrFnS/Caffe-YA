@@ -35,8 +35,8 @@ export default function ProductGrid({
       />
 
       {filtered.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-on-surface-variant">
-          <p className="text-body-lg">{t('noProducts')}</p>
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <p className="text-body-lg text-on-surface-variant">{t('noProducts')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto flex-1">

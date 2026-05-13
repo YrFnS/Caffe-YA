@@ -5,13 +5,18 @@
     "loading": "جاري التحميل...",
     "error": "خطأ",
     "retry": "إعادة المحاولة",
+    "somethingWentWrong": "حدث خطأ ما!",
+    "tryAgain": "حاول مجددًا",
     "save": "حفظ",
     "cancel": "إلغاء",
     "delete": "حذف",
     "edit": "تعديل",
     "create": "إنشاء",
     "search": "بحث",
-    "noResults": "لا توجد نتائج"
+    "noResults": "لا توجد نتائج",
+    "noItems": "لا توجد عناصر",
+    "emptyStateTitle": "لا شيء هنا بعد",
+    "emptyStateDescription": "ابدأ بإنشاء أول عنصر لك."
   },
   "nav": {
     "dashboard": "لوحة التحكم",

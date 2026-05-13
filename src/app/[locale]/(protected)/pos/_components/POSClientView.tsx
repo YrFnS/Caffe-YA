@@ -166,6 +166,7 @@ export default function POSClientView({
   }, [orderId])
 
   const handleSelectResource = useCallback(async (_resourceId: string) => {
+    void _resourceId
     // TODO: Wire to assignResourceToOrder server action
     setShowResourceGrid(false)
   }, [])
@@ -239,6 +240,7 @@ export default function POSClientView({
           total={subtotal}
           timerRunning={_timerRunning}
           timerDisplay={_timerDisplay}
+          orderCreatedAt={undefined}
           onAddItem={handleIncrementItem}
           onRemoveItem={handleRemoveItem}
           onUpdateQuantity={handleUpdateQuantity}

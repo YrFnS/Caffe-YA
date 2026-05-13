@@ -1,7 +1,8 @@
 import { db } from '@/lib/db'
-import { eq, desc, and, sql } from 'drizzle-orm'
-import { partners, partnerEquityEntries, users } from '@/lib/schema'
+import { eq, desc } from 'drizzle-orm'
+import { partners, partnerEquityEntries } from '@/lib/schema'
 import type { PartnerRow, PartnerEquityEntryRow, PartnerDashboard } from '../_types'
+import { toCents, fromCents } from '@/lib/currency'
 
 export async function getAllPartners(): Promise<PartnerRow[]> {
   const rows = await db.query.partners.findMany({ orderBy: [desc(partners.createdAt)] })
@@ -42,17 +43,17 @@ export async function getPartnerDashboard(partnerId: string): Promise<PartnerDas
 
   const totalInjected = entries
     .filter(e => e.type === 'capital_injection')
-    .reduce((s, e) => s + parseFloat(e.amount), 0)
+    .reduce((s, e) => s + toCents(Number(e.amount)), 0)
   const totalDistributions = entries
     .filter(e => e.type === 'draw' || e.type === 'profit_share')
-    .reduce((s, e) => s + parseFloat(e.amount), 0)
+    .reduce((s, e) => s + toCents(Number(e.amount)), 0)
   const currentEquity = totalInjected - totalDistributions
 
   return {
     partner,
-    currentEquity: currentEquity.toFixed(3),
-    totalCapitalInjected: totalInjected.toFixed(3),
-    totalDistributions: totalDistributions.toFixed(3),
+    currentEquity: fromCents(currentEquity),
+    totalCapitalInjected: fromCents(totalInjected),
+    totalDistributions: fromCents(totalDistributions),
     ownershipPercent: partner.ownershipPercent,
   }
 }

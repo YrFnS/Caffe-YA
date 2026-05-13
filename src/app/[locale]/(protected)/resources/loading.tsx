@@ -6,7 +6,7 @@ export default function ResourcesLoading() {
   return (
     <div className="flex items-center justify-center h-64">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border border-outline border-t-transparent rounded-full animate-spin" />
         <p className="text-body-md text-on-surface-variant">{t('loading')}</p>
       </div>
     </div>

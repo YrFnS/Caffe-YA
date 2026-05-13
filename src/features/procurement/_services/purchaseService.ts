@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
-import { eq, desc } from 'drizzle-orm'
-import { purchases, purchaseItems, vendors, ingredients, products } from '@/lib/schema'
+import { eq, inArray } from 'drizzle-orm'
+import { purchases, purchaseItems, ingredients, products } from '@/lib/schema'
 import type { PurchaseRow, PurchaseItemRow } from '../_types'
 
 export async function getAllPurchases(filters?: {
@@ -53,10 +53,10 @@ export async function getPurchaseItems(purchaseId: string): Promise<PurchaseItem
   const productIds = items.map(i => i.productId).filter(Boolean) as string[]
 
   const ingredientRows = ingredientIds.length
-    ? await db.query.ingredients.findMany({ where: eq(ingredients.id, ingredientIds[0]) })
+    ? await db.query.ingredients.findMany({ where: inArray(ingredients.id, ingredientIds) })
     : []
   const productRows = productIds.length
-    ? await db.query.products.findMany({ where: eq(products.id, productIds[0]) })
+    ? await db.query.products.findMany({ where: inArray(products.id, productIds) })
     : []
 
   const ingredientMap = new Map(ingredientRows.map(i => [i.id, i.name]))

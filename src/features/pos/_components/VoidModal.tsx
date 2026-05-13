@@ -36,7 +36,7 @@ export default function VoidModal({ isOpen, itemName, onClose, onConfirm }: Void
       {/* Backdrop */}
       <button
         type="button"
-        className="absolute inset-0 bg-surface-container-high/80 backdrop-blur-sm cursor-default"
+        className="absolute inset-0 bg-surface-container-high/80 cursor-default"
         onClick={onClose}
         aria-label="Close"
       />
@@ -44,7 +44,7 @@ export default function VoidModal({ isOpen, itemName, onClose, onConfirm }: Void
       {/* Modal */}
       <div className="relative bg-surface-container-lowest rounded-xl shadow-lg w-full max-w-sm mx-4">
         {/* Header */}
-        <div className="flex items-center gap-3 p-4 border-b border-outline-variant/15">
+        <div className="flex items-center gap-3 p-4">
           <div className="p-2 rounded-lg bg-tertiary/10">
             <AlertTriangle className="w-5 h-5 text-tertiary" />
           </div>
@@ -82,7 +82,7 @@ export default function VoidModal({ isOpen, itemName, onClose, onConfirm }: Void
         </div>
 
         {/* Actions */}
-        <div className="p-4 border-t border-outline-variant/15 flex gap-3">
+        <div className="p-4 flex gap-3">
           <Button
             variant="ghost"
             size="sm"

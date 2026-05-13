@@ -131,5 +131,5 @@ export async function getRecipeCost(productId: string): Promise<string> {
       total += Number(ing.costPerUnit) * Number(r.quantityUsed)
     }
   }
-  return total.toFixed(3)
+  return total.toFixed(3) // display: formatted recipe cost string
 }

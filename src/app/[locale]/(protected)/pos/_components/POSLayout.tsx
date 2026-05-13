@@ -49,7 +49,7 @@ export default function POSLayout({
   return (
     <div className="flex flex-col h-full">
       {/* POS Header */}
-      <header className="flex items-center justify-between px-6 py-3 bg-surface-container-low border-b border-outline-variant/15">
+      <header className="flex items-center justify-between px-6 py-3 bg-surface-container-low">
         <div className="flex items-center gap-4">
           <h1 className="text-headline-lg font-semibold text-on-surface">{t('title')}</h1>
           {shiftStatus && (

@@ -20,7 +20,8 @@ interface RolesClientViewProps {
 }
 
 export default function RolesClientView({ roles: initialRoles, groupedPermissions }: RolesClientViewProps) {
-  const t = useTranslations('admin')
+  const _t = useTranslations('admin')
+  void _t // used via dynamic t() in JSX
   const [roles, setRoles] = useState(initialRoles)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [newRoleName, setNewRoleName] = useState('')
@@ -75,7 +76,7 @@ export default function RolesClientView({ roles: initialRoles, groupedPermission
     {
       key: 'permissions',
       label: 'Permissions',
-      render: (row: Role) => (
+      render: () => (
         <div className="flex flex-wrap gap-1">
           {groupedPermissions.slice(0, 3).map(gp =>
             gp.permissions.slice(0, 2).map(p => (

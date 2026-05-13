@@ -3,6 +3,7 @@ import { orders, orderItems, transactions, resources, shifts } from '@/lib/schem
 import { eq, and, isNull } from 'drizzle-orm'
 import { getProductIngredients } from '@/features/inventory/_services/productService'
 import { logMovement } from '@/features/inventory/_services/stockMovementService'
+import { toCents, fromCents } from '@/lib/currency'
 
 export async function getOrCreateDraftOrder(shiftId: string, userId: string) {
   const existing = await db.query.orders.findFirst({
@@ -37,14 +38,14 @@ export async function getActiveShift(userId: string) {
 }
 
 export async function addItemToOrder(orderId: string, productId: string, quantity: number, unitPrice: string) {
-  const totalPrice = (Number(unitPrice) * quantity).toFixed(3)
+  const totalPrice = toCents(Number(unitPrice) * quantity)
 
   const [item] = await db.insert(orderItems).values({
     orderId,
     productId,
     quantity: quantity.toString(),
     unitPrice,
-    totalPrice,
+    totalPrice: totalPrice.toString(),
   }).returning()
 
   await recalculateOrderTotals(orderId)
@@ -71,9 +72,9 @@ export async function updateItemQuantity(itemId: string, quantity: number) {
     return
   }
 
-  const totalPrice = (Number(item.unitPrice) * quantity).toFixed(3)
+  const totalPrice = toCents(Number(item.unitPrice) * quantity)
   await db.update(orderItems)
-    .set({ quantity: quantity.toString(), totalPrice })
+    .set({ quantity: quantity.toString(), totalPrice: totalPrice.toString() })
     .where(eq(orderItems.id, itemId))
 
   await recalculateOrderTotals(item.orderId)
@@ -84,13 +85,13 @@ async function recalculateOrderTotals(orderId: string) {
     where: and(eq(orderItems.orderId, orderId), isNull(orderItems.voidedAt))
   })
 
-  const subtotal = items.reduce((sum, item) => sum + Number(item.totalPrice), 0)
+  const subtotal = items.reduce((sum, item) => sum + toCents(Number(item.totalPrice)), 0)
   const order = await db.query.orders.findFirst({ where: eq(orders.id, orderId) })
 
-  const total = subtotal + Number(order?.timerChargeAmount || 0)
+  const total = subtotal + toCents(Number(order?.timerChargeAmount || 0))
 
   await db.update(orders)
-    .set({ subtotal: subtotal.toFixed(3), totalAmount: total.toFixed(3) })
+    .set({ subtotal: fromCents(subtotal), totalAmount: fromCents(total) })
     .where(eq(orders.id, orderId))
 }
 
@@ -127,10 +128,10 @@ export async function checkoutOrder(orderId: string, paymentMethod: string, amou
       if (item.product && item.product.type === 'recipe') {
         const recipeIngredients = await getProductIngredients(item.productId)
         for (const ri of recipeIngredients) {
-          const deduction = (Number(ri.quantityUsed) * Number(item.quantity)).toFixed(3)
+          const deduction = toCents(Number(ri.quantityUsed) * Number(item.quantity))
           await logMovement({
             type: 'sale_deduction',
-            quantity: (-Number(deduction)).toFixed(3),
+            quantity: fromCents(-deduction),
             ingredientId: ri.ingredientId,
             productId: item.productId,
             orderId,

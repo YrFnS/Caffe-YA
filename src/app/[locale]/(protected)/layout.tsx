@@ -63,7 +63,7 @@ export default function ProtectedLayout({
   return (
     <div className="flex h-screen bg-surface">
       <aside className="w-60 h-screen bg-surface-container-low flex flex-col">
-        <div className="p-4 border-b border-outline-variant/15">
+        <div className="p-4">
           <h1 className="font-display text-xl font-bold text-on-surface mb-0.5">Caffe-YA</h1>
           <p className="text-sm text-on-surface-variant">{tCommon('tagline')}</p>
         </div>
@@ -89,7 +89,7 @@ export default function ProtectedLayout({
           })}
         </nav>
 
-        <div className="p-3 border-t border-outline-variant/15 space-y-2">
+        <div className="p-3 space-y-2">
           <div className="flex items-center gap-2 px-3 py-2">
             <User className="w-5 h-5 text-on-surface-variant" />
             <div className="flex-1 min-w-0">

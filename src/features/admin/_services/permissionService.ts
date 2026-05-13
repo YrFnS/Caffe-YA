@@ -83,6 +83,18 @@ export async function seedDefaultPermissions(): Promise<void> {
     { key: 'admin.manage_permissions', module: 'admin', description: 'Manage permissions' },
     { key: 'admin.manage_settings', module: 'admin', description: 'Manage settings' },
     { key: 'admin.manage_modules', module: 'admin', description: 'Manage modules' },
+
+    // Procurement permissions
+    { key: 'procurement.create_po', module: 'procurement', description: 'Create purchase order' },
+    { key: 'procurement.delete_po', module: 'procurement', description: 'Delete purchase order' },
+    { key: 'procurement.receive_goods', module: 'procurement', description: 'Receive goods' },
+    { key: 'procurement.approve_invoice', module: 'procurement', description: 'Approve invoice' },
+
+    // Expense permissions
+    { key: 'expenses.create', module: 'expenses', description: 'Create expense' },
+    { key: 'expenses.update', module: 'expenses', description: 'Update expense' },
+    { key: 'expenses.delete', module: 'expenses', description: 'Delete expense' },
+    { key: 'expenses.approve', module: 'expenses', description: 'Approve expense' },
   ]
 
   for (const perm of defaultPermissions) {

@@ -72,12 +72,12 @@ export default function PurchaseForm({ vendors, onSuccess, onClose }: PurchaseFo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-surface-container-high rounded-2xl p-6 w-full max-w-2xl shadow-xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-surface-container-high rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <h2 className="text-headline-sm font-semibold mb-4">{t('newPurchase')}</h2>
         <div className="space-y-4">
           <div>
             <label className="block text-body-sm text-on-surface-variant mb-1">{t('vendor')}</label>
-            <select value={vendorId} onChange={e => setVendorId(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface">
+            <select value={vendorId} onChange={e => setVendorId(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface">
               <option value="">{t('selectVendor')}</option>
               {vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
             </select>
@@ -86,9 +86,9 @@ export default function PurchaseForm({ vendors, onSuccess, onClose }: PurchaseFo
             <label className="block text-body-sm text-on-surface-variant mb-1">{t('items')}</label>
             {items.map((item, idx) => (
               <div key={idx} className="flex gap-2 mb-2 items-center">
-                <input placeholder={t('ingredientId')} value={item.ingredientId} onChange={e => updateItem(idx, 'ingredientId', e.target.value)} className="flex-1 px-2 py-1 rounded border border-outline-variable bg-surface-container-lowest text-on-surface text-sm" />
-                <input placeholder={t('qty')} value={item.quantity} onChange={e => updateItem(idx, 'quantity', e.target.value)} className="w-20 px-2 py-1 rounded border border-outline-variable bg-surface-container-lowest text-on-surface text-sm" />
-                <input placeholder={t('unitCost')} value={item.unitCost} onChange={e => updateItem(idx, 'unitCost', e.target.value)} className="w-28 px-2 py-1 rounded border border-outline-variable bg-surface-container-lowest text-on-surface text-sm" />
+                <input placeholder={t('ingredientId')} value={item.ingredientId} onChange={e => updateItem(idx, 'ingredientId', e.target.value)} className="flex-1 px-2 py-1 rounded border border-outline bg-surface-container-lowest text-on-surface text-sm" />
+                <input placeholder={t('qty')} value={item.quantity} onChange={e => updateItem(idx, 'quantity', e.target.value)} className="w-20 px-2 py-1 rounded border border-outline bg-surface-container-lowest text-on-surface text-sm" />
+                <input placeholder={t('unitCost')} value={item.unitCost} onChange={e => updateItem(idx, 'unitCost', e.target.value)} className="w-28 px-2 py-1 rounded border border-outline bg-surface-container-lowest text-on-surface text-sm" />
                 <span className="w-24 text-body-sm">{(Number(item.quantity) * Number(item.unitCost)).toFixed(3)}</span>
                 <button type="button" onClick={() => removeItem(idx)} className="text-error text-sm">✕</button>
               </div>
@@ -97,7 +97,7 @@ export default function PurchaseForm({ vendors, onSuccess, onClose }: PurchaseFo
           </div>
           <div>
             <label className="block text-body-sm text-on-surface-variant mb-1">{t('note')}</label>
-            <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface" />
+            <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface" />
           </div>
           <div className="flex items-center gap-2">
             <input type="checkbox" id="isPaid" checked={isPaid} onChange={e => setIsPaid(e.target.checked)} />

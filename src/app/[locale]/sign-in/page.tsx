@@ -23,7 +23,7 @@ export default async function SignInPage({
           <h1 className="font-display text-3xl font-bold text-on-surface">Caffe-YA</h1>
           <p className="text-on-surface-variant mt-1">{t('tagline')}</p>
           <div className="mt-2 flex justify-center gap-2">
-            <LanguageSwitcher locale={locale} />
+            <LanguageSwitcher />
           </div>
         </div>
 

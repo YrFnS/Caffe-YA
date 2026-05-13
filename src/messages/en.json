@@ -5,13 +5,18 @@
     "loading": "Loading...",
     "error": "Error",
     "retry": "Retry",
+    "somethingWentWrong": "Something went wrong!",
+    "tryAgain": "Try again",
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
     "create": "Create",
     "search": "Search",
-    "noResults": "No results found"
+    "noResults": "No results found",
+    "noItems": "No items found",
+    "emptyStateTitle": "Nothing here yet",
+    "emptyStateDescription": "Get started by creating your first item."
   },
   "nav": {
     "dashboard": "Dashboard",

@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
 import { getAllVendors } from '@/features/procurement/_services/vendorService'
 import VendorsList from '@/features/procurement/_components/VendorsList'
-import VendorModal from '@/features/procurement/_components/VendorModal'
 
 export default async function VendorsPage() {
   const session = await getSession()

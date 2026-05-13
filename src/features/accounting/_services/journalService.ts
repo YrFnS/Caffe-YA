@@ -1,7 +1,8 @@
 import { db } from '@/lib/db'
-import { eq, desc, and, sql } from 'drizzle-orm'
-import { journalEntries, journalEntryLines, chartOfAccounts } from '@/lib/schema'
-import type { JournalEntryRow, JournalLineRow } from '../_types'
+import { eq, desc, sql } from 'drizzle-orm'
+import { journalEntries, journalEntryLines } from '@/lib/schema'
+import type { JournalEntryRow } from '../_types'
+import { toCents } from '@/lib/currency'
 
 export async function getAllJournalEntries(limit = 50): Promise<JournalEntryRow[]> {
   const rows = await db.query.journalEntries.findMany({
@@ -66,12 +67,12 @@ export async function createJournalEntry(data: {
   // Validate double-entry: total debits must equal total credits
   const totalDebit = data.lines
     .filter(l => l.type === 'debit')
-    .reduce((sum, l) => sum + parseFloat(l.amount), 0)
+    .reduce((sum, l) => sum + toCents(Number(l.amount)), 0)
   const totalCredit = data.lines
     .filter(l => l.type === 'credit')
-    .reduce((sum, l) => sum + parseFloat(l.amount), 0)
+    .reduce((sum, l) => sum + toCents(Number(l.amount)), 0)
 
-  if (Math.abs(totalDebit - totalCredit) > 0.001) {
+  if (totalDebit !== totalCredit) {
     throw new Error(`Debits (${totalDebit}) must equal credits (${totalCredit})`)
   }
 
@@ -83,7 +84,7 @@ export async function createJournalEntry(data: {
     createdBy: data.createdBy,
   }).returning()
 
-  const lines = await db.insert(journalEntryLines).values(
+  await db.insert(journalEntryLines).values(
     data.lines.map(l => ({
       journalEntryId: entry.id,
       accountId: l.accountId,
@@ -91,7 +92,7 @@ export async function createJournalEntry(data: {
       amount: l.amount,
       note: l.note ?? null,
     }))
-  ).returning()
+  )
 
   return getJournalEntryById(entry.id) as Promise<JournalEntryRow>
 }

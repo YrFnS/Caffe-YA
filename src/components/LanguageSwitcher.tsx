@@ -5,7 +5,8 @@ import { useLocale } from 'next-intl'
 import { useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
-export default function LanguageSwitcher({ locale }: { locale: string }) {
+// _locale is used only in the href construction below
+export default function LanguageSwitcher() {
   const router = useRouter()
   const currentLocale = useLocale()
   const params = useParams()

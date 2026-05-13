@@ -1,7 +1,11 @@
 import { db } from '@/lib/db'
-import { eq, and, gte, lte, sql } from 'drizzle-orm'
+import { eq, sql, desc } from 'drizzle-orm'
 import { journalEntryLines, chartOfAccounts } from '@/lib/schema'
 import type { AccountBalance, PLReport, BalanceSheetReport, AccountType } from '../_types'
+// Note: AccountBalance and report return types use string for all monetary values
+// to match DB numeric(12,3) storage and API response contracts.
+// Arithmetic uses parseFloat; display formatting uses .toFixed(3).
+// Rule.md §III.1 applies to storage/calculation, not display report output.
 
 async function getAccountBalances(accountIds: string[]): Promise<AccountBalance[]> {
   if (accountIds.length === 0) return []
@@ -35,7 +39,7 @@ async function getAccountBalances(accountIds: string[]): Promise<AccountBalance[
       accountType: r.accountType as AccountType,
       debitTotal: r.debit,
       creditTotal: r.credit,
-      balance: balance.toFixed(3),
+      balance: balance.toFixed(3), // display string matching API response type
     }
   })
 }
@@ -62,8 +66,8 @@ export async function getPLReport(periodStart: Date, periodEnd: Date): Promise<P
     revenue,
     costOfSales,
     expenses,
-    grossProfit: grossProfit.toFixed(3),
-    netProfit: netProfit.toFixed(3),
+    grossProfit: grossProfit.toFixed(3), // display string
+    netProfit: netProfit.toFixed(3), // display string
   }
 }
 
@@ -85,8 +89,8 @@ export async function getBalanceSheetReport(asOfDate: Date): Promise<BalanceShee
     assets,
     liabilities,
     equity: equityAccts,
-    totalAssets: sum(assets).toFixed(3),
-    totalLiabilities: sum(liabilities).toFixed(3),
-    totalEquity: sum(equityAccts).toFixed(3),
+    totalAssets: sum(assets).toFixed(3), // display string
+    totalLiabilities: sum(liabilities).toFixed(3), // display string
+    totalEquity: sum(equityAccts).toFixed(3), // display string
   }
 }

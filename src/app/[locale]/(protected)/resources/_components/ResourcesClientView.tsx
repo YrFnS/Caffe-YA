@@ -129,7 +129,7 @@ export default function ResourcesClientView({
 
               {/* Action button for available resources */}
               {resource.status === 'available' && (
-                <div className="mt-3 pt-3 border-t border-outline-variant/15">
+                <div className="mt-3 pt-3">
                   <Button variant="ghost" size="sm" className="w-full">
                     {t('assign')}
                   </Button>

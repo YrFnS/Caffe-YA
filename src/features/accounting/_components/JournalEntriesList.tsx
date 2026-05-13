@@ -85,17 +85,17 @@ export default function JournalEntriesList({ entries, accounts }: JournalEntries
 
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-surface-container-high rounded-2xl p-6 w-full max-w-2xl shadow-xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-surface-container-high rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-headline-sm font-semibold mb-4">{t('newEntry')}</h2>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-body-sm text-on-surface-variant mb-1">{t('reference')}</label>
-                  <input value={reference} onChange={e => setReference(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface" />
+                  <input value={reference} onChange={e => setReference(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface" />
                 </div>
                 <div>
                   <label className="block text-body-sm text-on-surface-variant mb-1">{t('description')}</label>
-                  <input value={description} onChange={e => setDescription(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface" />
+                  <input value={description} onChange={e => setDescription(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface" />
                 </div>
               </div>
 
@@ -107,21 +107,21 @@ export default function JournalEntriesList({ entries, accounts }: JournalEntries
                 <div className="space-y-2">
                   {lines.map((line, i) => (
                     <div key={i} className="flex gap-2 items-center">
-                      <select value={line.type} onChange={e => updateLine(i, 'type', e.target.value as 'debit' | 'credit')} className="px-2 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface text-body-sm">
+                      <select value={line.type} onChange={e => updateLine(i, 'type', e.target.value as 'debit' | 'credit')} className="px-2 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface text-body-sm">
                         <option value="debit">{t('debit')}</option>
                         <option value="credit">{t('credit')}</option>
                       </select>
-                      <select value={line.accountId} onChange={e => updateLine(i, 'accountId', e.target.value)} className="flex-1 px-2 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface text-body-sm">
+                      <select value={line.accountId} onChange={e => updateLine(i, 'accountId', e.target.value)} className="flex-1 px-2 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface text-body-sm">
                         <option value="">— {t('selectAccount')} —</option>
                         {accounts.map(a => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}
                       </select>
-                      <input type="number" value={line.amount} onChange={e => updateLine(i, 'amount', e.target.value)} placeholder="0.000" step="0.001" className="w-32 px-2 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface text-body-sm" />
-                      <input value={line.note} onChange={e => updateLine(i, 'note', e.target.value)} placeholder={t('note')} className="w-24 px-2 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface text-body-sm" />
+                      <input type="number" value={line.amount} onChange={e => updateLine(i, 'amount', e.target.value)} placeholder="0.000" step="0.001" className="w-32 px-2 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface text-body-sm" />
+                      <input value={line.note} onChange={e => updateLine(i, 'note', e.target.value)} placeholder={t('note')} className="w-24 px-2 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface text-body-sm" />
                       {lines.length > 2 && <button onClick={() => removeLine(i)} className="text-error text-body-sm">×</button>}
                     </div>
                   ))}
                 </div>
-                <div className={`mt-2 text-body-sm font-medium ${isBalanced ? 'text-green-30' : 'text-error'}`}>
+                <div className={`mt-2 text-body-sm font-medium ${isBalanced ? 'text-secondary' : 'text-error'}`}>
                   {t('debit')}: {totalDebit.toFixed(3)} &nbsp; {t('credit')}: {totalCredit.toFixed(3)}
                   {!isBalanced && <span className="ms-2">⚠ {t('notBalanced')}</span>}
                 </div>

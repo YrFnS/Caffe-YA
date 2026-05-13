@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { createVendorAction, updateVendorAction, deleteVendorAction } from '../_actions/procurementActions'
+import { createVendorAction, updateVendorAction } from '../_actions/procurementActions'
 import type { VendorRow } from '../_types'
 
 interface VendorModalProps {
@@ -32,7 +32,7 @@ export default function VendorModal({ vendor, onSuccess, onClose }: VendorModalP
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-surface-container-high rounded-2xl p-6 w-full max-w-md shadow-xl">
+      <div className="bg-surface-container-high rounded-2xl p-6 w-full max-w-md shadow-md">
         <h2 className="text-headline-sm font-semibold mb-4">
           {vendor ? t('editVendor') : t('addVendor')}
         </h2>
@@ -42,7 +42,7 @@ export default function VendorModal({ vendor, onSuccess, onClose }: VendorModalP
             <input
               name="name"
               defaultValue={vendor?.name ?? ''}
-              className="w-full px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface"
+              className="w-full px-3 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface"
               required
             />
           </div>
@@ -51,7 +51,7 @@ export default function VendorModal({ vendor, onSuccess, onClose }: VendorModalP
             <input
               name="phone"
               defaultValue={vendor?.phone ?? ''}
-              className="w-full px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface"
+              className="w-full px-3 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface"
             />
           </div>
           <div>
@@ -60,7 +60,7 @@ export default function VendorModal({ vendor, onSuccess, onClose }: VendorModalP
               name="address"
               defaultValue={vendor?.address ?? ''}
               rows={2}
-              className="w-full px-3 py-2 rounded-lg border border-outline-variable bg-surface-container-lowest text-on-surface"
+              className="w-full px-3 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface"
             />
           </div>
           {error && <p className="text-error text-body-sm">{error}</p>}

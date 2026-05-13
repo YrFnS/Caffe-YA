@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { chromium } = require('playwright');
 
 const BASE = 'http://213.199.56.120:3000';

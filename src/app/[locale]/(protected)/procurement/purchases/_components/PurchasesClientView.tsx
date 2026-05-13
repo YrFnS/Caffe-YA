@@ -2,8 +2,6 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { getAllPurchases } from '@/features/procurement/_services/purchaseService'
-import { getAllVendors } from '@/features/procurement/_services/vendorService'
 import PurchasesList from '@/features/procurement/_components/PurchasesList'
 import PurchaseForm from '@/features/procurement/_components/PurchaseForm'
 import type { PurchaseRow, VendorRow } from '@/features/procurement/_types'
