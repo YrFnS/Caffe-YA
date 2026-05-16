@@ -45,7 +45,7 @@ export default function AccountsList({ accounts }: AccountsListProps) {
           <span className="text-on-surface">{acc.name}</span>
           {acc.nameAr && <span className="text-on-surface-variant ms-2">({acc.nameAr})</span>}
         </td>
-        <td className="p-3 text-body-sm">{t(`type.${acc.type}`)}</td>
+        <td className="p-3 text-body-sm">{t(`type${acc.type.charAt(0).toUpperCase() + acc.type.slice(1)}`)}</td>
         <td className="p-3">
           <span className={`px-2 py-1 rounded-full text-body-sm ${acc.isActive ? 'bg-secondary/10 text-secondary' : 'bg-error/10 text-error'}`}>
             {acc.isActive ? t('active') : t('inactive')}
@@ -108,7 +108,7 @@ export default function AccountsList({ accounts }: AccountsListProps) {
               <div>
                 <label className="block text-body-sm text-on-surface-variant mb-1">{t('type')}</label>
                 <select value={type} onChange={e => setType(e.target.value as AccountType)} className="w-full px-3 py-2 rounded-lg border border-outline bg-surface-container-lowest text-on-surface">
-                  {ACCOUNT_TYPES.map(tp => <option key={tp} value={tp}>{t(tp === 'cogs' ? 'type.cogs' : `type.${tp}`)}</option>)}
+                  {ACCOUNT_TYPES.map(tp => <option key={tp} value={tp}>{t(tp === 'cogs' ? 'typeCogs' : `type${tp.charAt(0).toUpperCase() + tp.slice(1)}`)}</option>)}
                 </select>
               </div>
               <div>

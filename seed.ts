@@ -1,10 +1,11 @@
+import 'dotenv/config'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
 import { hash } from 'bcryptjs'
 import { v4 as uuid } from 'uuid'
 import * as schema from './src/lib/schema'
 
-const pool = new Pool({ connectionString: 'postgresql://postgres:postgres@localhost:5432/caffe_ya' })
+const pool = new Pool({ connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5433/caffe_ya' })
 const db = drizzle(pool, { schema })
 
 async function seed() {

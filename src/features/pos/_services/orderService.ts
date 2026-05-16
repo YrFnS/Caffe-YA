@@ -164,3 +164,10 @@ export async function getOrderWithItems(orderId: string) {
     }
   })
 }
+
+export async function getDraftOrderItems(orderId: string) {
+  return db.query.orderItems.findMany({
+    where: and(eq(orderItems.orderId, orderId), isNull(orderItems.voidedAt)),
+    with: { product: true }
+  })
+}

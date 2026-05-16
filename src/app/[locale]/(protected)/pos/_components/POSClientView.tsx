@@ -21,6 +21,7 @@ interface POSClientViewProps {
   orderId: string
   cashierName: string
   shiftOpenedAt?: Date
+  initialCartItems?: CartItem[]
 }
 
 export default function POSClientView({
@@ -31,12 +32,13 @@ export default function POSClientView({
   orderId,
   cashierName,
   shiftOpenedAt,
+  initialCartItems = [],
 }: POSClientViewProps) {
   const t = useTranslations('pos')
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
   const [showResourceGrid, setShowResourceGrid] = useState(false)
   const [showCheckout, setShowCheckout] = useState(false)
-  const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const [cartItems, setCartItems] = useState<CartItem[]>(initialCartItems)
   const [isLoading, setIsLoading] = useState(false)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_timerDisplay, setTimerDisplay] = useState<string>('')

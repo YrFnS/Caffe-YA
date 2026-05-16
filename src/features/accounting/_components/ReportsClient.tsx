@@ -107,7 +107,7 @@ export default function ReportsClient({ initialPlData, initialBsData }: ReportsC
           <div className="space-y-4">
             {plData.revenue.length > 0 && (
               <div>
-                <h3 className="text-title-medium font-semibold text-on-surface mb-2">{t('type.revenue')}</h3>
+                <h3 className="text-title-medium font-semibold text-on-surface mb-2">{t('typeRevenue')}</h3>
                 <table className="w-full">
                   <tbody>
                     {plData.revenue.map(r => (
@@ -139,7 +139,7 @@ export default function ReportsClient({ initialPlData, initialBsData }: ReportsC
 
             {plData.expenses.length > 0 && (
               <div>
-                <h3 className="text-title-medium font-semibold text-on-surface mb-2">{t('type.expense')}</h3>
+                <h3 className="text-title-medium font-semibold text-on-surface mb-2">{t('typeExpense')}</h3>
                 <table className="w-full">
                   <tbody>
                     {plData.expenses.map(r => (
@@ -170,9 +170,9 @@ export default function ReportsClient({ initialPlData, initialBsData }: ReportsC
 
           <div className="grid grid-cols-3 gap-6">
             {[
-              { title: t('type.asset'), label: t('totalAssets'), accounts: bsData.assets, total: bsData.totalAssets },
-              { title: t('type.liability'), label: t('totalLiabilities'), accounts: bsData.liabilities, total: bsData.totalLiabilities },
-              { title: t('type.equity'), label: t('totalEquity'), accounts: bsData.equity, total: bsData.totalEquity },
+              { title: t('typeAsset'), label: t('totalAssets'), accounts: bsData.assets, total: bsData.totalAssets },
+              { title: t('typeLiability'), label: t('totalLiabilities'), accounts: bsData.liabilities, total: bsData.totalLiabilities },
+              { title: t('typeEquity'), label: t('totalEquity'), accounts: bsData.equity, total: bsData.totalEquity },
             ].map(col => (
               <div key={col.title}>
                 <h3 className="text-title-medium font-semibold text-on-surface mb-2">{col.title}</h3>
