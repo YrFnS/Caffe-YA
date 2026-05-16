@@ -32,7 +32,7 @@ export default async function InventoryPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-headline-lg font-semibold text-on-surface">{t('inventory.title')}</h1>
+        <h1 className="text-headline-lg font-semibold text-on-surface">{t('inventory')}</h1>
       </div>
       {typedLowStock.length > 0 && <AlertsBanner alerts={typedLowStock} />}
       <InventoryClientView

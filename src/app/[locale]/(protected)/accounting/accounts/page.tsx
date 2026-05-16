@@ -13,7 +13,7 @@ export default async function AccountsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-headline-lg font-semibold text-on-surface">{t('accounting.chartOfAccounts')}</h1>
+      <h1 className="text-headline-lg font-semibold text-on-surface">{t('accounting')}</h1>
       <AccountsList accounts={accounts} />
     </div>
   )

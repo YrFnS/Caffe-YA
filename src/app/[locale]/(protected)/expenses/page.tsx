@@ -19,7 +19,7 @@ export default async function ExpensesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-headline-lg font-semibold text-on-surface">{t('expenses.title')}</h1>
+      <h1 className="text-headline-lg font-semibold text-on-surface">{t('expenses')}</h1>
       <ExpensesList
         expenses={expenses}
         categories={categories}

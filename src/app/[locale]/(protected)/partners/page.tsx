@@ -19,7 +19,7 @@ export default async function PartnersPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-headline-lg font-semibold text-on-surface">{t('partners.title')}</h1>
+      <h1 className="text-headline-lg font-semibold text-on-surface">{t('partners')}</h1>
       <PartnersList
         partners={partners}
         dashboards={dashboards as Record<string, NonNullable<Awaited<ReturnType<typeof getPartnerDashboard>>>>}
