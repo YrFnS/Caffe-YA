@@ -9,7 +9,7 @@ export default async function EmployeesPage() {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
 
-  const t = await getTranslations('common')
+  const t = await getTranslations('nav')
 
   const allEmployees = await db.query.employees.findMany({
     where: eq(employees.isActive, true),

@@ -7,7 +7,7 @@ import PartnersList from '@/features/partners/_components/PartnersList'
 export default async function PartnersPage() {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
-  const t = await getTranslations('common')
+  const t = await getTranslations('nav')
 
   const partners = await getAllPartners()
   const dashboards: Record<string, Awaited<ReturnType<typeof getPartnerDashboard>>> = {}

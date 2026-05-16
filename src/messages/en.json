@@ -4,6 +4,7 @@
     "tagline": "Coffee & Gaming",
     "loading": "Loading...",
     "error": "Error",
+    "error_description": "Something went wrong. Please try again.",
     "retry": "Retry",
     "somethingWentWrong": "Something went wrong!",
     "tryAgain": "Try again",

@@ -10,7 +10,7 @@ export default async function ReportsPage() {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
 
-  const t = await getTranslations('common')
+  const t = await getTranslations('nav')
 
   const todaySummary = await getTodaySummary()
 
@@ -43,7 +43,7 @@ export default async function ReportsPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-surface-container-low p-4 rounded-lg">
-          <p className="text-sm text-on-surface-variant">Today's Sales</p>
+          <p className="text-sm text-on-surface-variant">Today&apos;s Sales</p>
           <p className="text-2xl font-bold text-on-surface">{todaySummary.salesTotal}</p>
         </div>
         <div className="bg-surface-container-low p-4 rounded-lg">

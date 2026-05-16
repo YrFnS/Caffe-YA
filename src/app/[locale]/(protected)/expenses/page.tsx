@@ -9,7 +9,7 @@ import ExpensesList from '@/features/expenses/_components/ExpensesList'
 export default async function ExpensesPage() {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
-  const t = await getTranslations('common')
+  const t = await getTranslations('nav')
 
   const [expenses, categories, activeShift] = await Promise.all([
     getAllExpenses(),

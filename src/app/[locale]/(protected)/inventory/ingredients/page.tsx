@@ -13,7 +13,7 @@ interface IngredientsPageProps {
 export default async function IngredientsPage({ searchParams }: IngredientsPageProps) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
-  const t = await getTranslations('common')
+  const t = await getTranslations('inventory')
 
   const params = await searchParams
   const [ingredients, units] = await Promise.all([
@@ -24,7 +24,7 @@ export default async function IngredientsPage({ searchParams }: IngredientsPageP
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-headline-lg font-semibold text-on-surface">{t('inventory.ingredients')}</h1>
+        <h1 className="text-headline-lg font-semibold text-on-surface">{t('ingredients')}</h1>
       </div>
       <IngredientTable ingredients={ingredients} units={units} />
       {(params.modal === 'add' || params.modal === 'edit') && (

@@ -4,6 +4,7 @@
     "tagline": "قهوة وألعاب",
     "loading": "جاري التحميل...",
     "error": "خطأ",
+    "error_description": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
     "retry": "إعادة المحاولة",
     "somethingWentWrong": "حدث خطأ ما!",
     "tryAgain": "حاول مجددًا",

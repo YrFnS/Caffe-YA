@@ -7,7 +7,7 @@ import CategoriesList from '@/features/expenses/_components/CategoriesList'
 export default async function CategoriesPage() {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
-  const t = await getTranslations('common')
+  const t = await getTranslations('expenses')
 
   const categories = await getAllCategories()
 

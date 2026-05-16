@@ -7,7 +7,7 @@ import AccountsList from '@/features/accounting/_components/AccountsList'
 export default async function AccountsPage() {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
-  const t = await getTranslations('common')
+  const t = await getTranslations('nav')
 
   const accounts = await getAllAccounts(true)
 

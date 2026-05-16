@@ -9,7 +9,7 @@ export default async function PayrollPage() {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
 
-  const t = await getTranslations('common')
+  const t = await getTranslations('nav')
 
   const entries = await db.query.payrollEntries.findMany({
     orderBy: [desc(payrollEntries.periodEnd)],
