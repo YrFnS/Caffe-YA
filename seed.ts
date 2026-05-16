@@ -21,6 +21,13 @@ async function seed() {
     passwordHash,
     isActive: true,
   }).onConflictDoNothing()
+  await db.insert(schema.accounts).values({
+    id: `acc_${uuid().replace(/-/g, '').slice(0, 16)}`,
+    userId: userId,
+    accountId: 'admin@caffe.ya',
+    providerId: 'credential',
+    password: passwordHash,
+  }).onConflictDoNothing()
   console.log('Created user:', userId)
 
   // 2. Create units

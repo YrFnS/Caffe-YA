@@ -53,19 +53,19 @@ export default async function RootLayout({
   const isRTL = locale === 'ar'
 
   return (
-    <html lang={locale} dir={isRTL ? 'rtl' : 'ltr'}>
-      <body
-        suppressHydrationWarning
-        className={`
-          ${inter.variable} ${manrope.variable}
-          ${ibmPlexArabic.variable} ${cairo.variable}
-          font-sans min-h-full antialiased
-        `}
-      >
-        <NextIntlClientProvider messages={messages}>
-          {children}
-        </NextIntlClientProvider>
-      </body>
-    </html>
+    <div
+      lang={locale}
+      dir={isRTL ? 'rtl' : 'ltr'}
+      suppressHydrationWarning
+      className={`
+        ${inter.variable} ${manrope.variable}
+        ${ibmPlexArabic.variable} ${cairo.variable}
+        font-sans min-h-full antialiased flex flex-col
+      `}
+    >
+      <NextIntlClientProvider messages={messages}>
+        {children}
+      </NextIntlClientProvider>
+    </div>
   )
 }

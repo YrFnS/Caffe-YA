@@ -18,6 +18,11 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: false,
   },
+  advanced: {
+    database: {
+      generateId: 'uuid',
+    },
+  },
   secret: env.BETTER_AUTH_SECRET,
   trustedOrigins: [env.BETTER_AUTH_URL],
   session: {

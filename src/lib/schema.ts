@@ -79,7 +79,7 @@ export const journalLineTypeEnum = pgEnum('journal_line_type', ['debit', 'credit
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const users = pgTable('users', {
-  id:           text('id').primaryKey(),
+  id:           uuid('id').primaryKey().defaultRandom(),
   name:         text('name').notNull(),
   email:        text('email').notNull().unique(),
   passwordHash: text('password_hash'),  // nullable — better-auth stores credentials in accounts table
