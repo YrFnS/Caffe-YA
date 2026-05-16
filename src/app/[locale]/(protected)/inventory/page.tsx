@@ -18,7 +18,7 @@ interface LowStockAlert {
 export default async function InventoryPage() {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
-  const t = await getTranslations('common')
+  const t = await getTranslations('nav')
 
   const [products, categories, ingredients, lowStockAlerts] = await Promise.all([
     getAllProducts(),
