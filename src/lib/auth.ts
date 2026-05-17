@@ -13,15 +13,11 @@ export const auth = betterAuth({
       account: schema.accounts,
       verification: schema.verifications,
     },
+    debugLogs: true,
   }),
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
-  },
-  advanced: {
-    database: {
-      generateId: 'uuid',
-    },
   },
   secret: env.BETTER_AUTH_SECRET,
   trustedOrigins: [env.BETTER_AUTH_URL],
