@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Table } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
@@ -15,6 +16,7 @@ interface UsersClientViewProps {
 }
 
 export default function UsersClientView({ users, roles, currentUserId }: UsersClientViewProps) {
+  const router = useRouter()
   const _t = useTranslations('admin')
   void _t // used via dynamic t() in JSX
   const [userList, setUserList] = useState(users)
@@ -117,10 +119,15 @@ export default function UsersClientView({ users, roles, currentUserId }: UsersCl
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button size="sm" onClick={() => router.push('?modal=add')}>
+          Add User
+        </Button>
+      </div>
       {editingId && (
         <div className="bg-surface-container-lowest border border-outline rounded-lg p-4">
           <h3 className="text-sm font-medium text-on-surface mb-3">
-            Assign Roles — {userList.find(u => u.id === editingId)?.name}
+            Assign Roles - {userList.find(u => u.id === editingId)?.name}
           </h3>
           <div className="flex flex-wrap gap-2">
             {roles.map(role => {
