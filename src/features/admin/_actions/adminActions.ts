@@ -2,7 +2,9 @@
 
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
-import { auth } from '@/lib/auth'
+import { hashPassword } from '@better-auth/utils/password'
+import { db } from '@/lib/db'
+import { users, accounts } from '@/lib/schema'
 import {
   getAllUsers,
   getUserById,
@@ -103,8 +105,21 @@ export async function createUserAction(formData: FormData) {
   if (password.length < 8) return { error: 'PASSWORD_TOO_SHORT' }
 
   try {
-    await auth.api.signUpEmail({
-      body: { name, email, password },
+    const passwordHash = await hashPassword(password)
+    const userId = crypto.randomUUID()
+    await db.insert(users).values({
+      id: userId,
+      name,
+      email,
+      passwordHash,
+      isActive: true,
+    })
+    await db.insert(accounts).values({
+      id: `acc_${crypto.randomUUID().replace(/-/g, '').slice(0, 16)}`,
+      userId,
+      accountId: email,
+      providerId: 'credential',
+      password: passwordHash,
     })
     revalidatePath('/admin/users')
     return { success: true }

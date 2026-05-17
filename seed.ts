@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
-import { hash } from 'bcryptjs'
+import { hashPassword } from '@better-auth/utils/password'
 import { v4 as uuid } from 'uuid'
 import * as schema from './src/lib/schema'
 
@@ -13,7 +13,7 @@ async function seed() {
 
   // 1. Create user
   const userId = uuid()
-  const passwordHash = await hash('admin123', 10)
+  const passwordHash = await hashPassword('admin123')
   await db.insert(schema.users).values({
     id: userId,
     name: 'Admin User',
@@ -128,6 +128,43 @@ async function seed() {
     name: 'Utilities',
   }).onConflictDoNothing()
   console.log('Created expense categories')
+
+  // 10. Create permissions
+  const permissions = [
+    { id: uuid(), key: 'admin.view', description: 'View admin panel', module: 'admin' },
+    { id: uuid(), key: 'admin.manage_users', description: 'Manage users', module: 'admin' },
+    { id: uuid(), key: 'admin.manage_roles', description: 'Manage roles', module: 'admin' },
+    { id: uuid(), key: 'admin.settings', description: 'Manage settings', module: 'admin' },
+  ]
+  for (const perm of permissions) {
+    await db.insert(schema.permissions).values(perm).onConflictDoNothing()
+  }
+  console.log('Created permissions')
+
+  // 11. Create Super Admin role
+  const superAdminRoleId = uuid()
+  await db.insert(schema.roles).values({
+    id: superAdminRoleId,
+    name: 'Super Admin',
+    description: 'Full access to all features',
+  }).onConflictDoNothing()
+  console.log('Created Super Admin role')
+
+  // 12. Assign all permissions to Super Admin role
+  for (const perm of permissions) {
+    await db.insert(schema.rolePermissions).values({
+      roleId: superAdminRoleId,
+      permissionId: perm.id,
+    }).onConflictDoNothing()
+  }
+  console.log('Assigned permissions to Super Admin role')
+
+  // 13. Assign Super Admin role to admin user
+  await db.insert(schema.userRoles).values({
+    userId: userId,
+    roleId: superAdminRoleId,
+  }).onConflictDoNothing()
+  console.log('Assigned Super Admin role to admin user')
 
   console.log('Seed complete!')
   await pool.end()
