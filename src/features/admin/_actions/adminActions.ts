@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
+import { auth } from '@/lib/auth'
 import {
   getAllUsers,
   getUserById,
@@ -87,6 +88,29 @@ export async function setUserRolesAction(userId: string, roleIds: string[]) {
   await setUserRoles(userId, roleIds)
   revalidatePath('/admin/users')
   return { success: true }
+}
+
+export async function createUserAction(formData: FormData) {
+  const session = await getSession()
+  if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'admin.manage_users')
+
+  const name = formData.get('name') as string
+  const email = formData.get('email') as string
+  const password = formData.get('password') as string
+
+  if (!name || !email || !password) return { error: 'INVALID_INPUT' }
+  if (password.length < 8) return { error: 'PASSWORD_TOO_SHORT' }
+
+  try {
+    await auth.api.signUpEmail({
+      body: { name, email, password },
+    })
+    revalidatePath('/admin/users')
+    return { success: true }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'CREATE_USER_FAILED' }
+  }
 }
 
 // ─── Role Actions ─────────────────────────────────────────────────────────────
