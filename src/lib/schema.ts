@@ -636,3 +636,7 @@ export const journalEntryLinesRelations = relations(journalEntryLines, ({ one })
   entry:   one(journalEntries,  { fields: [journalEntryLines.journalEntryId], references: [journalEntries.id] }),
   account: one(chartOfAccounts, { fields: [journalEntryLines.accountId],      references: [chartOfAccounts.id] }),
 }))
+
+export const employeesRelations = relations(employees, ({ one }) => ({
+  user: one(users, { fields: [employees.userId], references: [users.id] }),
+}))
