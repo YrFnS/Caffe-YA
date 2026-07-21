@@ -14,12 +14,12 @@ interface StatCardProps {
 
 function StatCard({ label, value, icon, valueColor = 'text-on-surface' }: StatCardProps) {
   return (
-    <div className="bg-surface-container-lowest p-6 rounded-lg flex flex-col gap-3">
+    <div className="group flex min-h-36 flex-col gap-5 rounded-2xl border border-outline-variant/60 bg-white p-5 shadow-[0_8px_30px_rgba(24,34,48,.05)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_38px_rgba(24,34,48,.09)]">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-on-surface-variant">{label}</span>
-        <span className="text-on-surface-variant">{icon}</span>
+        <span className="text-sm font-medium text-on-surface-variant">{label}</span>
+        <span className="grid h-9 w-9 place-items-center rounded-xl bg-surface-container-low text-secondary transition group-hover:bg-secondary group-hover:text-white">{icon}</span>
       </div>
-      <p className={`text-2xl font-display font-bold ${valueColor} mt-auto`}>
+      <p className={`mt-auto font-display text-3xl font-bold tracking-tight ${valueColor}`}>
         {value}
       </p>
     </div>
@@ -35,7 +35,7 @@ export default function DashboardWidgets({ summary }: DashboardWidgetsProps) {
   const isOpen = summary.shiftStatus === 'open'
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <StatCard
         label={t('todaySales')}
         value={formatIQD(summary.salesTotal)}

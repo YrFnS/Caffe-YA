@@ -8,7 +8,7 @@ import { requirePermission } from '@/features/admin/_actions/adminActions'
 export async function addItemAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
-  await requirePermission(session.user.id, 'pos.modify_order')
+  await requirePermission(session.user.id, 'pos.checkout')
 
   const orderId = formData.get('orderId') as string
   const productId = formData.get('productId') as string
@@ -31,7 +31,7 @@ export async function addItemAction(formData: FormData) {
 export async function removeItemAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
-  await requirePermission(session.user.id, 'pos.modify_order')
+  await requirePermission(session.user.id, 'pos.checkout')
 
   const itemId = formData.get('itemId') as string
 
@@ -51,7 +51,7 @@ export async function removeItemAction(formData: FormData) {
 export async function updateQuantityAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
-  await requirePermission(session.user.id, 'pos.modify_order')
+  await requirePermission(session.user.id, 'pos.checkout')
 
   const itemId = formData.get('itemId') as string
   const quantity = parseInt(formData.get('quantity') as string, 10)
@@ -72,7 +72,7 @@ export async function updateQuantityAction(formData: FormData) {
 export async function clearOrderAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
-  await requirePermission(session.user.id, 'pos.modify_order')
+  await requirePermission(session.user.id, 'pos.checkout')
 
   const orderId = formData.get('orderId') as string
 

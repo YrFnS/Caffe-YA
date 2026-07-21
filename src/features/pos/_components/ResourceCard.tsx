@@ -13,11 +13,12 @@ interface ResourceCardProps {
 
 export default function ResourceCard({ resource, onClick, disabled }: ResourceCardProps) {
   const t = useTranslations('pos')
+  const imageSrc = resource.localImageName?.startsWith('http') ? resource.localImageName : null
 
   const statusStyles = {
-    available: 'bg-surface-container-lowest border-s-4 border-secondary',
-    occupied: 'bg-surface-container-lowest border-s-4 border-tertiary',
-    maintenance: 'bg-surface-container-low border-s-4 border-tertiary-fixed-dim',
+    available: 'bg-white border-secondary/25',
+    occupied: 'bg-white border-tertiary/25',
+    maintenance: 'bg-surface-container-low border-outline-variant',
   }
 
   return (
@@ -26,13 +27,19 @@ export default function ResourceCard({ resource, onClick, disabled }: ResourceCa
       onClick={onClick}
       disabled={disabled || resource.status === 'maintenance'}
       className={cn(
-        'relative flex flex-col p-4 rounded-lg transition-all',
-        'hover:scale-[1.02] active:scale-[0.98]',
+        'relative overflow-hidden rounded-2xl border p-3 text-start shadow-sm transition-all',
+        'hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98]',
         statusStyles[resource.status],
         disabled && 'opacity-50 cursor-not-allowed'
       )}
     >
-      <div className="flex items-center justify-between mb-3">
+      {imageSrc && (
+        <div className="mb-3 h-28 overflow-hidden rounded-xl">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={imageSrc} alt="" className="h-full w-full object-cover" />
+        </div>
+      )}
+      <div className="mb-3 flex items-center justify-between">
         <Monitor className={cn(
           'w-8 h-8',
           resource.status === 'available' ? 'text-secondary' : 'text-on-surface-variant'

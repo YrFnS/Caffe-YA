@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from 'react'
+import { createAuthClient } from 'better-auth/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -22,6 +23,8 @@ import {
   FileText,
   LogOut,
   User,
+  Coffee,
+  Gamepad2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -41,6 +44,10 @@ const navItems = [
   { href: '/reports', icon: FileText, label: 'reports' },
 ]
 
+const authClient = createAuthClient({
+  baseURL: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000',
+})
+
 export default function ProtectedLayout({
   children,
 }: {
@@ -49,7 +56,6 @@ export default function ProtectedLayout({
   const router = useRouter()
   const pathname = usePathname()
   const t = useTranslations('nav')
-  const tCommon = useTranslations('common')
   
   const locale = pathname.split('/')[1] || 'en'
   const [currentLocale, setCurrentLocale] = useState(locale)
@@ -60,15 +66,26 @@ export default function ProtectedLayout({
     router.push(`/${newLocale}${pathWithoutLocale || '/dashboard'}`)
   }
 
+  const handleSignOut = async () => {
+    await authClient.signOut()
+    router.push(`/${locale}/sign-in`)
+    router.refresh()
+  }
+
   return (
-    <div className="flex h-screen bg-surface">
-      <aside className="w-60 h-screen bg-surface-container-low flex flex-col">
-        <div className="p-4">
-          <h1 className="font-display text-xl font-bold text-on-surface mb-0.5">Caffe-YA</h1>
-          <p className="text-sm text-on-surface-variant">{tCommon('tagline')}</p>
+    <div className="flex min-h-screen bg-surface">
+      <aside className="sticky top-0 flex h-screen w-20 shrink-0 flex-col border-e border-white/10 bg-[#111923] text-white lg:w-72">
+        <div className="flex items-center gap-3 border-b border-white/10 p-4 lg:p-6">
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-secondary text-white shadow-lg shadow-secondary/20">
+            <Coffee className="h-5 w-5" />
+          </div>
+          <div className="hidden min-w-0 lg:block">
+            <h1 className="font-display text-xl font-bold tracking-tight">Caffe YA</h1>
+            <p className="truncate text-xs text-slate-400">Cafe × Gaming</p>
+          </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto p-2 space-y-1">
+        <nav className="flex-1 space-y-1 overflow-y-auto p-2 lg:p-3">
           {navItems.map((item) => {
             const isActive = pathname === `/${locale}${item.href}`
             return (
@@ -76,43 +93,48 @@ export default function ProtectedLayout({
                 key={item.href}
                 href={`/${locale}${item.href}`}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                  'flex items-center justify-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all lg:justify-start',
                   isActive
-                    ? 'bg-surface-container-highest text-on-surface'
-                    : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
+                    ? 'bg-white/12 text-white shadow-sm ring-1 ring-white/10'
+                    : 'text-slate-400 hover:bg-white/7 hover:text-white'
                 )}
+                title={t(item.label)}
               >
-                <item.icon className="w-5 h-5" />
-                <span>{t(item.label)}</span>
+                <item.icon className="h-5 w-5 shrink-0" />
+                <span className="hidden lg:inline">{t(item.label)}</span>
               </Link>
             )
           })}
         </nav>
 
-        <div className="p-3 space-y-2">
-          <div className="flex items-center gap-2 px-3 py-2">
-            <User className="w-5 h-5 text-on-surface-variant" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-on-surface truncate">Admin User</p>
-              <p className="text-xs text-on-surface-variant">admin@caffe.ya</p>
+        <div className="space-y-2 border-t border-white/10 p-2 lg:p-3">
+          <div className="flex items-center justify-center gap-3 rounded-xl bg-white/5 px-2 py-2.5 lg:justify-start">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/10">
+              <User className="h-4 w-4 text-slate-300" />
+            </div>
+            <div className="hidden min-w-0 flex-1 lg:block">
+              <p className="truncate text-sm font-medium text-white">Caffe YA Team</p>
+              <p className="truncate text-xs text-slate-400">Signed in</p>
             </div>
           </div>
           
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start text-tertiary hover:text-tertiary hover:bg-tertiary/10"
+            onClick={handleSignOut}
+            className="w-full justify-center text-slate-400 hover:bg-white/7 hover:text-white lg:justify-start"
+            title={t('signOut')}
           >
-            <LogOut className="w-4 h-4 me-2" />
-            {t('signOut')}
+            <LogOut className="h-4 w-4 lg:me-2" />
+            <span className="hidden lg:inline">{t('signOut')}</span>
           </Button>
 
-          <div className="flex items-center gap-2 pt-2">
+          <div className="grid grid-cols-1 gap-1 pt-1 lg:grid-cols-2">
             <Button
               variant={currentLocale === 'en' ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => handleLocaleChange('en')}
-              className="flex-1"
+              className="h-9 px-1 text-xs"
             >
               EN
             </Button>
@@ -120,7 +142,7 @@ export default function ProtectedLayout({
               variant={currentLocale === 'ar' ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => handleLocaleChange('ar')}
-              className="flex-1"
+              className="h-9 px-1 text-xs"
             >
               العربية
             </Button>
@@ -128,8 +150,13 @@ export default function ProtectedLayout({
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto p-6">
-        {children}
+      <main className="min-w-0 flex-1 overflow-auto">
+        <div className="mx-auto max-w-[1600px] p-4 sm:p-6 lg:p-10">
+          <div className="mb-6 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+            <Gamepad2 className="h-4 w-4 text-secondary" /> Live operations
+          </div>
+          {children}
+        </div>
       </main>
     </div>
   )

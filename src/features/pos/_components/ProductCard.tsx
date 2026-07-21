@@ -1,7 +1,6 @@
 "use client"
 
 import { Plus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { Product } from '../_types'
 
@@ -12,25 +11,25 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, onAdd }: ProductCardProps) {
   const price = Number(product.price)
+  const imageSrc = product.localImageName?.startsWith('http') ? product.localImageName : `/uploads/products/${product.localImageName}`
 
   return (
     <button
       type="button"
       onClick={() => onAdd(product)}
       className={cn(
-        'group relative flex flex-col items-start p-4 rounded-lg',
-        'bg-surface-container-lowest transition-colors',
-        'hover:bg-surface-container-high active:scale-[0.98]',
+        'group relative flex flex-col items-start rounded-2xl border border-outline-variant/60 bg-white p-3 shadow-sm transition-all',
+        'hover:-translate-y-0.5 hover:border-secondary/30 hover:shadow-lg active:scale-[0.98]',
         'text-start'
       )}
     >
-      <div className="w-full aspect-square mb-3 rounded-md bg-surface-container-low flex items-center justify-center">
+      <div className="mb-3 flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-xl bg-surface-container-low">
         {product.localImageName ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={`/uploads/products/${product.localImageName}`}
+            src={imageSrc}
             alt={product.name}
-            className="w-full h-full object-cover rounded-md"
+            className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
           />
         ) : (
           <span className="text-2xl text-on-surface-variant">
@@ -48,9 +47,9 @@ export default function ProductCard({ product, onAdd }: ProductCardProps) {
       </p>
 
       <div className="absolute top-2 end-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full">
+        <span className="grid h-8 w-8 place-items-center rounded-full bg-secondary text-white shadow-md">
           <Plus className="w-4 h-4" />
-        </Button>
+        </span>
       </div>
     </button>
   )

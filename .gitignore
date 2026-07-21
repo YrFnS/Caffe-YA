@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# neon local project context
+.neon
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
@@ -54,3 +57,4 @@ drafft.md
 draft.md
 dogfood-output/
 .playwright-mcp/
+.vercel

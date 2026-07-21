@@ -16,12 +16,13 @@ export default function DashboardContent({ summary, lowStockItems }: DashboardCo
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-semibold text-on-surface mb-6">
-        {t('dashboard')}
-      </h1>
+      <div className="mb-7">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-on-surface">{t('dashboard')}</h1>
+        <p className="mt-1 text-sm text-on-surface-variant">Sales, service, and shift activity at a glance.</p>
+      </div>
 
       {lowStockItems.length > 0 && (
-        <div className="bg-warning/15 text-warning border border-warning/20 p-4 rounded-lg mb-6 flex items-start gap-3">
+        <div className="mb-6 flex items-start gap-3 rounded-2xl border border-warning/20 bg-warning/10 p-4 text-warning">
           <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0" />
           <div>
             <p className="font-medium">{tInventory('lowStockAlert')}</p>

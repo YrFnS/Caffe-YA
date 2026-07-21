@@ -5,6 +5,7 @@ import { createAuthClient } from 'better-auth/client'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { LockKeyhole, Mail } from 'lucide-react'
 
 const authClient = createAuthClient({
   baseURL: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000',
@@ -49,33 +50,33 @@ export default function SignInForm({ locale }: SignInFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-label-md text-on-surface-variant mb-1.5">
+        <label htmlFor="email" className="mb-2 block text-sm font-semibold text-on-surface">
           {t('email')}
         </label>
-        <input
+        <div className="relative"><Mail className="pointer-events-none absolute start-4 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-disabled" /><input
+          id="email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="admin@caffe.ya"
-          className="w-full h-12 px-4 bg-surface-container-highest rounded-lg text-body-lg text-on-surface
-            outline-none focus:ring-2 focus:ring-outline placeholder:text-on-surface-disabled"
+          className="h-12 w-full rounded-xl border border-outline-variant bg-white px-4 ps-11 text-on-surface outline-none transition focus:border-secondary focus:ring-4 focus:ring-secondary/10 placeholder:text-on-surface-disabled"
           required
-        />
+        /></div>
       </div>
 
       <div>
-        <label className="block text-label-md text-on-surface-variant mb-1.5">
+        <label htmlFor="password" className="mb-2 block text-sm font-semibold text-on-surface">
           {t('password')}
         </label>
-        <input
+        <div className="relative"><LockKeyhole className="pointer-events-none absolute start-4 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-disabled" /><input
+          id="password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="••••••••"
-          className="w-full h-12 px-4 bg-surface-container-highest rounded-lg text-body-lg text-on-surface
-            outline-none focus:ring-2 focus:ring-outline placeholder:text-on-surface-disabled"
+          className="h-12 w-full rounded-xl border border-outline-variant bg-white px-4 ps-11 text-on-surface outline-none transition focus:border-secondary focus:ring-4 focus:ring-secondary/10 placeholder:text-on-surface-disabled"
           required
-        />
+        /></div>
       </div>
 
       {error && (
@@ -85,7 +86,7 @@ export default function SignInForm({ locale }: SignInFormProps) {
       <Button
         type="submit"
         disabled={loading || !email || !password ? true : false}
-        className="w-full h-12"
+        className="h-12 w-full rounded-xl bg-secondary text-white shadow-lg shadow-secondary/20 hover:bg-secondary/90"
       >
         {loading ? tCommon('loading') : t('signIn')}
       </Button>

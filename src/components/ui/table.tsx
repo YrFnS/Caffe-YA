@@ -51,15 +51,15 @@ function Table<T>({
   }
 
   return (
-    <div className="w-full overflow-auto">
+    <div className="w-full overflow-auto rounded-2xl border border-outline-variant/60 bg-white shadow-sm">
       <table className="w-full border-collapse">
         <thead>
-          <tr className="border-b border-outline">
+          <tr className="border-b border-outline-variant bg-surface-container-low/60">
             {columns.map((col) => (
               <th
                 key={col.key}
                 className={cn(
-                  "px-4 py-3 text-start text-sm font-medium text-on-surface-variant",
+                  "px-4 py-3.5 text-start text-xs font-semibold uppercase tracking-wide text-on-surface-variant",
                   col.sortable && "cursor-pointer select-none hover:text-on-surface"
                 )}
                 onClick={() => handleSort(col.key, col)}
@@ -78,7 +78,7 @@ function Table<T>({
           {data.map((row, i) => (
             <tr
               key={i}
-              className="border-b border-outline hover:bg-surface-container-high/50"
+              className="border-b border-outline-variant/70 transition-colors last:border-0 hover:bg-surface-container-low/60"
             >
               {columns.map((col) => (
                 <td key={col.key} className="px-4 py-3 text-sm text-on-surface">
