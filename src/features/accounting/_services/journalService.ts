@@ -67,34 +67,35 @@ export async function createJournalEntry(data: {
   // Validate double-entry: total debits must equal total credits
   const totalDebit = data.lines
     .filter(l => l.type === 'debit')
-    .reduce((sum, l) => sum + toCents(Number(l.amount)), 0)
+    .reduce((sum, l) => sum + toCents(l.amount), 0)
   const totalCredit = data.lines
     .filter(l => l.type === 'credit')
-    .reduce((sum, l) => sum + toCents(Number(l.amount)), 0)
+    .reduce((sum, l) => sum + toCents(l.amount), 0)
 
   if (totalDebit !== totalCredit) {
     throw new Error(`Debits (${totalDebit}) must equal credits (${totalCredit})`)
   }
 
-  const [entry] = await db.insert(journalEntries).values({
-    reference: data.reference,
-    description: data.description,
-    sourceType: data.sourceType,
-    sourceId: data.sourceId,
-    createdBy: data.createdBy,
-  }).returning()
+  const entryId = await db.transaction(async (tx) => {
+    const [entry] = await tx.insert(journalEntries).values({
+      reference: data.reference,
+      description: data.description,
+      sourceType: data.sourceType,
+      sourceId: data.sourceId,
+      createdBy: data.createdBy,
+    }).returning()
 
-  await db.insert(journalEntryLines).values(
-    data.lines.map(l => ({
+    await tx.insert(journalEntryLines).values(data.lines.map(line => ({
       journalEntryId: entry.id,
-      accountId: l.accountId,
-      type: l.type,
-      amount: l.amount,
-      note: l.note ?? null,
-    }))
-  )
+      accountId: line.accountId,
+      type: line.type,
+      amount: line.amount,
+      note: line.note ?? null,
+    })))
+    return entry.id
+  })
 
-  return getJournalEntryById(entry.id) as Promise<JournalEntryRow>
+  return getJournalEntryById(entryId) as Promise<JournalEntryRow>
 }
 
 export async function getAccountBalance(accountId: string): Promise<{ debit: string; credit: string }> {

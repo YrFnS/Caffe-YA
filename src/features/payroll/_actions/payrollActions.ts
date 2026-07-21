@@ -11,22 +11,27 @@ import {
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { requirePermission } from '@/features/admin/_actions/adminActions'
+import { fromCents, toCents } from '@/lib/currency'
 
 export async function getPayrollEntriesAction() {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'payroll.view')
   return getAllPayrollEntries()
 }
 
 export async function getPayrollEntryAction(id: string) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'payroll.view')
   return getPayrollEntryById(id)
 }
 
 export async function createPayrollEntryAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'payroll.manage')
 
   const employeeId = formData.get('employeeId') as string
   const periodStart = formData.get('periodStart') as string
@@ -40,11 +45,7 @@ export async function createPayrollEntryAction(formData: FormData) {
     return { error: 'INVALID_INPUT' }
   }
 
-  const netAmount = (
-    parseFloat(baseSalary) +
-    parseFloat(bonuses || '0') -
-    parseFloat(deductions || '0')
-  ).toFixed(3)
+  const netAmount = fromCents(toCents(baseSalary) + toCents(bonuses || '0') - toCents(deductions || '0'))
 
   try {
     await createPayrollEntry({
@@ -69,6 +70,7 @@ export async function createPayrollEntryAction(formData: FormData) {
 export async function updatePayrollEntryAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'payroll.manage')
 
   const entryId = formData.get('id') as string
   if (!entryId) return { error: 'INVALID_INPUT' }
@@ -91,11 +93,7 @@ export async function updatePayrollEntryAction(formData: FormData) {
   if (note !== null) data.note = note || null
 
   if (baseSalary) {
-    const netAmount = (
-      parseFloat(baseSalary) +
-      parseFloat(bonuses || '0') -
-      parseFloat(deductions || '0')
-    ).toFixed(3)
+    const netAmount = fromCents(toCents(baseSalary) + toCents(bonuses || '0') - toCents(deductions || '0'))
     data.netAmount = netAmount
   }
 
@@ -112,11 +110,12 @@ export async function updatePayrollEntryAction(formData: FormData) {
 export async function markPayrollPaidAction(entryId: string) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'payroll.manage')
 
   if (!entryId) return { error: 'INVALID_INPUT' }
 
   try {
-    await markPayrollPaid(entryId)
+    await markPayrollPaid(entryId, session.user.id)
     revalidatePath('/payroll')
     return { success: true }
   } catch (e) {
@@ -128,6 +127,7 @@ export async function markPayrollPaidAction(entryId: string) {
 export async function deletePayrollEntryAction(entryId: string) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'payroll.manage')
 
   if (!entryId) return { error: 'INVALID_INPUT' }
 

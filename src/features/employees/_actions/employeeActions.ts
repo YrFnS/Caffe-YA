@@ -10,22 +10,26 @@ import {
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { requirePermission } from '@/features/admin/_actions/adminActions'
 
 export async function getEmployeesAction() {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'employees.view')
   return getAllEmployees()
 }
 
 export async function getEmployeeAction(id: string) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'employees.view')
   return getEmployeeById(id)
 }
 
 export async function createEmployeeAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'employees.manage')
 
   const name = formData.get('name') as string
   const phone = formData.get('phone') as string | null
@@ -56,6 +60,7 @@ export async function createEmployeeAction(formData: FormData) {
 export async function updateEmployeeAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'employees.manage')
 
   const employeeId = formData.get('id') as string
   if (!employeeId) return { error: 'INVALID_INPUT' }
@@ -88,6 +93,7 @@ export async function updateEmployeeAction(formData: FormData) {
 export async function deleteEmployeeAction(employeeId: string) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'employees.manage')
 
   if (!employeeId) return { error: 'INVALID_INPUT' }
 

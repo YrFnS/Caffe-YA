@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { createPurchaseAction } from '../_actions/procurementActions'
 import type { VendorRow } from '../_types'
+import { formatCurrency, fromCents, multiplyDecimalMoney, toCents } from '@/lib/currency'
 
 interface PurchaseFormProps {
   vendors: VendorRow[]
@@ -19,6 +20,10 @@ interface LineItem {
   unitCost: string
 }
 
+function lineTotal(item: LineItem) {
+  try { return multiplyDecimalMoney(item.unitCost || '0', item.quantity || '0') } catch { return '0.000' }
+}
+
 export default function PurchaseForm({ vendors, onSuccess, onClose }: PurchaseFormProps) {
   const t = useTranslations('procurement')
   const [loading, setLoading] = useState(false)
@@ -28,7 +33,7 @@ export default function PurchaseForm({ vendors, onSuccess, onClose }: PurchaseFo
   const [note, setNote] = useState('')
   const [items, setItems] = useState<LineItem[]>([])
 
-  const total = items.reduce((sum, i) => sum + Number(i.quantity) * Number(i.unitCost), 0).toFixed(3)
+  const total = fromCents(items.reduce((sum, item) => sum + toCents(lineTotal(item)), 0))
 
   function addItem() {
     setItems([...items, { ingredientId: '', productId: '', name: '', quantity: '1', unitCost: '0' }])
@@ -52,7 +57,7 @@ export default function PurchaseForm({ vendors, onSuccess, onClose }: PurchaseFo
         productId: i.productId || null,
         quantity: i.quantity,
         unitCost: i.unitCost,
-        totalCost: (Number(i.quantity) * Number(i.unitCost)).toFixed(3),
+        totalCost: lineTotal(i),
       }))
 
     const formData = new FormData()
@@ -89,7 +94,7 @@ export default function PurchaseForm({ vendors, onSuccess, onClose }: PurchaseFo
                 <input placeholder={t('ingredientId')} value={item.ingredientId} onChange={e => updateItem(idx, 'ingredientId', e.target.value)} className="flex-1 px-2 py-1 rounded border border-outline bg-surface-container-lowest text-on-surface text-sm" />
                 <input placeholder={t('qty')} value={item.quantity} onChange={e => updateItem(idx, 'quantity', e.target.value)} className="w-20 px-2 py-1 rounded border border-outline bg-surface-container-lowest text-on-surface text-sm" />
                 <input placeholder={t('unitCost')} value={item.unitCost} onChange={e => updateItem(idx, 'unitCost', e.target.value)} className="w-28 px-2 py-1 rounded border border-outline bg-surface-container-lowest text-on-surface text-sm" />
-                <span className="w-24 text-body-sm">{(Number(item.quantity) * Number(item.unitCost)).toFixed(3)}</span>
+                <span className="w-24 text-body-sm">{formatCurrency(lineTotal(item))}</span>
                 <button type="button" onClick={() => removeItem(idx)} className="text-error text-sm">✕</button>
               </div>
             ))}
@@ -104,7 +109,7 @@ export default function PurchaseForm({ vendors, onSuccess, onClose }: PurchaseFo
             <label htmlFor="isPaid" className="text-body-sm text-on-surface">{t('paid')}</label>
           </div>
           <div className="flex justify-end text-headline-sm font-semibold">
-            {t('total')}: {Number(total).toLocaleString()}
+            {t('total')}: {formatCurrency(total)}
           </div>
           {error && <p className="text-error text-body-sm">{error}</p>}
           <div className="flex gap-3 pt-2">

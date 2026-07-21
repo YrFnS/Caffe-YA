@@ -8,26 +8,30 @@ import {
   getAllPurchases, getPurchaseById, getPurchaseItems,
   createPurchase, markPurchasePaid, deletePurchase,
 } from '../_services/purchaseService'
-import { getAllGoodsReceipts } from '../_services/goodsReceiptService'
+import { getAllGoodsReceipts, getGoodsReceiptById, receivePurchase } from '../_services/goodsReceiptService'
 import { revalidatePath } from 'next/cache'
+import { fromCents, multiplyDecimalMoney, toCents } from '@/lib/currency'
 
 // ─── Vendor Actions ─────────────────────────────────────────────────────────
 
 export async function getVendorsAction() {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'procurement.view')
   return getAllVendors()
 }
 
 export async function getVendorAction(id: string) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'procurement.view')
   return getVendorById(id)
 }
 
 export async function createVendorAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'procurement.create_po')
 
   const name = formData.get('name') as string
   const phone = formData.get('phone') as string | null
@@ -46,6 +50,7 @@ export async function createVendorAction(formData: FormData) {
 export async function updateVendorAction(vendorId: string, formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'procurement.create_po')
 
   const name = formData.get('name') as string
   const phone = formData.get('phone') as string | null
@@ -66,6 +71,7 @@ export async function updateVendorAction(vendorId: string, formData: FormData) {
 export async function deleteVendorAction(id: string) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'procurement.delete_po')
   try {
     await deleteVendor(id)
     revalidatePath('/procurement/vendors')
@@ -83,18 +89,21 @@ export async function getPurchasesAction(filters?: {
 }) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'procurement.view')
   return getAllPurchases(filters)
 }
 
 export async function getPurchaseAction(id: string) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'procurement.view')
   return getPurchaseById(id)
 }
 
 export async function getPurchaseItemsAction(purchaseId: string) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'procurement.view')
   return getPurchaseItems(purchaseId)
 }
 
@@ -122,8 +131,16 @@ export async function createPurchaseAction(formData: FormData) {
   }
 
   if (!items.length) return { error: 'NO_ITEMS' }
-
-  const totalAmount = String(items.reduce((sum, i) => sum + Number(i.totalCost), 0)) // stored as numeric, no toFixed
+  try {
+    items = items.map(item => {
+      if (Boolean(item.ingredientId) === Boolean(item.productId)) throw new Error('INVALID_ITEM_TARGET')
+      if (toCents(item.quantity) <= 0 || toCents(item.unitCost) < 0) throw new Error('INVALID_ITEM_AMOUNT')
+      return { ...item, totalCost: multiplyDecimalMoney(item.unitCost, item.quantity) }
+    })
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'INVALID_ITEMS' }
+  }
+  const totalAmount = fromCents(items.reduce((sum, item) => sum + toCents(item.totalCost), 0))
 
   try {
     const result = await createPurchase({
@@ -172,11 +189,26 @@ export async function deletePurchaseAction(id: string) {
 export async function getGoodsReceiptsAction() {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'procurement.view')
   return getAllGoodsReceipts()
 }
 
-// ─── Goods Receipt Actions ────────────────────────────────────────────────────
+export async function getGoodsReceiptAction(id: string) {
+  const session = await getSession()
+  if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'procurement.view')
+  return getGoodsReceiptById(id)
+}
 
-// createGoodsReceiptAction and getGoodsReceiptItemsAction are commented out
-// because goodsReceipts/goodsReceiptItems tables do not exist in the schema.
-// When the tables are added, uncomment and implement these actions.
+export async function receivePurchaseAction(purchaseId: string, note?: string) {
+  const session = await getSession()
+  if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'procurement.receive_goods')
+  try {
+    const receipt = await receivePurchase(purchaseId, session.user.id, note)
+    revalidatePath('/procurement/purchases')
+    return { success: true, receipt }
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'RECEIVE_PURCHASE_FAILED' }
+  }
+}

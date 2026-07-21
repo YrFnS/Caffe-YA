@@ -1,6 +1,7 @@
 import { db } from '@/lib/db'
 import { resources, resourceCategories, orders } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
+import { addMoney, fromCents, prorateMoney, toCents } from '@/lib/currency'
 
 export async function getResourcesWithCategories() {
   return db.query.resources.findMany({
@@ -29,6 +30,10 @@ export async function assignResourceToOrder(resourceId: string, orderId: string)
       throw new Error('RESOURCE_NOT_AVAILABLE')
     }
 
+    const [order] = await tx.select().from(orders).where(eq(orders.id, orderId)).for('update')
+    if (!order || !['draft', 'open'].includes(order.status)) throw new Error('ORDER_NOT_OPEN')
+    if (order.resourceId) throw new Error('ORDER_ALREADY_HAS_RESOURCE')
+
     await tx.update(resources)
       .set({ status: 'occupied' })
       .where(eq(resources.id, resourceId))
@@ -47,7 +52,7 @@ export async function assignResourceToOrder(resourceId: string, orderId: string)
         .where(eq(orders.id, orderId))
     }
 
-    return resource
+    return { resource, timerStartedAt: category?.isTimed ? new Date() : null }
   })
 }
 
@@ -58,15 +63,16 @@ export async function startTimer(orderId: string) {
 }
 
 export async function stopTimer(orderId: string) {
-  const order = await db.query.orders.findFirst({ where: eq(orders.id, orderId) })
-  if (!order || !order.timerStartedAt) return null
+  return db.transaction(async tx => {
+  const [order] = await tx.select().from(orders).where(eq(orders.id, orderId)).for('update')
+  if (!order || !order.timerStartedAt || order.timerEndedAt) return null
 
   const startTime = new Date(order.timerStartedAt)
   const endTime = new Date()
   const elapsedMs = endTime.getTime() - startTime.getTime()
   const elapsedMinutes = Math.floor(elapsedMs / 60000)
 
-  const resource = await db.query.resources.findFirst({
+  const resource = await tx.query.resources.findFirst({
     where: eq(resources.id, order.resourceId!),
     with: { category: true },
   })
@@ -78,26 +84,32 @@ export async function stopTimer(orderId: string) {
   const graceMin = graceMinutes ?? 0
 
   const chargeableMinutes = Math.max(elapsedMinutes - graceMin, minMin)
-  const charge = (chargeableMinutes / 60) * Number(hourlyRate)
+  const charge = prorateMoney(hourlyRate ?? '0', chargeableMinutes, 60)
 
-  await db.update(orders)
+  await tx.update(orders)
     .set({
       timerEndedAt: endTime,
-      timerChargeAmount: String(charge), // stored as numeric, no formatting needed
+      timerChargeAmount: charge,
+      totalAmount: fromCents(toCents(order.subtotal) + toCents(charge)),
     })
     .where(eq(orders.id, orderId))
 
   return {
     elapsedMinutes,
     chargeableMinutes,
-    charge: Number(charge.toFixed(3)), // display only
+    charge,
   }
+  })
 }
 
 export async function transferOrder(orderId: string, newResourceId: string) {
   return db.transaction(async (tx) => {
-    const order = await tx.query.orders.findFirst({ where: eq(orders.id, orderId) })
-    if (!order) throw new Error('ORDER_NOT_FOUND')
+    const [order] = await tx.select().from(orders).where(eq(orders.id, orderId)).for('update')
+    if (!order || !['draft', 'open'].includes(order.status)) throw new Error('ORDER_NOT_OPEN')
+    if (order.resourceId === newResourceId) throw new Error('RESOURCE_ALREADY_ASSIGNED')
+
+    const [newResource] = await tx.select().from(resources).where(eq(resources.id, newResourceId)).for('update')
+    if (!newResource || newResource.status !== 'available') throw new Error('NEW_RESOURCE_NOT_AVAILABLE')
 
     if (order.resourceId) {
       await tx.update(resources)
@@ -105,8 +117,8 @@ export async function transferOrder(orderId: string, newResourceId: string) {
         .where(eq(resources.id, order.resourceId))
     }
 
-    let timerCharge = '0'
-    if (order.timerStartedAt) {
+    let timerCharge = order.timerChargeAmount ?? '0'
+    if (order.timerStartedAt && !order.timerEndedAt) {
       const startTime = new Date(order.timerStartedAt)
       const endTime = new Date()
       const elapsedMinutes = Math.floor((endTime.getTime() - startTime.getTime()) / 60000)
@@ -119,15 +131,8 @@ export async function transferOrder(orderId: string, newResourceId: string) {
         const minMin = minimumMinutes ?? 0
         const graceMin = graceMinutes ?? 0
         const chargeableMinutes = Math.max(elapsedMinutes - graceMin, minMin)
-        timerCharge = String((chargeableMinutes / 60) * Number(hourlyRate)) // stored as numeric
+        timerCharge = addMoney(timerCharge, prorateMoney(hourlyRate ?? '0', chargeableMinutes, 60))
       }
-    }
-
-    const newResource = await tx.query.resources.findFirst({
-      where: eq(resources.id, newResourceId),
-    })
-    if (!newResource || newResource.status !== 'available') {
-      throw new Error('NEW_RESOURCE_NOT_AVAILABLE')
     }
 
     await tx.update(resources)
@@ -138,16 +143,18 @@ export async function transferOrder(orderId: string, newResourceId: string) {
       where: eq(resourceCategories.id, newResource.categoryId),
     })
 
+    const nextTimerStartedAt = newCategory?.isTimed ? new Date() : null
     await tx.update(orders)
       .set({
         resourceId: newResourceId,
-        timerStartedAt: newCategory?.isTimed ? new Date() : order.timerStartedAt,
+        timerStartedAt: nextTimerStartedAt,
         timerEndedAt: newCategory?.isTimed ? null : order.timerEndedAt,
         timerChargeAmount: timerCharge,
+        totalAmount: fromCents(toCents(order.subtotal) + toCents(timerCharge)),
       })
       .where(eq(orders.id, orderId))
 
-    return { timerCharge }
+    return { timerCharge, timerStartedAt: nextTimerStartedAt }
   })
 }
 

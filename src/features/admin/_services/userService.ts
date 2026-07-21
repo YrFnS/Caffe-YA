@@ -49,12 +49,10 @@ export async function updateUser(
 }
 
 export async function setUserRoles(userId: string, roleIds: string[]): Promise<void> {
-  // Remove existing roles
-  await db.delete(userRoles).where(eq(userRoles.userId, userId))
-  // Add new roles
-  for (const roleId of roleIds) {
-    await db.insert(userRoles).values({ userId, roleId })
-  }
+  await db.transaction(async tx => {
+    await tx.delete(userRoles).where(eq(userRoles.userId, userId))
+    if (roleIds.length) await tx.insert(userRoles).values(roleIds.map(roleId => ({ userId, roleId })))
+  })
 }
 
 export async function getAllRoles() {

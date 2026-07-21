@@ -3,6 +3,7 @@
 import { Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Product } from '../_types'
+import { formatCurrency } from '@/lib/currency'
 
 interface ProductCardProps {
   product: Product
@@ -10,7 +11,6 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, onAdd }: ProductCardProps) {
-  const price = Number(product.price)
   const imageSrc = product.localImageName?.startsWith('http') ? product.localImageName : `/uploads/products/${product.localImageName}`
 
   return (
@@ -43,7 +43,7 @@ export default function ProductCard({ product, onAdd }: ProductCardProps) {
       </h3>
 
       <p className="text-label-md text-secondary font-semibold">
-        {price.toLocaleString('en-US', { minimumFractionDigits: 0 })} IQD
+        {formatCurrency(product.price)} IQD
       </p>
 
       <div className="absolute top-2 end-2 opacity-0 group-hover:opacity-100 transition-opacity">

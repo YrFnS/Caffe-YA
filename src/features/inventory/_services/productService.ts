@@ -2,6 +2,7 @@ import { db } from '@/lib/db'
 import { eq, desc, asc } from 'drizzle-orm'
 import { products, productIngredients } from '@/lib/schema'
 import type { Product, ProductIngredientRow } from '../_types'
+import { fromCents, multiplyDecimalMoney, toCents } from '@/lib/currency'
 
 export async function getAllProducts(includeInactive = false): Promise<(Product & { categoryName: string })[]> {
   const allProducts = await db.query.products.findMany({
@@ -128,8 +129,8 @@ export async function getRecipeCost(productId: string): Promise<string> {
   for (const r of results) {
     const ing = ingredientMap.get(r.ingredientId)
     if (ing) {
-      total += Number(ing.costPerUnit) * Number(r.quantityUsed)
+      total += toCents(multiplyDecimalMoney(ing.costPerUnit ?? '0', r.quantityUsed))
     }
   }
-  return total.toFixed(3) // display: formatted recipe cost string
+  return fromCents(total)
 }

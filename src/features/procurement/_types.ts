@@ -18,6 +18,7 @@ export interface PurchaseRow {
   createdBy: string | null
   creatorName: string | null
   createdAt: Date
+  receivedAt?: Date | null
 }
 
 export interface PurchaseItemRow {

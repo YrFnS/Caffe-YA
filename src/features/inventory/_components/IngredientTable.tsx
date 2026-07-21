@@ -7,6 +7,7 @@ import { Pencil } from 'lucide-react'
 import { Table } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import type { Unit } from '@/features/inventory/_types'
+import { formatCurrency } from '@/lib/currency'
 
 interface IngredientWithUnitName {
   id: string
@@ -61,7 +62,7 @@ export default function IngredientTable({ ingredients }: IngredientTableProps) {
       label: t('costPerUnit'),
       render: (row: IngredientWithUnitName) => (
         <span className="font-mono text-on-surface-variant">
-          {Number(row.costPerUnit).toFixed(3)}
+          {formatCurrency(row.costPerUnit ?? '0')}
         </span>
       ),
     },

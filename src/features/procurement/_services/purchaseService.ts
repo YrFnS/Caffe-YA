@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
 import { eq, inArray } from 'drizzle-orm'
-import { purchases, purchaseItems, ingredients, products } from '@/lib/schema'
+import { goodsReceipts, purchases, purchaseItems, ingredients, products } from '@/lib/schema'
 import type { PurchaseRow, PurchaseItemRow } from '../_types'
 
 export async function getAllPurchases(filters?: {
@@ -12,6 +12,8 @@ export async function getAllPurchases(filters?: {
   const rows = await db.query.purchases.findMany({
     with: { vendor: { columns: { name: true } } },
   })
+  const receipts = await db.select({ purchaseId: goodsReceipts.purchaseId, receivedAt: goodsReceipts.receivedAt }).from(goodsReceipts)
+  const receiptMap = new Map(receipts.map(receipt => [receipt.purchaseId, receipt.receivedAt]))
 
   let filtered = rows
   if (filters?.vendorId) {
@@ -31,6 +33,7 @@ export async function getAllPurchases(filters?: {
     ...r,
     vendorName: r.vendor?.name ?? null,
     creatorName: null,
+    receivedAt: receiptMap.get(r.id) ?? null,
   }))
 }
 

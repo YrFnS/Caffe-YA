@@ -20,5 +20,5 @@ export interface PermissionGroup {
   permissions: Permission[]
 }
 
-export const MODULES = ['pos', 'inventory', 'shifts', 'admin', 'procurement', 'expenses', 'accounting', 'partners'] as const
+export const MODULES = ['pos', 'resources', 'inventory', 'shifts', 'admin', 'procurement', 'expenses', 'employees', 'payroll', 'accounting', 'partners', 'reports'] as const
 export type Module = (typeof MODULES)[number]

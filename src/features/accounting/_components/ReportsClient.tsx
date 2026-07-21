@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import type { PLReport, BalanceSheetReport } from '@/features/accounting/_types'
+import { formatCurrency } from '@/lib/currency'
 
 interface ReportsClientProps {
   initialPlData?: PLReport | null
@@ -113,7 +114,7 @@ export default function ReportsClient({ initialPlData, initialBsData }: ReportsC
                     {plData.revenue.map(r => (
                       <tr key={r.accountId} className="border-b border-outline-variant">
                         <td className="p-2 text-on-surface">{r.accountName}</td>
-                        <td className="p-2 text-end font-mono text-on-surface">{parseFloat(r.balance).toLocaleString()}</td>
+                        <td className="p-2 text-end font-mono text-on-surface">{formatCurrency(r.balance)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -129,7 +130,7 @@ export default function ReportsClient({ initialPlData, initialBsData }: ReportsC
                     {plData.costOfSales.map(r => (
                       <tr key={r.accountId} className="border-b border-outline-variant">
                         <td className="p-2 text-on-surface">{r.accountName}</td>
-                        <td className="p-2 text-end font-mono text-on-surface">{parseFloat(r.balance).toLocaleString()}</td>
+                        <td className="p-2 text-end font-mono text-on-surface">{formatCurrency(r.balance)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -145,7 +146,7 @@ export default function ReportsClient({ initialPlData, initialBsData }: ReportsC
                     {plData.expenses.map(r => (
                       <tr key={r.accountId} className="border-b border-outline-variant">
                         <td className="p-2 text-on-surface">{r.accountName}</td>
-                        <td className="p-2 text-end font-mono text-on-surface">{parseFloat(r.balance).toLocaleString()}</td>
+                        <td className="p-2 text-end font-mono text-on-surface">{formatCurrency(r.balance)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -155,8 +156,8 @@ export default function ReportsClient({ initialPlData, initialBsData }: ReportsC
           </div>
 
           <div className="flex justify-end gap-8 border-t border-outline pt-4">
-            <div><span className="text-on-surface-variant me-4">{t('grossProfit')}:</span><span className="font-mono font-semibold text-on-surface">{parseFloat(plData.grossProfit).toLocaleString()}</span></div>
-            <div><span className="text-on-surface-variant me-4">{t('netProfit')}:</span><span className="font-mono font-semibold text-primary">{parseFloat(plData.netProfit).toLocaleString()}</span></div>
+            <div><span className="text-on-surface-variant me-4">{t('grossProfit')}:</span><span className="font-mono font-semibold text-on-surface">{formatCurrency(plData.grossProfit)}</span></div>
+            <div><span className="text-on-surface-variant me-4">{t('netProfit')}:</span><span className="font-mono font-semibold text-primary">{formatCurrency(plData.netProfit)}</span></div>
           </div>
         </div>
       )}
@@ -181,12 +182,12 @@ export default function ReportsClient({ initialPlData, initialBsData }: ReportsC
                     {col.accounts.map(a => (
                       <tr key={a.accountId} className="border-b border-outline-variant">
                         <td className="p-2 text-on-surface text-body-sm">{a.accountName}</td>
-                        <td className="p-2 text-end font-mono text-on-surface text-body-sm">{parseFloat(a.balance).toLocaleString()}</td>
+                        <td className="p-2 text-end font-mono text-on-surface text-body-sm">{formatCurrency(a.balance)}</td>
                       </tr>
                     ))}
                     <tr className="border-t-2 border-outline font-semibold">
                       <td className="p-2 text-on-surface">{col.label}</td>
-                      <td className="p-2 text-end font-mono text-on-surface">{parseFloat(col.total).toLocaleString()}</td>
+                      <td className="p-2 text-end font-mono text-on-surface">{formatCurrency(col.total)}</td>
                     </tr>
                   </tbody>
                 </table>

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import type { CartItem, ActiveOrder, Product } from '../_types'
+import { fromCents, multiplyMoney, toCents } from '@/lib/currency'
 
 interface UseCartProps {
   order: ActiveOrder | null
@@ -31,7 +32,7 @@ export function useCart({ order, onAddItem, onRemoveItem, onUpdateQuantity, onCl
         await onUpdateQuantity(existing.orderItemId || existing.productId, existing.quantity + 1)
         setItems(prev => prev.map(i =>
           i.productId === product.id
-            ? { ...i, quantity: i.quantity + 1, totalPrice: (Number(i.unitPrice) * (i.quantity + 1)).toFixed(3) } // local display only — server recalculates from unitPrice * quantity
+            ? { ...i, quantity: i.quantity + 1, totalPrice: multiplyMoney(i.unitPrice, i.quantity + 1) }
             : i
         ))
       } else {
@@ -68,7 +69,7 @@ export function useCart({ order, onAddItem, onRemoveItem, onUpdateQuantity, onCl
     await onUpdateQuantity(item.orderItemId, quantity)
     setItems(prev => prev.map(i =>
       i.productId === productId
-        ? { ...i, quantity, totalPrice: (Number(i.unitPrice) * quantity).toFixed(3) } // local display only — server recalculates from unitPrice * quantity
+        ? { ...i, quantity, totalPrice: multiplyMoney(i.unitPrice, quantity) }
         : i
     ))
   }, [items, onUpdateQuantity])
@@ -78,14 +79,14 @@ export function useCart({ order, onAddItem, onRemoveItem, onUpdateQuantity, onCl
     setItems([])
   }, [onClearOrder])
 
-  const subtotal = items.reduce((sum, i) => sum + Number(i.totalPrice), 0)
-  const total = subtotal + Number(order?.timerCharge || 0)
+  const subtotal = items.reduce((sum, item) => sum + toCents(item.totalPrice), 0)
+  const total = subtotal + toCents(order?.timerCharge || '0')
 
   return {
     items,
-    subtotal: subtotal.toFixed(3),
+    subtotal: fromCents(subtotal),
     timerCharge: order?.timerCharge || '0',
-    total: total.toFixed(3),
+    total: fromCents(total),
     isLoading,
     addItem,
     removeItem,

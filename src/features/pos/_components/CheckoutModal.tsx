@@ -5,6 +5,7 @@ import { X, Banknote, CreditCard, Smartphone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
+import { formatCurrency } from '@/lib/currency'
 
 type PaymentMethod = 'cash' | 'card' | 'mobile_wallet'
 
@@ -76,7 +77,7 @@ export default function CheckoutModal({
         <div className="p-6 text-center">
           <p className="text-body-sm text-on-surface-variant mb-1">{t('total')}</p>
           <p className="text-display-lg font-bold text-secondary">
-            {Number(total).toLocaleString()} IQD
+            {formatCurrency(total)} IQD
           </p>
         </div>
 

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import PurchasesList from '@/features/procurement/_components/PurchasesList'
 import PurchaseForm from '@/features/procurement/_components/PurchaseForm'
+import GoodsReceiptForm from '@/features/procurement/_components/GoodsReceiptForm'
 import type { PurchaseRow, VendorRow } from '@/features/procurement/_types'
 
 interface PurchasesClientViewProps {
@@ -14,6 +15,7 @@ interface PurchasesClientViewProps {
 export default function PurchasesClientView({ purchases, vendors }: PurchasesClientViewProps) {
   const t = useTranslations('procurement')
   const [showForm, setShowForm] = useState(false)
+  const [receivingPurchase, setReceivingPurchase] = useState<PurchaseRow | null>(null)
 
   return (
     <div className="space-y-6">
@@ -29,7 +31,7 @@ export default function PurchasesClientView({ purchases, vendors }: PurchasesCli
       <PurchasesList
         purchases={purchases}
         onNewPurchase={() => setShowForm(false)}
-        onViewReceipt={() => {}}
+        onViewReceipt={id => setReceivingPurchase(purchases.find(purchase => purchase.id === id) ?? null)}
       />
       {showForm && (
         <PurchaseForm
@@ -38,6 +40,7 @@ export default function PurchasesClientView({ purchases, vendors }: PurchasesCli
           onClose={() => setShowForm(false)}
         />
       )}
+      {receivingPurchase && <GoodsReceiptForm purchase={receivingPurchase} onClose={() => setReceivingPurchase(null)} />}
     </div>
   )
 }

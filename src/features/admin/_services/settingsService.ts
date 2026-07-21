@@ -25,7 +25,7 @@ export async function getAllSettings(): Promise<Record<string, unknown>> {
 
 export async function getModuleStatus(module: string): Promise<boolean> {
   const row = await db.query.systemModules.findFirst({ where: eq(systemModules.module, module) })
-  return row?.isActive ?? false
+  return row?.isActive ?? true
 }
 
 export async function setModuleStatus(

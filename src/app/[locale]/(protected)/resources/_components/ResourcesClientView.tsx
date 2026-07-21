@@ -6,6 +6,7 @@ import { Clock, Monitor } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { Resource } from '@/features/pos/_types'
+import { formatCurrency } from '@/lib/currency'
 
 interface ResourcesClientViewProps {
   resources: (Resource & { category?: { isTimed: boolean; hourlyRate: string | null; name: string } })[]
@@ -113,7 +114,7 @@ export default function ResourcesClientView({
               {/* Hourly rate for timed resources */}
               {resource.category?.isTimed && resource.category?.hourlyRate && (
                 <p className="text-label-sm text-secondary font-medium mb-3">
-                  {Number(resource.category.hourlyRate).toLocaleString()}/hr
+                  {formatCurrency(resource.category.hourlyRate)}/hr
                 </p>
               )}
 

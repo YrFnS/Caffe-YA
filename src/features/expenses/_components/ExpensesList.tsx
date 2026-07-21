@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { createExpenseAction, deleteExpenseAction } from '../_actions/expenseActions'
 import type { ExpenseRow, ExpenseCategoryRow } from '../_types'
+import { formatCurrency } from '@/lib/currency'
 
 interface ExpensesListProps {
   expenses: ExpenseRow[]
@@ -72,7 +73,7 @@ export default function ExpensesList({ expenses, categories, currentShiftId }: E
               {filtered.map(e => (
                 <tr key={e.id} className="border-b border-outline-variant hover:bg-surface-container-hover">
                   <td className="p-3 text-on-surface">{e.categoryName ?? '—'}</td>
-                  <td className="p-3 text-on-surface">{Number(e.amount).toLocaleString()}</td>
+                  <td className="p-3 text-on-surface">{formatCurrency(e.amount)}</td>
                   <td className="p-3 text-on-surface text-body-sm">{e.description ?? '—'}</td>
                   <td className="p-3 text-on-surface-variant text-body-sm">{new Date(e.createdAt).toLocaleDateString()}</td>
                   <td className="p-3">

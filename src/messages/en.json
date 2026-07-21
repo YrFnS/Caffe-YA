@@ -39,7 +39,9 @@
     "shiftStatus": "Shift Status",
     "closed": "Closed",
     "open": "Open",
-    "signOut": "Sign Out"
+    "signOut": "Sign Out",
+    "signedIn": "Signed in",
+    "liveOperations": "Live operations"
   },
   "auth": {
     "signIn": "Sign In",
@@ -75,6 +77,7 @@
     "newOrder": "New Order",
     "emptyCart": "No items in order",
     "selectResource": "Select a table or station",
+    "stopTimer": "Stop timer",
     "available": "Available",
     "occupied": "Occupied",
     "maintenance": "Maintenance",
@@ -291,6 +294,31 @@
     "totalEquity": "Total Equity",
     "asOfDate": "As of Date",
     "generateReport": "Generate Report"
+  },
+  "reports": {
+    "title": "Reports",
+    "from": "From",
+    "to": "To",
+    "action": "Action",
+    "all": "All",
+    "apply": "Apply",
+    "netSales": "Net sales",
+    "expenses": "Expenses",
+    "net": "Net result",
+    "orders": "Orders",
+    "paymentBreakdown": "Payment breakdown",
+    "topProducts": "Top products",
+    "recentOrders": "Recent orders",
+    "auditLog": "Audit log",
+    "noData": "No data for this period",
+    "noAudit": "No matching audit activity",
+    "id": "ID",
+    "cashier": "Cashier",
+    "status": "Status",
+    "total": "Total",
+    "date": "Date",
+    "user": "User",
+    "target": "Target"
   },
   "partners": {
     "title": "Partners",

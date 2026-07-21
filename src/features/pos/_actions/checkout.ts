@@ -3,9 +3,6 @@
 import { checkoutOrder } from '../_services/orderService'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { after } from 'next/server'
-import { db } from '@/lib/db'
-import { auditLogs } from '@/lib/schema'
 import { requirePermission } from '@/features/admin/_actions/adminActions'
 
 export async function processCheckout(formData: FormData) {
@@ -23,23 +20,7 @@ export async function processCheckout(formData: FormData) {
   }
 
   try {
-    const userId = session.user.id as string
-    await checkoutOrder(orderId, paymentMethod, amount, reference || undefined, userId)
-
-    after(async () => {
-      try {
-        await db.insert(auditLogs).values({
-          userId,
-          action: 'CHECKOUT_ORDER',
-          targetTable: 'orders',
-          targetId: orderId,
-          oldValue: { status: 'draft' },
-          newValue: { status: 'closed', paymentMethod, amount, reference },
-        })
-      } catch (e) {
-        console.error('Audit log failed:', e)
-      }
-    })
+    await checkoutOrder(orderId, paymentMethod, amount, reference || undefined, session.user.id)
 
     return { success: true }
   } catch (error) {

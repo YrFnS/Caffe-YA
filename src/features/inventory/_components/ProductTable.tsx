@@ -7,6 +7,7 @@ import { Pencil } from 'lucide-react'
 import { Table } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import type { Product, ProductCategory } from '@/features/inventory/_types'
+import { formatCurrency } from '@/lib/currency'
 
 interface ProductTableProps {
   products: (Product & { categoryName: string })[]
@@ -54,7 +55,7 @@ export default function ProductTable({ products }: ProductTableProps) {
       key: 'price',
       label: t('price'),
       render: (row: Product) => (
-        <span className="font-mono">{Number(row.price).toLocaleString()} IQD</span>
+        <span className="font-mono">{formatCurrency(row.price)} IQD</span>
       ),
     },
     {

@@ -9,14 +9,19 @@ import {
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { requirePermission } from '@/features/admin/_actions/adminActions'
 
 export async function getCategoriesAction() {
+  const session = await getSession()
+  if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'inventory.view')
   return getAllCategories()
 }
 
 export async function createCategoryAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'inventory.manage_categories')
 
   const name = formData.get('name') as string
   const nameAr = formData.get('nameAr') as string | null
@@ -40,6 +45,7 @@ export async function createCategoryAction(formData: FormData) {
 export async function updateCategoryAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'inventory.manage_categories')
 
   const categoryId = formData.get('categoryId') as string
   if (!categoryId) return { error: 'INVALID_INPUT' }
@@ -66,6 +72,7 @@ export async function updateCategoryAction(formData: FormData) {
 export async function deleteCategoryAction(categoryId: string) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'inventory.manage_categories')
 
   if (!categoryId) return { error: 'INVALID_INPUT' }
 

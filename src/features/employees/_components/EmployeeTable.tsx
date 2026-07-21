@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { deleteEmployeeAction } from '@/features/employees/_actions/employeeActions'
 import type { EmployeeRecord } from '@/features/employees/_services/employeeService'
+import { formatCurrency } from '@/lib/currency'
 
 interface EmployeeTableProps {
   employees: EmployeeRecord[]
@@ -49,7 +50,7 @@ export default function EmployeeTable({ employees: initialEmployees }: EmployeeT
       label: 'Salary',
       render: (row: EmployeeRecord) => (
         <span className="font-mono text-on-surface">
-          {Number(row.salaryAmount).toLocaleString()} ({row.salaryType})
+          {formatCurrency(row.salaryAmount)} ({row.salaryType})
         </span>
       ),
     },

@@ -53,6 +53,9 @@ export default async function POSPage({
       cashierName={session.user.name || 'Cashier'}
       shiftOpenedAt={activeShift.openedAt}
       initialCartItems={initialCartItems}
+      initialTimerStartedAt={draftOrder.timerStartedAt}
+      initialTimerCharge={draftOrder.timerChargeAmount ?? '0'}
+      initialResourceId={draftOrder.resourceId}
     />
   )
 }

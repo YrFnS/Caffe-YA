@@ -10,18 +10,26 @@ import {
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { requirePermission } from '@/features/admin/_actions/adminActions'
 
 export async function getIngredientsAction() {
+  const session = await getSession()
+  if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'inventory.view')
   return getAllIngredients()
 }
 
 export async function getLowStockIngredientsAction() {
+  const session = await getSession()
+  if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'inventory.view')
   return getLowStockIngredients()
 }
 
 export async function createIngredientAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'inventory.manage_ingredients')
 
   const name = formData.get('name') as string
   const unitId = formData.get('unitId') as string
@@ -49,6 +57,7 @@ export async function createIngredientAction(formData: FormData) {
 export async function updateIngredientAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'inventory.manage_ingredients')
 
   const ingredientId = formData.get('ingredientId') as string
   if (!ingredientId) return { error: 'INVALID_INPUT' }
@@ -81,6 +90,7 @@ export async function updateIngredientAction(formData: FormData) {
 export async function deleteIngredientAction(ingredientId: string) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'inventory.manage_ingredients')
 
   if (!ingredientId) return { error: 'INVALID_INPUT' }
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createAuthClient } from 'better-auth/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -27,21 +27,22 @@ import {
   Gamepad2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { getNavigationAccessAction } from '@/features/admin/_actions/adminActions'
 
 const navItems = [
-  { href: '/dashboard', icon: LayoutDashboard, label: 'dashboard' },
-  { href: '/pos', icon: ShoppingCart, label: 'pos' },
-  { href: '/resources', icon: Monitor, label: 'resources' },
-  { href: '/shifts', icon: Clock, label: 'shifts' },
-  { href: '/inventory', icon: Package, label: 'inventory' },
-  { href: '/procurement', icon: Truck, label: 'procurement' },
-  { href: '/expenses', icon: Wallet, label: 'expenses' },
-  { href: '/employees', icon: Users, label: 'employees' },
-  { href: '/payroll', icon: CreditCard, label: 'payroll' },
-  { href: '/accounting', icon: PieChart, label: 'accounting' },
-  { href: '/partners', icon: Handshake, label: 'partners' },
-  { href: '/admin/users', icon: Settings, label: 'admin' },
-  { href: '/reports', icon: FileText, label: 'reports' },
+  { href: '/dashboard', icon: LayoutDashboard, label: 'dashboard', module: null },
+  { href: '/pos', icon: ShoppingCart, label: 'pos', module: 'pos' },
+  { href: '/resources', icon: Monitor, label: 'resources', module: 'resources' },
+  { href: '/shifts', icon: Clock, label: 'shifts', module: 'shifts' },
+  { href: '/inventory', icon: Package, label: 'inventory', module: 'inventory' },
+  { href: '/procurement', icon: Truck, label: 'procurement', module: 'procurement' },
+  { href: '/expenses', icon: Wallet, label: 'expenses', module: 'expenses' },
+  { href: '/employees', icon: Users, label: 'employees', module: 'employees' },
+  { href: '/payroll', icon: CreditCard, label: 'payroll', module: 'payroll' },
+  { href: '/accounting', icon: PieChart, label: 'accounting', module: 'accounting' },
+  { href: '/partners', icon: Handshake, label: 'partners', module: 'partners' },
+  { href: '/admin/users', icon: Settings, label: 'admin', module: 'admin' },
+  { href: '/reports', icon: FileText, label: 'reports', module: 'reports' },
 ]
 
 const authClient = createAuthClient({
@@ -59,6 +60,15 @@ export default function ProtectedLayout({
   
   const locale = pathname.split('/')[1] || 'en'
   const [currentLocale, setCurrentLocale] = useState(locale)
+  const [access, setAccess] = useState<{ userName: string; modules: string[]; disabledModules: string[] } | null>(null)
+
+  useEffect(() => {
+    getNavigationAccessAction().then(setAccess)
+  }, [])
+
+  const visibleNavItems = navItems.filter(item => item.module === null || (
+    access?.modules.includes(item.module) && !access.disabledModules.includes(item.module)
+  ))
 
   const handleLocaleChange = (newLocale: string) => {
     setCurrentLocale(newLocale)
@@ -86,7 +96,7 @@ export default function ProtectedLayout({
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto p-2 lg:p-3">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const isActive = pathname === `/${locale}${item.href}`
             return (
               <Link
@@ -113,8 +123,8 @@ export default function ProtectedLayout({
               <User className="h-4 w-4 text-slate-300" />
             </div>
             <div className="hidden min-w-0 flex-1 lg:block">
-              <p className="truncate text-sm font-medium text-white">Caffe YA Team</p>
-              <p className="truncate text-xs text-slate-400">Signed in</p>
+              <p className="truncate text-sm font-medium text-white">{access?.userName ?? 'Caffe YA'}</p>
+              <p className="truncate text-xs text-slate-400">{t('signedIn')}</p>
             </div>
           </div>
           
@@ -153,7 +163,7 @@ export default function ProtectedLayout({
       <main className="min-w-0 flex-1 overflow-auto">
         <div className="mx-auto max-w-[1600px] p-4 sm:p-6 lg:p-10">
           <div className="mb-6 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
-            <Gamepad2 className="h-4 w-4 text-secondary" /> Live operations
+            <Gamepad2 className="h-4 w-4 text-secondary" /> {t('liveOperations')}
           </div>
           {children}
         </div>

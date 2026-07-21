@@ -8,6 +8,7 @@ import {
   getActiveResources,
 } from '@/features/shifts/_services/shiftService'
 import ShiftsClientView from './_components/ShiftsClientView'
+import { hasPermission } from '@/features/admin/_actions/adminActions'
 
 export default async function ShiftsPage() {
   const session = await getSession()
@@ -16,6 +17,7 @@ export default async function ShiftsPage() {
   const userId = session.user.id as string
   const activeShift = await getActiveShiftForUser(userId)
   const history = await getShiftHistory()
+  const canApproveVariance = await hasPermission(userId, 'shifts.approve')
 
   // Pre-calculate cash data for close overlay
   let openingFloat = '0'
@@ -39,6 +41,7 @@ export default async function ShiftsPage() {
       cashSales={cashSales}
       cashExpenses={cashExpenses}
       activeResources={activeResources}
+      canApproveVariance={canApproveVariance}
     />
   )
 }

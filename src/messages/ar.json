@@ -39,7 +39,9 @@
     "shiftStatus": "حالة الوردية",
     "closed": "مغلقة",
     "open": "مفتوحة",
-    "signOut": "تسجيل الخروج"
+    "signOut": "تسجيل الخروج",
+    "signedIn": "تم تسجيل الدخول",
+    "liveOperations": "العمليات المباشرة"
   },
   "auth": {
     "signIn": "تسجيل الدخول",
@@ -75,6 +77,7 @@
     "newOrder": "طلب جديد",
     "emptyCart": "لا توجد أصناف في الطلب",
     "selectResource": "اختر طاولة أو محطة",
+    "stopTimer": "إيقاف المؤقت",
     "available": "متاح",
     "occupied": "مشغول",
     "maintenance": "صيانة",
@@ -286,6 +289,31 @@
     "totalEquity": "إجمالي حقوق الملكية",
     "asOfDate": "حتى تاريخ",
     "generateReport": "إنشاء تقرير"
+  },
+  "reports": {
+    "title": "التقارير",
+    "from": "من",
+    "to": "إلى",
+    "action": "الإجراء",
+    "all": "الكل",
+    "apply": "تطبيق",
+    "netSales": "صافي المبيعات",
+    "expenses": "المصروفات",
+    "net": "صافي النتيجة",
+    "orders": "الطلبات",
+    "paymentBreakdown": "تفصيل طرق الدفع",
+    "topProducts": "المنتجات الأكثر مبيعاً",
+    "recentOrders": "الطلبات الأخيرة",
+    "auditLog": "سجل التدقيق",
+    "noData": "لا توجد بيانات لهذه الفترة",
+    "noAudit": "لا يوجد نشاط تدقيق مطابق",
+    "id": "المعرف",
+    "cashier": "أمين الصندوق",
+    "status": "الحالة",
+    "total": "الإجمالي",
+    "date": "التاريخ",
+    "user": "المستخدم",
+    "target": "الهدف"
   },
   "partners": {
     "title": "الشركاء",

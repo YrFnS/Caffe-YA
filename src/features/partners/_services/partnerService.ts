@@ -43,10 +43,10 @@ export async function getPartnerDashboard(partnerId: string): Promise<PartnerDas
 
   const totalInjected = entries
     .filter(e => e.type === 'capital_injection')
-    .reduce((s, e) => s + toCents(Number(e.amount)), 0)
+    .reduce((s, e) => s + toCents(e.amount), 0)
   const totalDistributions = entries
     .filter(e => e.type === 'draw' || e.type === 'profit_share')
-    .reduce((s, e) => s + toCents(Number(e.amount)), 0)
+    .reduce((s, e) => s + toCents(e.amount), 0)
   const currentEquity = totalInjected - totalDistributions
 
   return {

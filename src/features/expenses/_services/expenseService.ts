@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
 import { eq } from 'drizzle-orm'
-import { expenses, expenseCategories } from '@/lib/schema'
+import { auditLogs, chartOfAccounts, expenses, expenseCategories, journalEntries, journalEntryLines } from '@/lib/schema'
 import type { ExpenseRow } from '../_types'
 
 export async function getAllExpenses(filters?: {
@@ -50,17 +50,39 @@ export async function createExpense(data: {
   paidBy?: string
   receiptImageName?: string | null
 }): Promise<{ id: string }> {
-  const [row] = await db.insert(expenses).values({
-    shiftId: data.shiftId,
-    categoryId: data.categoryId,
-    amount: data.amount,
-    description: data.description ?? null,
-    paidBy: data.paidBy ?? null,
-    receiptImageName: data.receiptImageName ?? null,
-  }).returning()
-  return { id: row.id }
+  return db.transaction(async tx => {
+    const category = await tx.query.expenseCategories.findFirst({ where: eq(expenseCategories.id, data.categoryId) })
+    const [cashAccount] = await tx.select().from(chartOfAccounts).where(eq(chartOfAccounts.code, '1001')).limit(1)
+    if (!category?.accountId || !cashAccount) throw new Error('ACCOUNTING_NOT_CONFIGURED')
+    const [row] = await tx.insert(expenses).values({
+      shiftId: data.shiftId,
+      categoryId: data.categoryId,
+      amount: data.amount,
+      description: data.description ?? null,
+      paidBy: data.paidBy ?? null,
+      receiptImageName: data.receiptImageName ?? null,
+    }).returning()
+    const [journal] = await tx.insert(journalEntries).values({
+      reference: `EXPENSE-${row.id.slice(0, 8)}`,
+      description: data.description ?? category.name,
+      sourceType: 'expense',
+      sourceId: row.id,
+      createdBy: data.paidBy,
+    }).returning()
+    await tx.insert(journalEntryLines).values([
+      { journalEntryId: journal.id, accountId: category.accountId, type: 'debit', amount: data.amount },
+      { journalEntryId: journal.id, accountId: cashAccount.id, type: 'credit', amount: data.amount },
+    ])
+    await tx.insert(auditLogs).values({ userId: data.paidBy, action: 'CREATE_EXPENSE', targetTable: 'expenses', targetId: row.id, newValue: { amount: data.amount } })
+    return { id: row.id }
+  })
 }
 
-export async function deleteExpense(id: string): Promise<void> {
-  await db.delete(expenses).where(eq(expenses.id, id))
+export async function deleteExpense(id: string, userId: string): Promise<void> {
+  await db.transaction(async tx => {
+    const entry = await tx.query.journalEntries.findFirst({ where: eq(journalEntries.sourceId, id) })
+    if (entry) await tx.delete(journalEntries).where(eq(journalEntries.id, entry.id))
+    await tx.delete(expenses).where(eq(expenses.id, id))
+    await tx.insert(auditLogs).values({ userId, action: 'DELETE_EXPENSE', targetTable: 'expenses', targetId: id })
+  })
 }

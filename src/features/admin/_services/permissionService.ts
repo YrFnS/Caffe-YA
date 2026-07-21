@@ -33,10 +33,12 @@ export async function getGroupedPermissions(): Promise<PermissionGroup[]> {
 }
 
 export async function setRolePermissions(roleId: string, permissionIds: string[]): Promise<void> {
-  await db.delete(rolePermissions).where(eq(rolePermissions.roleId, roleId))
-  for (const permId of permissionIds) {
-    await db.insert(rolePermissions).values({ roleId, permissionId: permId })
-  }
+  await db.transaction(async tx => {
+    await tx.delete(rolePermissions).where(eq(rolePermissions.roleId, roleId))
+    if (permissionIds.length) {
+      await tx.insert(rolePermissions).values(permissionIds.map(permissionId => ({ roleId, permissionId })))
+    }
+  })
 }
 
 export async function createPermission(data: {
@@ -49,8 +51,10 @@ export async function createPermission(data: {
 }
 
 export async function deletePermission(id: string) {
-  await db.delete(rolePermissions).where(eq(rolePermissions.permissionId, id))
-  await db.delete(permissions).where(eq(permissions.id, id))
+  await db.transaction(async tx => {
+    await tx.delete(rolePermissions).where(eq(rolePermissions.permissionId, id))
+    await tx.delete(permissions).where(eq(permissions.id, id))
+  })
 }
 
 export async function seedDefaultPermissions(): Promise<void> {
@@ -69,6 +73,8 @@ export async function seedDefaultPermissions(): Promise<void> {
     { key: 'inventory.manage_ingredients', module: 'inventory', description: 'Manage ingredients' },
     { key: 'inventory.manage_categories', module: 'inventory', description: 'Manage categories' },
     { key: 'inventory.stock_movement', module: 'inventory', description: 'Record stock movement' },
+    { key: 'resources.view', module: 'resources', description: 'View resources' },
+    { key: 'resources.manage', module: 'resources', description: 'Manage resources' },
 
     // Shifts permissions
     { key: 'shifts.view', module: 'shifts', description: 'View shifts' },
@@ -89,12 +95,22 @@ export async function seedDefaultPermissions(): Promise<void> {
     { key: 'procurement.delete_po', module: 'procurement', description: 'Delete purchase order' },
     { key: 'procurement.receive_goods', module: 'procurement', description: 'Receive goods' },
     { key: 'procurement.approve_invoice', module: 'procurement', description: 'Approve invoice' },
+    { key: 'procurement.view', module: 'procurement', description: 'View procurement' },
 
     // Expense permissions
     { key: 'expenses.create', module: 'expenses', description: 'Create expense' },
     { key: 'expenses.update', module: 'expenses', description: 'Update expense' },
     { key: 'expenses.delete', module: 'expenses', description: 'Delete expense' },
     { key: 'expenses.approve', module: 'expenses', description: 'Approve expense' },
+    { key: 'accounting.view', module: 'accounting', description: 'View accounting' },
+    { key: 'accounting.manage', module: 'accounting', description: 'Manage accounting' },
+    { key: 'employees.view', module: 'employees', description: 'View employees' },
+    { key: 'employees.manage', module: 'employees', description: 'Manage employees' },
+    { key: 'payroll.view', module: 'payroll', description: 'View payroll' },
+    { key: 'payroll.manage', module: 'payroll', description: 'Manage payroll' },
+    { key: 'partners.view', module: 'partners', description: 'View partners' },
+    { key: 'partners.manage', module: 'partners', description: 'Manage partners' },
+    { key: 'reports.view', module: 'reports', description: 'View reports' },
   ]
 
   for (const perm of defaultPermissions) {

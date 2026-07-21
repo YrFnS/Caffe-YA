@@ -2,6 +2,7 @@ import { db } from '@/lib/db'
 import { and, eq, gte, inArray, desc } from 'drizzle-orm'
 import { orders, shifts, transactions } from '@/lib/schema'
 import type { TodaySummary } from '../_types'
+import { fromCents, toCents } from '@/lib/currency'
 
 function startOfDay(date: Date): Date {
   const d = new Date(date)
@@ -30,14 +31,12 @@ export async function getTodaySummary(): Promise<TodaySummary> {
         inArray(transactions.orderId, todayOrderIds)
       ),
     })
-    salesTotal = todayTxs
-      .reduce((sum, tx) => sum + Number(tx.amount), 0)
-      .toFixed(3)
+    salesTotal = fromCents(todayTxs.reduce((sum, transaction) => sum + toCents(transaction.amount), 0))
   }
 
   // ── Active orders: open orders (created today, not yet closed)
   // 'open' = actively being worked on; 'closed' = finalized after payment
-  const activeOrders = todayOrders.filter((o) => o.status === 'open').length
+  const activeOrders = todayOrders.filter((o) => o.status === 'open' || o.status === 'draft').length
 
   // ── Active timers: orders with a running timer (timerStartedAt set, timerEndedAt null)
   const activeTimers = todayOrders.filter(
@@ -65,12 +64,9 @@ export async function getTodaySummary(): Promise<TodaySummary> {
 /**
  * Format a numeric string as IQD currency using Intl.NumberFormat.
  */
-export function formatIQD(amount: string | number): string {
-  const num = typeof amount === 'string' ? parseFloat(amount) : amount
-  return new Intl.NumberFormat('en-IQ', {
-    style: 'currency',
-    currency: 'IQD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 3,
-  }).format(num)
+export function formatIQD(amount: string): string {
+  const millimes = toCents(amount)
+  const sign = millimes < 0 ? '-' : ''
+  const absolute = Math.abs(millimes)
+  return `${sign}${Math.floor(absolute / 1000).toLocaleString('en-IQ')} IQD`
 }

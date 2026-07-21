@@ -4,7 +4,8 @@ import { openShift, closeShift } from '../_services/shiftService'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
-import { requirePermission } from '@/features/admin/_actions/adminActions'
+import { hasPermission, requirePermission } from '@/features/admin/_actions/adminActions'
+import { toCents } from '@/lib/currency'
 
 export async function openShiftAction(formData: FormData) {
   const session = await getSession()
@@ -12,7 +13,9 @@ export async function openShiftAction(formData: FormData) {
   await requirePermission(session.user.id, 'shifts.open')
 
   const openingFloat = formData.get('openingFloat') as string
-  if (!openingFloat || isNaN(Number(openingFloat))) {
+  try {
+    if (!openingFloat || toCents(openingFloat) < 0) throw new Error('INVALID_FLOAT')
+  } catch {
     return { error: 'INVALID_FLOAT' }
   }
 
@@ -36,15 +39,17 @@ export async function closeShiftAction(formData: FormData) {
 
   const shiftId = formData.get('shiftId') as string
   const countedCash = formData.get('countedCash') as string
-  const approvedBy = formData.get('approvedBy') as string | null
   const notes = formData.get('notes') as string | undefined
 
-  if (!shiftId || !countedCash || isNaN(Number(countedCash))) {
+  try {
+    if (!shiftId || !countedCash || toCents(countedCash) < 0) throw new Error('INVALID_INPUT')
+  } catch {
     return { error: 'INVALID_INPUT' }
   }
 
   try {
-    await closeShift(shiftId, session.user.id as string, countedCash, approvedBy ?? undefined, notes)
+    const canApprove = await hasPermission(session.user.id, 'shifts.approve')
+    await closeShift(shiftId, session.user.id, countedCash, canApprove ? session.user.id : undefined, notes)
     revalidatePath('/shifts')
     revalidatePath('/pos')
     return { success: true }
@@ -54,6 +59,9 @@ export async function closeShiftAction(formData: FormData) {
     }
     if (e instanceof Error && e.message === 'SHIFT_NOT_FOUND') {
       return { error: 'SHIFT_NOT_FOUND' }
+    }
+    if (e instanceof Error && e.message === 'APPROVAL_REQUIRED') {
+      return { error: 'APPROVAL_REQUIRED' }
     }
     return { error: 'CLOSE_SHIFT_FAILED' }
   }

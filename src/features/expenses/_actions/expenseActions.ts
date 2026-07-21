@@ -16,12 +16,14 @@ import { revalidatePath } from 'next/cache'
 export async function getCategoriesAction() {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'expenses.view')
   return getAllCategories()
 }
 
 export async function createCategoryAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'expenses.approve')
   const name = formData.get('name') as string
   if (!name) return { error: 'INVALID_INPUT' }
   try {
@@ -36,6 +38,7 @@ export async function createCategoryAction(formData: FormData) {
 export async function updateCategoryAction(categoryId: string, formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'expenses.approve')
   const name = formData.get('name') as string
   try {
     const cat = await updateCategory(categoryId, { name })
@@ -49,6 +52,7 @@ export async function updateCategoryAction(categoryId: string, formData: FormDat
 export async function deleteCategoryAction(id: string) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'expenses.approve')
   try {
     await deleteCategory(id)
     revalidatePath('/expenses/categories')
@@ -63,6 +67,7 @@ export async function deleteCategoryAction(id: string) {
 export async function getExpensesAction(filters?: { categoryId?: string }) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'expenses.view')
   return getAllExpenses(filters)
 }
 
@@ -93,7 +98,7 @@ export async function deleteExpenseAction(id: string) {
   if (!session?.user) redirect('/sign-in')
   await requirePermission(session.user.id, 'expenses.delete')
   try {
-    await deleteExpense(id)
+    await deleteExpense(id, session.user.id)
     revalidatePath('/expenses')
     return { success: true }
   } catch (e) {

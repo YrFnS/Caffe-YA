@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { closeShiftAction } from '../_actions/shiftActions'
 import ActiveResourcesWarning from './ActiveResourcesWarning'
+import { formatCurrency, fromCents, toCents } from '@/lib/currency'
 
 interface ActiveResource {
   id: string
@@ -17,6 +18,7 @@ interface CloseShiftOverlayProps {
   cashSales: string
   cashExpenses: string
   activeResources: ActiveResource[]
+  canApproveVariance: boolean
   onClose?: () => void
   onSuccess?: () => void
 }
@@ -27,6 +29,7 @@ export default function CloseShiftOverlay({
   cashSales,
   cashExpenses,
   activeResources,
+  canApproveVariance,
   onClose,
   onSuccess,
 }: CloseShiftOverlayProps) {
@@ -36,20 +39,23 @@ export default function CloseShiftOverlay({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showExpected, setShowExpected] = useState(false)
-  const [needsApproval, setNeedsApproval] = useState(false)
-  const [approverId, setApproverId] = useState('')
-
-  const expected = (Number(openingFloat) + Number(cashSales) - Number(cashExpenses)).toFixed(3)
-  const varianceNum = showExpected && countedCash ? Number(countedCash) - Number(expected) : 0
-  const isOver = varianceNum > 0
-  const isShort = varianceNum < 0
-
-  const VARIANCE_THRESHOLD = 50000
-  const requiresApproval = showExpected && Math.abs(varianceNum) > VARIANCE_THRESHOLD
+  const expectedMillimes = toCents(openingFloat) + toCents(cashSales) - toCents(cashExpenses)
+  const expected = fromCents(expectedMillimes)
+  const varianceMillimes = showExpected && countedCash ? toCents(countedCash) - expectedMillimes : 0
+  const variance = fromCents(varianceMillimes)
+  const isOver = varianceMillimes > 0
+  const isShort = varianceMillimes < 0
+  const requiresApproval = showExpected && varianceMillimes !== 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!showExpected) {
+      try {
+        if (toCents(countedCash) < 0) throw new Error('INVALID_INPUT')
+      } catch {
+        setError('INVALID_INPUT')
+        return
+      }
       setShowExpected(true)
       return
     }
@@ -60,8 +66,6 @@ export default function CloseShiftOverlay({
     const fd = new FormData()
     fd.set('shiftId', shiftId)
     fd.set('countedCash', countedCash)
-    if (requiresApproval && approverId) fd.set('approvedBy', approverId)
-
     const result = await closeShiftAction(fd)
     if (result?.error) {
       if (result.error === 'ACTIVE_RESOURCES') {
@@ -145,7 +149,7 @@ export default function CloseShiftOverlay({
               <div className="bg-surface-container-low rounded-xl p-4">
                 <p className="text-label-sm text-on-surface-variant mb-1">{t('expectedCash')}</p>
                 <p className="text-display-sm font-bold text-on-surface font-mono">
-                  {Number(expected).toLocaleString()}
+                  {formatCurrency(expected)}
                 </p>
               </div>
               <div className={`rounded-xl p-4 ${isOver ? 'bg-secondary/10' : isShort ? 'bg-tertiary/10' : 'bg-secondary/10'}`}>
@@ -153,7 +157,7 @@ export default function CloseShiftOverlay({
                 <p className={`text-display-sm font-bold font-mono ${
                   isOver ? 'text-secondary' : isShort ? 'text-tertiary' : 'text-secondary'
                 }`}>
-                  {isOver ? '+' : ''}{varianceNum.toLocaleString()}
+                  {isOver ? '+' : ''}{formatCurrency(variance)}
                 </p>
                 <p className="text-label-sm mt-1">
                   {isOver ? t('varianceOver') : isShort ? t('varianceShort') : t('varianceOk')}
@@ -161,32 +165,10 @@ export default function CloseShiftOverlay({
               </div>
             </div>
 
-            {requiresApproval && !needsApproval && (
+            {requiresApproval && !canApproveVariance && (
               <div className="mb-4 p-4 bg-warning/10 border border-warning/20 rounded-xl">
                 <p className="text-body-sm text-warning">{t('managerApprovalRequired')}</p>
-                <button
-                  type="button"
-                  onClick={() => setNeedsApproval(true)}
-                  className="mt-2 text-label-md text-warning underline"
-                >
-                  {t('approveAndClose')}
-                </button>
-              </div>
-            )}
-
-            {requiresApproval && needsApproval && (
-              <div className="mb-4">
-                <label className="block text-label-md text-on-surface-variant mb-1.5">
-                  {t('approvedBy')}
-                </label>
-                <input
-                  type="text"
-                  value={approverId}
-                  onChange={(e) => setApproverId(e.target.value)}
-                  placeholder={t('approvedBy')}
-                  className="w-full h-12 px-4 bg-surface-container-highest rounded-lg text-body-md text-on-surface
-                    outline-none focus:ring-2 focus:ring-outline"
-                />
+                <p className="mt-2 text-label-md text-warning">{t('managerApprovalDesc')}</p>
               </div>
             )}
 
@@ -205,7 +187,7 @@ export default function CloseShiftOverlay({
                 </button>
                 <button
                   type="submit"
-                  disabled={loading || (requiresApproval && !approverId)}
+                  disabled={loading || (requiresApproval && !canApproveVariance)}
                   className="flex-1 h-12 rounded-lg bg-tertiary text-on-primary font-medium disabled:opacity-50"
                 >
                   {loading ? t('processing') : requiresApproval ? t('approveAndClose') : t('confirmClose')}

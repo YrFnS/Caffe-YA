@@ -430,6 +430,23 @@ export const purchaseItems = pgTable('purchase_items', {
   totalCost:    numeric('total_cost', { precision: 12, scale: 3 }).notNull(),
 })
 
+export const goodsReceipts = pgTable('goods_receipts', {
+  id:         uuid('id').primaryKey().defaultRandom(),
+  purchaseId: uuid('purchase_id').notNull().unique().references(() => purchases.id),
+  receivedBy: text('received_by').references(() => users.id),
+  receivedAt: timestamp('received_at').notNull().defaultNow(),
+  note:       text('note'),
+})
+
+export const goodsReceiptItems = pgTable('goods_receipt_items', {
+  id:             uuid('id').primaryKey().defaultRandom(),
+  goodsReceiptId: uuid('goods_receipt_id').notNull().references(() => goodsReceipts.id, { onDelete: 'cascade' }),
+  ingredientId:   uuid('ingredient_id').references(() => ingredients.id),
+  productId:      uuid('product_id').references(() => products.id),
+  quantity:       numeric('quantity', { precision: 12, scale: 3 }).notNull(),
+  unitCost:       numeric('unit_cost', { precision: 12, scale: 3 }).notNull(),
+})
+
 // ─────────────────────────────────────────────────────────────────────────────
 // EMPLOYEES & PAYROLL
 // ─────────────────────────────────────────────────────────────────────────────
@@ -626,6 +643,18 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
 export const purchasesRelations = relations(purchases, ({ one, many }) => ({
   vendor: one(vendors, { fields: [purchases.vendorId], references: [vendors.id] }),
   items:  many(purchaseItems),
+}))
+
+export const goodsReceiptsRelations = relations(goodsReceipts, ({ one, many }) => ({
+  purchase: one(purchases, { fields: [goodsReceipts.purchaseId], references: [purchases.id] }),
+  receiver: one(users, { fields: [goodsReceipts.receivedBy], references: [users.id] }),
+  items: many(goodsReceiptItems),
+}))
+
+export const goodsReceiptItemsRelations = relations(goodsReceiptItems, ({ one }) => ({
+  receipt: one(goodsReceipts, { fields: [goodsReceiptItems.goodsReceiptId], references: [goodsReceipts.id] }),
+  ingredient: one(ingredients, { fields: [goodsReceiptItems.ingredientId], references: [ingredients.id] }),
+  product: one(products, { fields: [goodsReceiptItems.productId], references: [products.id] }),
 }))
 
 export const journalEntriesRelations = relations(journalEntries, ({ many }) => ({

@@ -17,9 +17,10 @@ import type { Role, PermissionGroup } from '@/features/admin/_types'
 interface RolesClientViewProps {
   roles: Role[]
   groupedPermissions: PermissionGroup[]
+  rolePermissions: Record<string, string[]>
 }
 
-export default function RolesClientView({ roles: initialRoles, groupedPermissions }: RolesClientViewProps) {
+export default function RolesClientView({ roles: initialRoles, groupedPermissions, rolePermissions }: RolesClientViewProps) {
   const _t = useTranslations('admin')
   void _t // used via dynamic t() in JSX
   const [roles, setRoles] = useState(initialRoles)
@@ -27,14 +28,11 @@ export default function RolesClientView({ roles: initialRoles, groupedPermission
   const [newRoleName, setNewRoleName] = useState('')
   const [newRoleDesc, setNewRoleDesc] = useState('')
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null)
-  const [selectedPerms, setSelectedPerms] = useState<Record<string, string[]>>({})
+  const [selectedPerms, setSelectedPerms] = useState<Record<string, string[]>>(rolePermissions)
 
   const openPermissionEditor = (roleId: string) => {
     setEditingRoleId(roleId)
-    // Get current permissions for this role from groupedPermissions
-    const currentPerms: string[] = []
-    // We need to track which permissions are assigned - for now we just track by roleId
-    setSelectedPerms(prev => ({ ...prev, [roleId]: currentPerms }))
+    setSelectedPerms(prev => ({ ...prev, [roleId]: rolePermissions[roleId] ?? [] }))
   }
 
   const togglePerm = (roleId: string, permId: string) => {
@@ -55,7 +53,10 @@ export default function RolesClientView({ roles: initialRoles, groupedPermission
 
   const handleCreateRole = async () => {
     if (!newRoleName.trim()) return
-    const result = await createRoleAction(new FormData())
+    const formData = new FormData()
+    formData.set('name', newRoleName.trim())
+    formData.set('description', newRoleDesc.trim())
+    const result = await createRoleAction(formData)
     if ('role' in result && result.role) {
       setRoles(prev => [...prev, result.role])
       setNewRoleName('')
@@ -76,15 +77,15 @@ export default function RolesClientView({ roles: initialRoles, groupedPermission
     {
       key: 'permissions',
       label: 'Permissions',
-      render: () => (
+      render: (row: Role) => (
         <div className="flex flex-wrap gap-1">
-          {groupedPermissions.slice(0, 3).map(gp =>
-            gp.permissions.slice(0, 2).map(p => (
+          {groupedPermissions.flatMap(group => group.permissions)
+            .filter(permission => selectedPerms[row.id]?.includes(permission.id))
+            .slice(0, 5).map(p => (
               <Badge key={p.id} variant="neutral">{p.key}</Badge>
-            ))
-          )}
-          {groupedPermissions.reduce((sum, gp) => sum + gp.permissions.length, 0) > 6 && (
-            <Badge variant="neutral">+more</Badge>
+            ))}
+          {(selectedPerms[row.id]?.length ?? 0) > 5 && (
+            <Badge variant="neutral">+{selectedPerms[row.id].length - 5}</Badge>
           )}
         </div>
       ),

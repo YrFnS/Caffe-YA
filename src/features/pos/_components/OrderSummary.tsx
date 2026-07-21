@@ -6,6 +6,7 @@ import { Minus, Plus, Trash2, Clock, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import type { CartItem } from '../_types'
+import { formatCurrency, toCents } from '@/lib/currency'
 
 const WARNING_THRESHOLD_MS = 10 * 60 * 1000 // 10 minutes
 
@@ -22,6 +23,7 @@ interface OrderSummaryProps {
   onUpdateQuantity: (productId: string, quantity: number) => void
   onCheckout: () => void
   onClear: () => void
+  onStopTimer?: () => void
   isLoading?: boolean
   disabled?: boolean
 }
@@ -39,6 +41,7 @@ export default function OrderSummary({
   onUpdateQuantity,
   onCheckout,
   onClear,
+  onStopTimer,
   isLoading,
   disabled,
 }: OrderSummaryProps) {
@@ -83,6 +86,11 @@ export default function OrderSummary({
             </span>
           </div>
         )}
+        {timerRunning && onStopTimer && (
+          <Button variant="secondary" size="sm" className="mt-2" onClick={onStopTimer} disabled={disabled}>
+            {t('stopTimer')}
+          </Button>
+        )}
       </div>
 
       {/* Items list */}
@@ -99,12 +107,12 @@ export default function OrderSummary({
               <div className="flex-1 min-w-0">
                 <p className="text-body-sm font-medium text-on-surface truncate">{item.productName}</p>
                 <p className="text-label-sm text-on-surface-variant">
-                  {Number(item.unitPrice).toLocaleString()} × {item.quantity}
+                  {formatCurrency(item.unitPrice)} × {item.quantity}
                 </p>
               </div>
               <div className="flex flex-col items-end gap-1">
                 <span className="text-body-sm font-semibold text-on-surface">
-                  {Number(item.totalPrice).toLocaleString()}
+                  {formatCurrency(item.totalPrice)}
                 </span>
                 <div className="flex items-center gap-1">
                   <Button
@@ -143,11 +151,11 @@ export default function OrderSummary({
       </div>
 
       {/* Timer charge line */}
-      {Number(timerCharge) > 0 && (
+      {toCents(timerCharge) > 0 && (
         <div className="px-4 py-2">
           <div className="flex justify-between text-body-sm text-on-surface-variant">
             <span>{t('timer')}</span>
-            <span className="font-mono">{Number(timerCharge).toLocaleString()} IQD</span>
+            <span className="font-mono">{formatCurrency(timerCharge)} IQD</span>
           </div>
         </div>
       )}
@@ -156,11 +164,11 @@ export default function OrderSummary({
       <div className="p-4 space-y-2">
         <div className="flex justify-between text-body-sm">
           <span className="text-on-surface-variant">{t('subtotal')}</span>
-          <span className="font-mono">{Number(subtotal).toLocaleString()} IQD</span>
+          <span className="font-mono">{formatCurrency(subtotal)} IQD</span>
         </div>
         <div className="flex justify-between text-headline-sm font-bold">
           <span>{t('total')}</span>
-          <span className="font-mono text-secondary">{Number(total).toLocaleString()} IQD</span>
+          <span className="font-mono text-secondary">{formatCurrency(total)} IQD</span>
         </div>
       </div>
 
@@ -171,7 +179,7 @@ export default function OrderSummary({
           size="lg"
           className="w-full"
           onClick={onCheckout}
-          disabled={items.length === 0 || disabled || isLoading}
+          disabled={(items.length === 0 && timerCharge === '0') || timerRunning || disabled || isLoading}
         >
           {t('checkout')}
         </Button>

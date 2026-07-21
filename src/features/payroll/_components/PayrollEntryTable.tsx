@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { deletePayrollEntryAction, markPayrollPaidAction } from '@/features/payroll/_actions/payrollActions'
 import type { PayrollEntryRecord } from '@/features/payroll/_services/payrollService'
+import { formatCurrency } from '@/lib/currency'
 
 interface PayrollEntryTableProps {
   entries: PayrollEntryRecord[]
@@ -33,7 +34,6 @@ export default function PayrollEntryTable({ entries: initialEntries, employeeNam
     router.refresh()
   }
 
-  const formatCurrency = (value: string) => Number(value).toLocaleString()
 
   const columns = [
     {

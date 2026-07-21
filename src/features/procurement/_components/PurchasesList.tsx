@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import type { PurchaseRow } from '../_types'
+import { formatCurrency } from '@/lib/currency'
 
 interface PurchasesListProps {
   purchases: PurchaseRow[]
@@ -54,7 +55,7 @@ export default function PurchasesList({ purchases, onNewPurchase, onViewReceipt 
             {filtered.map(p => (
               <tr key={p.id} className="border-b border-outline-variant hover:bg-surface-container-hover">
                 <td className="p-3 text-on-surface">{p.vendorName ?? '—'}</td>
-                <td className="p-3 text-on-surface">{Number(p.totalAmount).toLocaleString()}</td>
+                <td className="p-3 text-on-surface">{formatCurrency(p.totalAmount)}</td>
                 <td className="p-3">
                   <span className={`px-2 py-1 rounded-full text-body-sm ${p.isPaid ? 'bg-secondary/10 text-secondary' : 'bg-warning/10 text-warning'}`}>
                     {p.isPaid ? t('paid') : t('unpaid')}
@@ -63,7 +64,7 @@ export default function PurchasesList({ purchases, onNewPurchase, onViewReceipt 
                 <td className="p-3 text-on-surface-variant text-body-sm">{new Date(p.createdAt).toLocaleDateString()}</td>
                 <td className="p-3">
                   <div className="flex gap-2">
-                    {!p.isPaid && (
+                    {!p.receivedAt && (
                       <button onClick={() => onViewReceipt(p.id)} className="text-primary text-body-sm hover:underline">
                         {t('receiveGoods')}
                       </button>

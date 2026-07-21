@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl'
 import type { ShiftSummary } from '../_types'
+import { formatCurrency, toCents } from '@/lib/currency'
 
 interface ShiftHistoryTableProps {
   history: ShiftSummary[]
@@ -33,7 +34,7 @@ export default function ShiftHistoryTable({ history }: ShiftHistoryTableProps) {
         </thead>
         <tbody>
           {history.map((shift) => {
-            const variance = shift.cashVariance ? Number(shift.cashVariance) : 0
+            const variance = shift.cashVariance ? toCents(shift.cashVariance) : 0
             const isOver = variance > 0
             const isShort = variance < 0
             return (
@@ -49,16 +50,16 @@ export default function ShiftHistoryTable({ history }: ShiftHistoryTableProps) {
                   {shift.closedAt ? new Date(shift.closedAt).toLocaleString() : '—'}
                 </td>
                 <td className="px-4 py-3.5 text-body-md text-end text-on-surface font-mono">
-                  {Number(shift.openingFloat).toLocaleString()}
+                  {formatCurrency(shift.openingFloat)}
                 </td>
                 <td className="px-4 py-3.5 text-body-md text-end text-on-surface font-mono">
-                  {shift.closingExpectedCash ? Number(shift.closingExpectedCash).toLocaleString() : '—'}
+                  {shift.closingExpectedCash ? formatCurrency(shift.closingExpectedCash) : '—'}
                 </td>
                 <td className={`px-4 py-3.5 text-body-md text-end font-mono font-semibold ${
                   isOver ? 'text-secondary' : isShort ? 'text-tertiary' : 'text-secondary'
                 }`}>
                   {shift.cashVariance !== null && shift.cashVariance !== undefined
-                    ? `${isOver ? '+' : ''}${variance.toLocaleString()}`
+                    ? `${isOver ? '+' : ''}${formatCurrency(shift.cashVariance)}`
                     : '—'}
                 </td>
               </tr>

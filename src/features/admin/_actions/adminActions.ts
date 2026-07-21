@@ -28,6 +28,7 @@ import {
   getAllSettings,
   setSetting,
   getAllModules,
+  getModuleStatus,
   setModuleStatus,
 } from '../_services/settingsService'
 import { revalidatePath } from 'next/cache'
@@ -40,6 +41,7 @@ export async function hasPermission(userId: string, permissionKey: string): Prom
 
   const user = await getUserById(userId)
   if (!user) return false
+  if (!await getModuleStatus(permissionKey.split('.')[0])) return false
 
   for (const role of user.roles) {
     const perms = await getPermissionsByRole(role.id)
@@ -58,12 +60,14 @@ export async function requirePermission(userId: string, permissionKey: string) {
 export async function getUsersAction() {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'admin.view')
   return getAllUsers()
 }
 
 export async function getUserAction(id: string) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'admin.view')
   return getUserById(id)
 }
 
@@ -133,6 +137,7 @@ export async function createUserAction(formData: FormData) {
 export async function getRolesAction() {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'admin.view')
   return getAllRoles()
 }
 
@@ -186,6 +191,9 @@ export async function deleteRoleAction(roleId: string) {
 }
 
 export async function getRolePermissionsAction(roleId: string) {
+  const session = await getSession()
+  if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'admin.view')
   return getPermissionsByRole(roleId)
 }
 
@@ -204,12 +212,14 @@ export async function setRolePermissionsAction(roleId: string, permissionIds: st
 export async function getPermissionsAction() {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'admin.view')
   return getAllPermissions()
 }
 
 export async function getGroupedPermissionsAction() {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'admin.view')
   return getGroupedPermissions()
 }
 
@@ -249,6 +259,7 @@ export async function deletePermissionAction(id: string) {
 export async function getSettingsAction() {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'admin.view')
   return getAllSettings()
 }
 
@@ -265,7 +276,22 @@ export async function setSettingAction(key: string, value: unknown) {
 export async function getModulesAction() {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'admin.view')
   return getAllModules()
+}
+
+export async function getNavigationAccessAction() {
+  const session = await getSession()
+  if (!session?.user) return null
+  const user = await getUserById(session.user.id)
+  if (!user) return null
+  const permissionSets = await Promise.all(user.roles.map(role => getPermissionsByRole(role.id)))
+  const moduleRows = await getAllModules()
+  return {
+    userName: session.user.name || session.user.email,
+    modules: [...new Set(permissionSets.flat().map(permission => permission.module))],
+    disabledModules: moduleRows.filter(module => !module.isActive).map(module => module.module),
+  }
 }
 
 export async function setModuleStatusAction(module: string, isActive: boolean) {

@@ -16,6 +16,7 @@ interface ShiftsClientViewProps {
   cashSales?: string
   cashExpenses?: string
   activeResources?: Array<{ id: string; name: string; orderId: string }>
+  canApproveVariance: boolean
 }
 
 export default function ShiftsClientView({
@@ -26,6 +27,7 @@ export default function ShiftsClientView({
   cashSales = '0',
   cashExpenses = '0',
   activeResources = [],
+  canApproveVariance,
 }: ShiftsClientViewProps) {
   const t = useTranslations('shifts')
   const [showOpenModal, setShowOpenModal] = useState(!activeShift)
@@ -82,6 +84,7 @@ export default function ShiftsClientView({
           cashSales={cashSales}
           cashExpenses={cashExpenses}
           activeResources={activeResources}
+          canApproveVariance={canApproveVariance}
           onClose={() => setShowCloseOverlay(false)}
           onSuccess={handleShiftClosed}
         />

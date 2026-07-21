@@ -1,34 +1,49 @@
-/**
- * Currency utilities for safe integer-cent arithmetic.
- * All money values are stored as integers (not floats) in the DB.
- * Uses Dinero.js v2 for precise decimal arithmetic.
- */
+const SCALE = 1000
 
-import { dinero as Dinero, toDecimal, IQD } from 'dinero.js'
+/** Parse a DB numeric(…,3) money string into integer millimes without floats. */
+export function toCents(amount: string): number {
+  const match = amount.trim().match(/^(-?)(\d+)(?:\.(\d{1,3}))?$/)
+  if (!match) throw new Error('INVALID_MONEY')
 
-/**
- * Convert a number or string to integer cents (or millimes for IQD).
- * "10.50" → 10500, 10.5 → 10500, "10" → 10000
- * Uses 3 decimal places (1000 factor) to match DB numeric(12,3) schema.
- */
-export function toCents(amount: number | string): number {
-  const num = typeof amount === 'string' ? parseFloat(amount) : amount
-  return Math.round(num * 1000)
+  const [, sign, whole, fraction = ''] = match
+  const millimes = Number(whole) * SCALE + Number(fraction.padEnd(3, '0'))
+  if (!Number.isSafeInteger(millimes)) throw new Error('MONEY_OUT_OF_RANGE')
+  return sign ? -millimes : millimes
 }
 
-/**
- * Convert cents back to a decimal string representation.
- * Use this when you need the raw numeric string to store in DB or pass to Dinero.
- */
-export function fromCents(cents: number): string {
-  return (cents / 1000).toFixed(3)
+/** Convert integer millimes to the canonical DB numeric string. */
+export function fromCents(millimes: number): string {
+  if (!Number.isSafeInteger(millimes)) throw new Error('INVALID_MILLIMES')
+  const sign = millimes < 0 ? '-' : ''
+  const absolute = Math.abs(millimes)
+  return `${sign}${Math.floor(absolute / SCALE)}.${String(absolute % SCALE).padStart(3, '0')}`
 }
 
-/**
- * Format cents as human-readable currency string.
- * e.g. 10500 → "10,500 IQD"
- */
-export function formatCurrency(cents: number, locale = 'en-IQ', currency = 'IQD'): string {
-  const d = Dinero({ amount: cents, currency: IQD })
-  return toDecimal(d)
+export function addMoney(...amounts: string[]): string {
+  return fromCents(amounts.reduce((sum, amount) => sum + toCents(amount), 0))
+}
+
+export function multiplyMoney(amount: string, quantity: number): string {
+  if (!Number.isSafeInteger(quantity)) throw new Error('INVALID_QUANTITY')
+  return fromCents(toCents(amount) * quantity)
+}
+
+export function multiplyDecimalMoney(amount: string, quantity: string): string {
+  return fromCents(Math.round(toCents(amount) * toCents(quantity) / SCALE))
+}
+
+export function prorateMoney(amount: string, numerator: number, denominator: number): string {
+  if (!Number.isSafeInteger(numerator) || !Number.isSafeInteger(denominator) || denominator <= 0) {
+    throw new Error('INVALID_RATIO')
+  }
+  return fromCents(Math.round(toCents(amount) * numerator / denominator))
+}
+
+export function formatCurrency(amount: string): string {
+  const millimes = toCents(amount)
+  const sign = millimes < 0 ? '-' : ''
+  const absolute = Math.abs(millimes)
+  const whole = String(Math.floor(absolute / SCALE)).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  const fraction = absolute % SCALE
+  return `${sign}${whole}${fraction ? `.${String(fraction).padStart(3, '0').replace(/0+$/, '')}` : ''}`
 }

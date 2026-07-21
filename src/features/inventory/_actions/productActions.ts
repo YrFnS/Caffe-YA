@@ -10,14 +10,19 @@ import {
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { requirePermission } from '@/features/admin/_actions/adminActions'
 
 export async function getProductsAction() {
+  const session = await getSession()
+  if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'inventory.view')
   return getAllProducts()
 }
 
 export async function createProductAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'inventory.manage_products')
 
   const name = formData.get('name') as string
   const nameAr = formData.get('nameAr') as string | null
@@ -53,6 +58,7 @@ export async function createProductAction(formData: FormData) {
 export async function updateProductAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'inventory.manage_products')
 
   const productId = formData.get('productId') as string
   if (!productId) return { error: 'INVALID_INPUT' }
@@ -91,6 +97,7 @@ export async function updateProductAction(formData: FormData) {
 export async function deleteProductAction(productId: string) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'inventory.manage_products')
 
   if (!productId) return { error: 'INVALID_INPUT' }
 
@@ -107,6 +114,7 @@ export async function deleteProductAction(productId: string) {
 export async function setRecipeAction(formData: FormData) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
+  await requirePermission(session.user.id, 'inventory.manage_products')
 
   const productId = formData.get('productId') as string
   const ingredientsJson = formData.get('ingredients') as string

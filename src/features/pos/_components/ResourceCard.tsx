@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl'
 import { Monitor } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Resource } from '../_types'
+import { formatCurrency } from '@/lib/currency'
 
 interface ResourceCardProps {
   resource: Resource & { category?: { isTimed: boolean; hourlyRate: string | null } }
@@ -46,7 +47,7 @@ export default function ResourceCard({ resource, onClick, disabled }: ResourceCa
         )} />
         {resource.category?.isTimed && resource.category?.hourlyRate && (
           <span className="text-label-sm text-on-surface-variant">
-            {Number(resource.category.hourlyRate).toLocaleString()}/hr
+            {formatCurrency(resource.category.hourlyRate)}/hr
           </span>
         )}
       </div>

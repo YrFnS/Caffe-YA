@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { createJournalEntryAction } from '../_actions/accountingActions'
 import type { JournalEntryRow, AccountRow } from '../_types'
+import { formatCurrency, fromCents, toCents } from '@/lib/currency'
 
 interface JournalEntriesListProps {
   entries: JournalEntryRow[]
@@ -11,6 +12,10 @@ interface JournalEntriesListProps {
 }
 
 interface LineInput { accountId: string; type: 'debit' | 'credit'; amount: string; note: string; journalEntryId?: string }
+
+function lineAmount(amount: string) {
+  try { return toCents(amount || '0') } catch { return 0 }
+}
 
 export default function JournalEntriesList({ entries, accounts }: JournalEntriesListProps) {
   const t = useTranslations('accounting')
@@ -41,9 +46,9 @@ export default function JournalEntriesList({ entries, accounts }: JournalEntries
     window.location.reload()
   }
 
-  const totalDebit = lines.filter(l => l.type === 'debit').reduce((s, l) => s + parseFloat(l.amount || '0'), 0)
-  const totalCredit = lines.filter(l => l.type === 'credit').reduce((s, l) => s + parseFloat(l.amount || '0'), 0)
-  const isBalanced = Math.abs(totalDebit - totalCredit) < 0.001
+  const totalDebit = lines.filter(line => line.type === 'debit').reduce((sum, line) => sum + lineAmount(line.amount), 0)
+  const totalCredit = lines.filter(line => line.type === 'credit').reduce((sum, line) => sum + lineAmount(line.amount), 0)
+  const isBalanced = totalDebit === totalCredit
 
   return (
     <>
@@ -122,7 +127,7 @@ export default function JournalEntriesList({ entries, accounts }: JournalEntries
                   ))}
                 </div>
                 <div className={`mt-2 text-body-sm font-medium ${isBalanced ? 'text-secondary' : 'text-error'}`}>
-                  {t('debit')}: {totalDebit.toFixed(3)} &nbsp; {t('credit')}: {totalCredit.toFixed(3)}
+                  {t('debit')}: {formatCurrency(fromCents(totalDebit))} &nbsp; {t('credit')}: {formatCurrency(fromCents(totalCredit))}
                   {!isBalanced && <span className="ms-2">⚠ {t('notBalanced')}</span>}
                 </div>
               </div>

@@ -5,6 +5,14 @@ import { addCapitalInjection, addProfitDistribution, addDraw } from '../_service
 import { partners } from '@/lib/schema'
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
+import { getSession } from '@/lib/auth'
+import { requirePermission } from '@/features/admin/_actions/adminActions'
+
+async function authorize() {
+  const session = await getSession()
+  if (!session?.user) throw new Error('UNAUTHORIZED')
+  await requirePermission(session.user.id, 'partners.manage')
+}
 
 const partnerSchema = createInsertSchema(partners, {
   userId: z.string().min(1),
@@ -12,6 +20,7 @@ const partnerSchema = createInsertSchema(partners, {
 })
 
 export async function createPartnerAction(data: z.infer<typeof partnerSchema>) {
+  await authorize()
   const parsed = partnerSchema.parse(data)
   return createPartner(parsed)
 }
@@ -21,6 +30,7 @@ export async function addCapitalInjectionAction(data: {
   amount: string
   note?: string
 }) {
+  await authorize()
   return addCapitalInjection(data)
 }
 
@@ -29,6 +39,7 @@ export async function addProfitDistributionAction(data: {
   amount: string
   note?: string
 }) {
+  await authorize()
   return addProfitDistribution(data)
 }
 
@@ -37,5 +48,6 @@ export async function addDrawAction(data: {
   amount: string
   note?: string
 }) {
+  await authorize()
   return addDraw(data)
 }

@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { hashPassword } from '@better-auth/utils/password'
 import { drizzle } from 'drizzle-orm/node-postgres'
-import { inArray } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { Pool } from 'pg'
 import * as schema from './src/lib/schema'
 
@@ -19,7 +19,8 @@ const ids = {
   espresso: '70000000-0000-4000-8000-000000000001', cappuccino: '70000000-0000-4000-8000-000000000002', latte: '70000000-0000-4000-8000-000000000003', croissant: '70000000-0000-4000-8000-000000000004',
   orderClosed: '80000000-0000-4000-8000-000000000001', orderOpen: '80000000-0000-4000-8000-000000000002', vendor: '80000000-0000-4000-8000-000000000003', purchase: '80000000-0000-4000-8000-000000000004',
   expenseCategory: '90000000-0000-4000-8000-000000000001', expense: '90000000-0000-4000-8000-000000000002', employeeCashier: '90000000-0000-4000-8000-000000000003', employeeManager: '90000000-0000-4000-8000-000000000004',
-  cashAccount: 'a0000000-0000-4000-8000-000000000001', inventoryAccount: 'a0000000-0000-4000-8000-000000000002', salesAccount: 'a0000000-0000-4000-8000-000000000003', expenseAccount: 'a0000000-0000-4000-8000-000000000004', journal: 'a0000000-0000-4000-8000-000000000005',
+  goodsReceipt: '90000000-0000-4000-8000-000000000005',
+  cashAccount: 'a0000000-0000-4000-8000-000000000001', inventoryAccount: 'a0000000-0000-4000-8000-000000000002', salesAccount: 'a0000000-0000-4000-8000-000000000003', expenseAccount: 'a0000000-0000-4000-8000-000000000004', journal: 'a0000000-0000-4000-8000-000000000005', payableAccount: 'a0000000-0000-4000-8000-000000000006', payrollExpenseAccount: 'a0000000-0000-4000-8000-000000000007',
 }
 
 const productImages = {
@@ -34,12 +35,33 @@ const permissionRows = [
   ['pos.view', 'pos'], ['pos.checkout', 'pos'], ['pos.void_item', 'pos'], ['pos.void_order', 'pos'], ['pos.open_shift', 'pos'], ['pos.close_shift', 'pos'],
   ['shifts.view', 'shifts'], ['shifts.open', 'shifts'], ['shifts.close', 'shifts'], ['shifts.approve', 'shifts'],
   ['inventory.view', 'inventory'], ['inventory.manage_products', 'inventory'], ['inventory.manage_ingredients', 'inventory'], ['inventory.manage_categories', 'inventory'], ['inventory.stock_movement', 'inventory'],
+  ['resources.view', 'resources'], ['resources.manage', 'resources'],
   ['procurement.view', 'procurement'], ['procurement.create_po', 'procurement'], ['procurement.delete_po', 'procurement'], ['procurement.receive_goods', 'procurement'], ['procurement.approve_invoice', 'procurement'],
   ['expenses.view', 'expenses'], ['expenses.create', 'expenses'], ['expenses.update', 'expenses'], ['expenses.delete', 'expenses'], ['expenses.approve', 'expenses'],
-  ['accounting.view', 'accounting'], ['reports.view', 'reports'],
+  ['employees.view', 'employees'], ['employees.manage', 'employees'], ['payroll.view', 'payroll'], ['payroll.manage', 'payroll'],
+  ['accounting.view', 'accounting'], ['accounting.manage', 'accounting'], ['partners.view', 'partners'], ['partners.manage', 'partners'], ['reports.view', 'reports'],
 ].map(([key, module], index) => ({ id: `b0000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`, key, module, description: key.replaceAll('.', ' ') }))
 
+const cashierPermissionKeys = new Set(['pos.view', 'pos.checkout', 'pos.void_item', 'pos.open_shift', 'pos.close_shift', 'shifts.view', 'shifts.open', 'shifts.close', 'resources.view'])
+const accountantModules = new Set(['accounting', 'expenses', 'employees', 'payroll', 'reports'])
+
 async function syncPermissionMatrix() {
+  const payable = await db.select().from(schema.chartOfAccounts).where(eq(schema.chartOfAccounts.code, '2001')).limit(1)
+  if (!payable.length) await db.insert(schema.chartOfAccounts).values({ id: ids.payableAccount, code: '2001', name: 'Accounts Payable', nameAr: 'الحسابات الدائنة', type: 'liability' })
+  const payrollExpense = await db.select().from(schema.chartOfAccounts).where(eq(schema.chartOfAccounts.code, '6201')).limit(1)
+  if (!payrollExpense.length) await db.insert(schema.chartOfAccounts).values({ id: ids.payrollExpenseAccount, code: '6201', name: 'Payroll Expense', nameAr: 'مصروف الرواتب', type: 'expense' })
+  const receipt = await db.select().from(schema.goodsReceipts).where(eq(schema.goodsReceipts.purchaseId, ids.purchase)).limit(1)
+  if (!receipt.length) {
+    await db.transaction(async tx => {
+      await tx.insert(schema.goodsReceipts).values({ id: ids.goodsReceipt, purchaseId: ids.purchase, receivedBy: ids.manager, note: 'Demo delivery received in full' })
+      await tx.insert(schema.goodsReceiptItems).values([
+        { goodsReceiptId: ids.goodsReceipt, ingredientId: ids.beans, quantity: '5000', unitCost: '72' },
+        { goodsReceiptId: ids.goodsReceipt, ingredientId: ids.milk, quantity: '40000', unitCost: '3' },
+      ])
+    })
+  }
+  const verification = await db.select().from(schema.verifications).limit(1)
+  if (!verification.length) await db.insert(schema.verifications).values({ id: 'demo-expired-verification', identifier: 'demo@caffe.ya', value: 'expired-demo-record', expiresAt: new Date(0) })
   let currentPermissions = await db.select().from(schema.permissions)
   for (const permission of permissionRows) {
     const matches = currentPermissions.filter((current) => current.key === permission.key)
@@ -58,8 +80,8 @@ async function syncPermissionMatrix() {
   const managedPermissions = currentPermissions.filter((permission) => permissionRows.some((row) => row.key === permission.key))
   await db.insert(schema.rolePermissions).values(managedPermissions.map((permission) => ({ roleId: ids.superAdmin, permissionId: permission.id })))
   await db.insert(schema.rolePermissions).values(managedPermissions.filter((p) => p.module !== 'admin').map((permission) => ({ roleId: ids.managerRole, permissionId: permission.id })))
-  await db.insert(schema.rolePermissions).values(managedPermissions.filter((p) => p.module === 'pos' || p.module === 'shifts').map((p) => ({ roleId: ids.cashierRole, permissionId: p.id })))
-  await db.insert(schema.rolePermissions).values(managedPermissions.filter((p) => ['accounting', 'expenses', 'reports'].includes(p.module)).map((p) => ({ roleId: ids.accountantRole, permissionId: p.id })))
+  await db.insert(schema.rolePermissions).values(managedPermissions.filter((p) => cashierPermissionKeys.has(p.key)).map((p) => ({ roleId: ids.cashierRole, permissionId: p.id })))
+  await db.insert(schema.rolePermissions).values(managedPermissions.filter((p) => accountantModules.has(p.module)).map((p) => ({ roleId: ids.accountantRole, permissionId: p.id })))
 }
 
 async function seed() {
@@ -84,6 +106,7 @@ async function seed() {
     ]
     await tx.insert(schema.users).values(demoUsers.map((user) => ({ ...user, passwordHash: password, emailVerified: true })))
     await tx.insert(schema.accounts).values(demoUsers.map((user) => ({ id: `account-${user.id}`, userId: user.id, accountId: user.email, providerId: 'credential', password })))
+    await tx.insert(schema.verifications).values({ id: 'demo-expired-verification', identifier: 'demo@caffe.ya', value: 'expired-demo-record', expiresAt: new Date(0) })
 
     const roleRows = [
       { id: ids.superAdmin, name: 'Super Admin', description: 'Full system access' },
@@ -95,8 +118,8 @@ async function seed() {
     await tx.insert(schema.permissions).values(permissionRows)
     await tx.insert(schema.rolePermissions).values(permissionRows.map((permission) => ({ roleId: ids.superAdmin, permissionId: permission.id })))
     await tx.insert(schema.rolePermissions).values(permissionRows.filter((p) => p.module !== 'admin').map((permission) => ({ roleId: ids.managerRole, permissionId: permission.id })))
-    await tx.insert(schema.rolePermissions).values(permissionRows.filter((p) => p.module === 'pos' || p.module === 'shifts').map((p) => ({ roleId: ids.cashierRole, permissionId: p.id })))
-    await tx.insert(schema.rolePermissions).values(permissionRows.filter((p) => ['accounting', 'expenses', 'reports'].includes(p.module)).map((p) => ({ roleId: ids.accountantRole, permissionId: p.id })))
+    await tx.insert(schema.rolePermissions).values(permissionRows.filter((p) => cashierPermissionKeys.has(p.key)).map((p) => ({ roleId: ids.cashierRole, permissionId: p.id })))
+    await tx.insert(schema.rolePermissions).values(permissionRows.filter((p) => accountantModules.has(p.module)).map((p) => ({ roleId: ids.accountantRole, permissionId: p.id })))
     await tx.insert(schema.userRoles).values([
       { userId: ids.admin, roleId: ids.superAdmin }, { userId: ids.manager, roleId: ids.managerRole },
       { userId: ids.cashier, roleId: ids.cashierRole }, { userId: ids.accountant, roleId: ids.accountantRole },
@@ -162,6 +185,8 @@ async function seed() {
       { id: ids.inventoryAccount, code: '1201', name: 'Inventory', nameAr: 'المخزون', type: 'asset' },
       { id: ids.salesAccount, code: '4001', name: 'Cafe Sales', nameAr: 'مبيعات المقهى', type: 'revenue' },
       { id: ids.expenseAccount, code: '6101', name: 'Utilities Expense', nameAr: 'مصروف الخدمات', type: 'expense' },
+      { id: ids.payrollExpenseAccount, code: '6201', name: 'Payroll Expense', nameAr: 'مصروف الرواتب', type: 'expense' },
+      { id: ids.payableAccount, code: '2001', name: 'Accounts Payable', nameAr: 'الحسابات الدائنة', type: 'liability' },
     ])
     await tx.insert(schema.expenseCategories).values({ id: ids.expenseCategory, name: 'Utilities', accountId: ids.expenseAccount })
     await tx.insert(schema.expenses).values({ id: ids.expense, shiftId: ids.shift, categoryId: ids.expenseCategory, amount: '85000', description: 'Internet and gaming network', paidBy: ids.manager })
@@ -170,6 +195,11 @@ async function seed() {
     await tx.insert(schema.purchaseItems).values([
       { purchaseId: ids.purchase, ingredientId: ids.beans, quantity: '5000', unitCost: '72', totalCost: '360000' },
       { purchaseId: ids.purchase, ingredientId: ids.milk, quantity: '40000', unitCost: '3', totalCost: '120000' },
+    ])
+    await tx.insert(schema.goodsReceipts).values({ id: ids.goodsReceipt, purchaseId: ids.purchase, receivedBy: ids.manager, receivedAt: yesterday, note: 'Demo delivery received in full' })
+    await tx.insert(schema.goodsReceiptItems).values([
+      { goodsReceiptId: ids.goodsReceipt, ingredientId: ids.beans, quantity: '5000', unitCost: '72' },
+      { goodsReceiptId: ids.goodsReceipt, ingredientId: ids.milk, quantity: '40000', unitCost: '3' },
     ])
     await tx.insert(schema.employees).values([
       { id: ids.employeeCashier, userId: ids.cashier, name: 'Sara Ali', phone: '+964 750 200 1001', salaryType: 'fixed', salaryAmount: '850000', hiredAt: new Date('2025-09-15') },
