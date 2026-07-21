@@ -44,6 +44,8 @@ test('cashier cannot open admin and does not see finance/admin navigation', asyn
   await expect(page.getByRole('link', { name: 'Accounting' })).toHaveCount(0)
   await page.goto('/en/admin/users')
   await expect(page).toHaveURL(/\/en\/dashboard$/)
+  await page.goto('/en/procurement/purchases')
+  await expect(page).toHaveURL(/\/en\/dashboard$/)
 })
 
 test('Arabic mode renders an RTL protected shell', async ({ page }) => {
