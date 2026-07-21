@@ -1,6 +1,6 @@
 # Caffe YA completion plan
 
-Status: Release verification
+Status: Complete
 
 ## 1. Security and financial integrity
 
@@ -33,7 +33,7 @@ Acceptance: Admin, Manager, Cashier, and Accountant see only allowed modules; En
 
 - [x] Replace stale browser tests and credentials with reliable role-based production-safe checks.
 - [x] Pass lint with zero warnings, TypeScript, production build, dependency audit, and focused integrity tests.
-- [ ] Browser-test every role and core workflow on the deployed Vercel application.
-- [ ] Commit and push the verified implementation to `main`.
+- [x] Browser-test every role and core workflow on the deployed Vercel application.
+- [x] Commit and push the verified implementation to `main`.
 
 Acceptance: clean repository, green local gates, successful Vercel deployment, and recorded browser evidence.

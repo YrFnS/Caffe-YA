@@ -7,7 +7,15 @@ async function signIn(page: Page, email: string) {
   await page.getByLabel('Email').fill(email)
   await page.getByLabel('Password').fill(password)
   await page.getByRole('button', { name: 'Sign In' }).click()
-  await page.waitForURL(/\/en\/dashboard/)
+  try {
+    await page.waitForURL(/\/en\/dashboard/, { timeout: 12_000 })
+  } catch (error) {
+    const rateLimited = await page.getByText(/Too many requests/i).isVisible()
+    if (!rateLimited) throw error
+    await page.waitForTimeout(11_000)
+    await page.getByRole('button', { name: 'Sign In' }).click()
+    await page.waitForURL(/\/en\/dashboard/)
+  }
 }
 
 test('financial APIs reject unauthenticated requests', async ({ request }) => {

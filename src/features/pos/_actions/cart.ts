@@ -13,14 +13,12 @@ export async function addItemAction(formData: FormData) {
   const orderId = formData.get('orderId') as string
   const productId = formData.get('productId') as string
   const quantity = parseInt(formData.get('quantity') as string, 10)
-  const unitPrice = formData.get('unitPrice') as string
-
-  if (!orderId || !productId || isNaN(quantity) || !unitPrice) {
+  if (!orderId || !productId || isNaN(quantity) || quantity <= 0) {
     return { error: 'MISSING_FIELDS' }
   }
 
   try {
-    const item = await addItemToOrder(orderId, productId, quantity, unitPrice)
+    const item = await addItemToOrder(orderId, productId, quantity, session.user.id)
     return { success: true, item }
   } catch (error) {
     console.error('Add item failed:', error)
@@ -40,7 +38,7 @@ export async function removeItemAction(formData: FormData) {
   }
 
   try {
-    await removeItemFromOrder(itemId)
+    await removeItemFromOrder(itemId, session.user.id)
     return { success: true }
   } catch (error) {
     console.error('Remove item failed:', error)
@@ -61,7 +59,7 @@ export async function updateQuantityAction(formData: FormData) {
   }
 
   try {
-    await updateItemQuantity(itemId, quantity)
+    await updateItemQuantity(itemId, quantity, session.user.id)
     return { success: true }
   } catch (error) {
     console.error('Update quantity failed:', error)
@@ -81,7 +79,7 @@ export async function clearOrderAction(formData: FormData) {
   }
 
   try {
-    await clearOrder(orderId)
+    await clearOrder(orderId, session.user.id)
     return { success: true }
   } catch (error) {
     console.error('Clear order failed:', error)

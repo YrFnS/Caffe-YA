@@ -219,8 +219,7 @@ export default function POSClientView({
       return
     }
 
-    setShowCheckout(false)
-    setCartItems([])
+    window.location.reload()
   }, [orderId, total])
 
   return (

@@ -19,7 +19,7 @@ export async function getResourceCategories() {
   })
 }
 
-export async function assignResourceToOrder(resourceId: string, orderId: string) {
+export async function assignResourceToOrder(resourceId: string, orderId: string, userId: string) {
   return db.transaction(async (tx) => {
     const [resource] = await tx.select()
       .from(resources)
@@ -31,7 +31,7 @@ export async function assignResourceToOrder(resourceId: string, orderId: string)
     }
 
     const [order] = await tx.select().from(orders).where(eq(orders.id, orderId)).for('update')
-    if (!order || !['draft', 'open'].includes(order.status)) throw new Error('ORDER_NOT_OPEN')
+    if (!order || order.cashierId !== userId || !['draft', 'open'].includes(order.status)) throw new Error('ORDER_NOT_OPEN')
     if (order.resourceId) throw new Error('ORDER_ALREADY_HAS_RESOURCE')
 
     await tx.update(resources)
@@ -62,10 +62,10 @@ export async function startTimer(orderId: string) {
     .where(eq(orders.id, orderId))
 }
 
-export async function stopTimer(orderId: string) {
+export async function stopTimer(orderId: string, userId: string) {
   return db.transaction(async tx => {
   const [order] = await tx.select().from(orders).where(eq(orders.id, orderId)).for('update')
-  if (!order || !order.timerStartedAt || order.timerEndedAt) return null
+  if (!order || order.cashierId !== userId || !order.timerStartedAt || order.timerEndedAt) return null
 
   const startTime = new Date(order.timerStartedAt)
   const endTime = new Date()
@@ -102,10 +102,10 @@ export async function stopTimer(orderId: string) {
   })
 }
 
-export async function transferOrder(orderId: string, newResourceId: string) {
+export async function transferOrder(orderId: string, newResourceId: string, userId: string) {
   return db.transaction(async (tx) => {
     const [order] = await tx.select().from(orders).where(eq(orders.id, orderId)).for('update')
-    if (!order || !['draft', 'open'].includes(order.status)) throw new Error('ORDER_NOT_OPEN')
+    if (!order || order.cashierId !== userId || !['draft', 'open'].includes(order.status)) throw new Error('ORDER_NOT_OPEN')
     if (order.resourceId === newResourceId) throw new Error('RESOURCE_ALREADY_ASSIGNED')
 
     const [newResource] = await tx.select().from(resources).where(eq(resources.id, newResourceId)).for('update')

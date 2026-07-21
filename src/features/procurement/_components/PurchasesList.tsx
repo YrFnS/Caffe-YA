@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import type { PurchaseRow } from '../_types'
 import { formatCurrency } from '@/lib/currency'
+import { formatDate } from '@/lib/format'
 
 interface PurchasesListProps {
   purchases: PurchaseRow[]
@@ -15,6 +16,7 @@ export default function PurchasesList({ purchases, onNewPurchase, onViewReceipt 
   void onNewPurchase // provided for parent use
   void onViewReceipt // provided for parent use
   const t = useTranslations('procurement')
+  const locale = useLocale()
   const [filterPaid, setFilterPaid] = useState<boolean | null>(null)
   const [filterVendor] = useState<string>('')
 
@@ -61,7 +63,7 @@ export default function PurchasesList({ purchases, onNewPurchase, onViewReceipt 
                     {p.isPaid ? t('paid') : t('unpaid')}
                   </span>
                 </td>
-                <td className="p-3 text-on-surface-variant text-body-sm">{new Date(p.createdAt).toLocaleDateString()}</td>
+                <td className="p-3 text-on-surface-variant text-body-sm">{formatDate(p.createdAt, locale)}</td>
                 <td className="p-3">
                   <div className="flex gap-2">
                     {!p.receivedAt && (

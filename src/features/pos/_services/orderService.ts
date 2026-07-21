@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import { auditLogs, chartOfAccounts, ingredients, journalEntries, journalEntryLines, orders, orderItems, transactions, resources, shifts, stockMovements } from '@/lib/schema'
+import { auditLogs, chartOfAccounts, ingredients, journalEntries, journalEntryLines, orders, orderItems, products, transactions, resources, shifts, stockMovements } from '@/lib/schema'
 import { eq, and, isNull } from 'drizzle-orm'
 import { getProductIngredients } from '@/features/inventory/_services/productService'
 import { toCents, fromCents } from '@/lib/currency'
@@ -36,69 +36,52 @@ export async function getActiveShift(userId: string) {
   return openShift
 }
 
-export async function addItemToOrder(orderId: string, productId: string, quantity: number, unitPrice: string) {
-  const totalPrice = fromCents(toCents(unitPrice) * quantity)
+export async function addItemToOrder(orderId: string, productId: string, quantity: number, userId: string) {
+  return db.transaction(async tx => {
+    const [order] = await tx.select().from(orders).where(eq(orders.id, orderId)).for('update')
+    if (!order || order.cashierId !== userId || !['draft', 'open'].includes(order.status)) throw new Error('ORDER_NOT_OPEN')
+    const [product] = await tx.select().from(products).where(and(eq(products.id, productId), eq(products.isActive, true))).limit(1)
+    if (!product) throw new Error('PRODUCT_NOT_FOUND')
 
-  const [item] = await db.insert(orderItems).values({
-    orderId,
-    productId,
-    quantity: quantity.toString(),
-    unitPrice,
-    totalPrice,
-  }).returning()
+    const [existing] = await tx.select().from(orderItems).where(and(eq(orderItems.orderId, orderId), eq(orderItems.productId, productId), isNull(orderItems.voidedAt))).limit(1)
+    const nextQuantity = Number(existing?.quantity ?? 0) + quantity
+    const totalPrice = fromCents(toCents(product.price) * nextQuantity)
+    const [item] = existing
+      ? await tx.update(orderItems).set({ quantity: String(nextQuantity), unitPrice: product.price, totalPrice }).where(eq(orderItems.id, existing.id)).returning()
+      : await tx.insert(orderItems).values({ orderId, productId, quantity: String(quantity), unitPrice: product.price, totalPrice }).returning()
 
-  await recalculateOrderTotals(orderId)
-  return item
-}
-
-export async function removeItemFromOrder(itemId: string) {
-  const item = await db.query.orderItems.findFirst({ where: eq(orderItems.id, itemId) })
-  if (!item) return
-
-  await db.update(orderItems)
-    .set({ voidedAt: new Date() })
-    .where(eq(orderItems.id, itemId))
-
-  await recalculateOrderTotals(item.orderId)
-}
-
-export async function updateItemQuantity(itemId: string, quantity: number) {
-  const item = await db.query.orderItems.findFirst({ where: eq(orderItems.id, itemId) })
-  if (!item) return
-
-  if (quantity <= 0) {
-    await removeItemFromOrder(itemId)
-    return
-  }
-
-  const totalPrice = fromCents(toCents(item.unitPrice) * quantity)
-  await db.update(orderItems)
-    .set({ quantity: quantity.toString(), totalPrice })
-    .where(eq(orderItems.id, itemId))
-
-  await recalculateOrderTotals(item.orderId)
-}
-
-async function recalculateOrderTotals(orderId: string) {
-  const items = await db.query.orderItems.findMany({
-    where: and(eq(orderItems.orderId, orderId), isNull(orderItems.voidedAt))
+    const items = await tx.select().from(orderItems).where(and(eq(orderItems.orderId, orderId), isNull(orderItems.voidedAt)))
+    const subtotal = items.reduce((sum, row) => sum + toCents(row.totalPrice), 0)
+    await tx.update(orders).set({ subtotal: fromCents(subtotal), totalAmount: fromCents(subtotal + toCents(order.timerChargeAmount ?? '0')) }).where(eq(orders.id, orderId))
+    return item
   })
-
-  const subtotal = items.reduce((sum, item) => sum + toCents(item.totalPrice), 0)
-  const order = await db.query.orders.findFirst({ where: eq(orders.id, orderId) })
-
-  const total = subtotal + toCents(order?.timerChargeAmount ?? '0')
-
-  await db.update(orders)
-    .set({ subtotal: fromCents(subtotal), totalAmount: fromCents(total) })
-    .where(eq(orders.id, orderId))
 }
 
-export async function checkoutOrder(orderId: string, paymentMethod: string, amount: string, reference?: string, userId?: string) {
+export async function removeItemFromOrder(itemId: string, userId: string) {
+  return updateItemQuantity(itemId, 0, userId)
+}
+
+export async function updateItemQuantity(itemId: string, quantity: number, userId: string) {
+  return db.transaction(async tx => {
+    const [item] = await tx.select().from(orderItems).where(eq(orderItems.id, itemId)).for('update')
+    if (!item) throw new Error('ITEM_NOT_FOUND')
+    const [order] = await tx.select().from(orders).where(eq(orders.id, item.orderId)).for('update')
+    if (!order || order.cashierId !== userId || !['draft', 'open'].includes(order.status)) throw new Error('ORDER_NOT_OPEN')
+    if (quantity <= 0) await tx.update(orderItems).set({ voidedAt: new Date() }).where(eq(orderItems.id, itemId))
+    else await tx.update(orderItems).set({ quantity: String(quantity), totalPrice: fromCents(toCents(item.unitPrice) * quantity) }).where(eq(orderItems.id, itemId))
+    const items = await tx.select().from(orderItems).where(and(eq(orderItems.orderId, order.id), isNull(orderItems.voidedAt)))
+    const subtotal = items.reduce((sum, row) => sum + toCents(row.totalPrice), 0)
+    await tx.update(orders).set({ subtotal: fromCents(subtotal), totalAmount: fromCents(subtotal + toCents(order.timerChargeAmount ?? '0')) }).where(eq(orders.id, order.id))
+  })
+}
+
+export async function checkoutOrder(orderId: string, paymentMethod: string, amount: string, reference: string | undefined, userId: string) {
   return db.transaction(async (tx) => {
     const [order] = await tx.select().from(orders).where(eq(orders.id, orderId)).for('update')
     if (!order) throw new Error('ORDER_NOT_FOUND')
+    if (order.cashierId !== userId) throw new Error('ORDER_NOT_OWNED')
     if (!['draft', 'open'].includes(order.status)) throw new Error('ORDER_NOT_OPEN')
+    if (!['cash', 'card', 'mobile_wallet'].includes(paymentMethod)) throw new Error('INVALID_PAYMENT_METHOD')
     if (order.timerStartedAt && !order.timerEndedAt) throw new Error('TIMER_RUNNING')
     if (toCents(amount) !== toCents(order.totalAmount)) throw new Error('PAYMENT_MISMATCH')
 
@@ -174,14 +157,13 @@ export async function checkoutOrder(orderId: string, paymentMethod: string, amou
   })
 }
 
-export async function clearOrder(orderId: string) {
-  await db.update(orderItems)
-    .set({ voidedAt: new Date() })
-    .where(eq(orderItems.orderId, orderId))
-
-  await db.update(orders)
-    .set({ subtotal: '0', totalAmount: '0' })
-    .where(eq(orders.id, orderId))
+export async function clearOrder(orderId: string, userId: string) {
+  await db.transaction(async tx => {
+    const [order] = await tx.select().from(orders).where(eq(orders.id, orderId)).for('update')
+    if (!order || order.cashierId !== userId || !['draft', 'open'].includes(order.status)) throw new Error('ORDER_NOT_OPEN')
+    await tx.update(orderItems).set({ voidedAt: new Date() }).where(eq(orderItems.orderId, orderId))
+    await tx.update(orders).set({ subtotal: '0', totalAmount: order.timerChargeAmount ?? '0' }).where(eq(orders.id, orderId))
+  })
 }
 
 export async function getOrderWithItems(orderId: string) {
