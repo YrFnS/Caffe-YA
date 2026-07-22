@@ -2,6 +2,9 @@
 
 Status: Complete
 
+This remediation plan is complete. Remaining full-product work is tracked in
+[`full-implementation-plan.md`](full-implementation-plan.md).
+
 ## 1. Security and financial integrity
 
 - [x] Require authenticated, permission-checked access for every sensitive Server Action and accounting API.
