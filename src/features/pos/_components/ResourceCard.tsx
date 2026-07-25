@@ -15,6 +15,7 @@ interface ResourceCardProps {
 export default function ResourceCard({ resource, onClick, disabled }: ResourceCardProps) {
   const t = useTranslations('pos')
   const imageSrc = resource.localImageName?.startsWith('http') ? resource.localImageName : null
+  const unavailable = resource.status !== 'available'
 
   const statusStyles = {
     available: 'bg-white border-secondary/25',
@@ -26,12 +27,12 @@ export default function ResourceCard({ resource, onClick, disabled }: ResourceCa
     <button
       type="button"
       onClick={onClick}
-      disabled={disabled || resource.status === 'maintenance'}
+      disabled={disabled || unavailable}
       className={cn(
         'relative overflow-hidden rounded-2xl border p-3 text-start shadow-sm transition-all',
         'hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98]',
         statusStyles[resource.status],
-        disabled && 'opacity-50 cursor-not-allowed'
+        (disabled || unavailable) && 'opacity-50 cursor-not-allowed'
       )}
     >
       {imageSrc && (

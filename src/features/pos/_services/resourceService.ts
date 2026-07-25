@@ -1,7 +1,8 @@
 import { db } from '@/lib/db'
 import { resources, resourceCategories, orders } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
-import { addMoney, fromCents, prorateMoney, toCents } from '@/lib/currency'
+import { fromCents, toCents } from '@/lib/currency'
+import { addTimedCharge } from './timerBilling'
 
 export async function getResourcesWithCategories() {
   return db.query.resources.findMany({
@@ -83,8 +84,13 @@ export async function stopTimer(orderId: string, userId: string) {
   const minMin = minimumMinutes ?? 0
   const graceMin = graceMinutes ?? 0
 
-  const chargeableMinutes = Math.max(elapsedMinutes - graceMin, minMin)
-  const charge = prorateMoney(hourlyRate ?? '0', chargeableMinutes, 60)
+  const { chargeableMinutes, charge } = addTimedCharge(
+    order.timerChargeAmount ?? '0',
+    hourlyRate ?? '0',
+    elapsedMinutes,
+    minMin,
+    graceMin,
+  )
 
   await tx.update(orders)
     .set({
@@ -130,8 +136,13 @@ export async function transferOrder(orderId: string, newResourceId: string, user
         const { hourlyRate, minimumMinutes = 0, graceMinutes = 0 } = oldResource.category ?? {}
         const minMin = minimumMinutes ?? 0
         const graceMin = graceMinutes ?? 0
-        const chargeableMinutes = Math.max(elapsedMinutes - graceMin, minMin)
-        timerCharge = addMoney(timerCharge, prorateMoney(hourlyRate ?? '0', chargeableMinutes, 60))
+        timerCharge = addTimedCharge(
+          timerCharge,
+          hourlyRate ?? '0',
+          elapsedMinutes,
+          minMin,
+          graceMin,
+        ).charge
       }
     }
 

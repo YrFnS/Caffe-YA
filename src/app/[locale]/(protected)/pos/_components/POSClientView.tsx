@@ -28,6 +28,7 @@ interface POSClientViewProps {
   shiftOpenedAt?: Date
   initialCartItems?: CartItem[]
   initialTimerStartedAt?: Date | null
+  initialTimerEndedAt?: Date | null
   initialTimerCharge?: string
   initialResourceId?: string | null
   refundableOrders?: RefundableOrder[]
@@ -43,6 +44,7 @@ export default function POSClientView({
   shiftOpenedAt,
   initialCartItems = [],
   initialTimerStartedAt = null,
+  initialTimerEndedAt = null,
   initialTimerCharge = '0',
   initialResourceId = null,
   refundableOrders = [],
@@ -54,7 +56,7 @@ export default function POSClientView({
   const [cartItems, setCartItems] = useState<CartItem[]>(initialCartItems)
   const [isLoading, setIsLoading] = useState(false)
   const [timerStartedAt, setTimerStartedAt] = useState<Date | null>(initialTimerStartedAt)
-  const [timerRunning, setTimerRunning] = useState(Boolean(initialTimerStartedAt))
+  const [timerRunning, setTimerRunning] = useState(Boolean(initialTimerStartedAt && !initialTimerEndedAt))
   const [timerCharge, setTimerCharge] = useState(initialTimerCharge)
   const [currentResourceId, setCurrentResourceId] = useState(initialResourceId)
   const [resourceOverrides, setResourceOverrides] = useState<Record<string, Resource['status']>>({})

@@ -58,6 +58,7 @@ export default async function POSPage({
       shiftOpenedAt={activeShift.openedAt}
       initialCartItems={initialCartItems}
       initialTimerStartedAt={draftOrder.timerStartedAt}
+      initialTimerEndedAt={draftOrder.timerEndedAt}
       initialTimerCharge={draftOrder.timerChargeAmount ?? '0'}
       initialResourceId={draftOrder.resourceId}
       refundableOrders={refundableOrders}

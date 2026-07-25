@@ -3,6 +3,7 @@ import test from 'node:test'
 import { readFileSync } from 'node:fs'
 import { calculatePayrollNet, calculateShiftVariance, isJournalBalanced } from '../../src/lib/currency.ts'
 import { isRefundableOrder, validatePayments } from '../../src/features/pos/_services/payment.ts'
+import { addTimedCharge } from '../../src/features/pos/_services/timerBilling.ts'
 
 test('split payments require an exact total and references for non-cash lines', () => {
   assert.deepEqual(validatePayments([
@@ -20,6 +21,14 @@ test('refund eligibility is limited to paid closed orders', () => {
   assert.equal(isRefundableOrder('closed', true), true)
   assert.equal(isRefundableOrder('cancelled', true), false)
   assert.equal(isRefundableOrder('closed', false), false)
+})
+
+test('transferred timed sessions retain every station charge', () => {
+  const firstStation = addTimedCharge('0', '5000', 0, 30, 5)
+  const secondStation = addTimedCharge(firstStation.charge, '5000', 0, 30, 5)
+  assert.equal(firstStation.chargeableMinutes, 30)
+  assert.equal(firstStation.charge, '2500.000')
+  assert.equal(secondStation.charge, '5000.000')
 })
 
 test('shift, payroll, and journal calculations use integer millimes', () => {
