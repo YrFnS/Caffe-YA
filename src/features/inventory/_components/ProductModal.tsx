@@ -100,7 +100,7 @@ export default function ProductModal({ categories, product, editId }: ProductMod
           options={categoryOptions}
           value={form.categoryId}
           onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-          placeholder="Select category"
+          placeholder={t('selectCategory')}
         />
         <Select
           label={t('type')}

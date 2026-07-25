@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Modal } from '@/components/ui/modal'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
@@ -17,6 +18,8 @@ interface EmployeeModalProps {
 
 export default function EmployeeModal({ editId, existing, users }: EmployeeModalProps) {
   const router = useRouter()
+  const t = useTranslations('employees')
+  const common = useTranslations('common')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({
@@ -62,32 +65,32 @@ export default function EmployeeModal({ editId, existing, users }: EmployeeModal
       router.push('/employees')
       router.refresh()
     } catch {
-      setError('Failed to save employee')
+      setError(t('saveFailed'))
       setLoading(false)
     }
   }
 
   const salaryTypeOptions = [
-    { value: 'fixed', label: 'Fixed' },
-    { value: 'hourly', label: 'Hourly' },
+    { value: 'fixed', label: t('fixed') },
+    { value: 'hourly', label: t('hourly') },
   ]
 
   const userOptions = users
-    ? [{ value: '', label: 'None (no login)' }, ...users.map(u => ({ value: u.id, label: `${u.name} (${u.email})` }))]
-    : [{ value: '', label: 'None' }]
+    ? [{ value: '', label: t('noLogin') }, ...users.map(u => ({ value: u.id, label: `${u.name} (${u.email})` }))]
+    : [{ value: '', label: t('noneOption') }]
 
   return (
     <Modal
       open={true}
       onClose={handleClose}
-      title={editId ? 'Edit Employee' : 'Add Employee'}
+      title={editId ? t('edit') : t('add')}
       footer={
         <>
           <Button variant="outline" onClick={handleClose}>
-            Cancel
+            {common('cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Saving...' : 'Save'}
+            {loading ? t('saving') : common('save')}
           </Button>
         </>
       }
@@ -97,26 +100,26 @@ export default function EmployeeModal({ editId, existing, users }: EmployeeModal
           <div className="text-sm text-error">{error}</div>
         )}
         <Input
-          label="Name"
+          label={t('name')}
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           required
-          placeholder="John Doe"
+          placeholder={t('namePlaceholder')}
         />
         <Input
-          label="Phone"
+          label={t('phone')}
           value={form.phone}
           onChange={(e) => setForm({ ...form, phone: e.target.value })}
           placeholder="+964 750 123 4567"
         />
         <Select
-          label="Salary Type"
+          label={t('salaryType')}
           options={salaryTypeOptions}
           value={form.salaryType}
           onChange={(e) => setForm({ ...form, salaryType: e.target.value })}
         />
         <Input
-          label="Salary Amount"
+          label={t('salaryAmount')}
           type="number"
           step="0.001"
           value={form.salaryAmount}
@@ -125,13 +128,13 @@ export default function EmployeeModal({ editId, existing, users }: EmployeeModal
           placeholder="0.000"
         />
         <Input
-          label="Hire Date"
+          label={t('hireDate')}
           type="date"
           value={form.hiredAt}
           onChange={(e) => setForm({ ...form, hiredAt: e.target.value })}
         />
         <Select
-          label="Link to User (optional)"
+          label={t('linkUser')}
           options={userOptions}
           value={form.userId}
           onChange={(e) => setForm({ ...form, userId: e.target.value })}

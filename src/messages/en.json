@@ -10,6 +10,8 @@
     "tryAgain": "Try again",
     "save": "Save",
     "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
     "delete": "Delete",
     "edit": "Edit",
     "create": "Create",
@@ -110,7 +112,10 @@
     "reference": "Payment reference",
     "addPayment": "Add payment line",
     "removePayment": "Remove payment line",
-    "remaining": "Remaining"
+    "remaining": "Remaining",
+    "decreaseQuantity": "Decrease quantity",
+    "increaseQuantity": "Increase quantity",
+    "removeItem": "Remove item"
   },
   "resources": {
     "title": "Resources",
@@ -187,6 +192,11 @@
     "search": "Search",
     "date": "Date",
     "note": "Note",
+    "selectUnit": "Select unit",
+    "selectCategory": "Select category",
+    "selectIngredient": "Select ingredient",
+    "addIngredient": "Add Ingredient",
+    "removeIngredient": "Remove ingredient",
     "movement": {
       "purchase": "Purchase", "sale_deduction": "Sale", "wastage": "Wastage",
       "adjustment": "Adjustment", "opening_balance": "Opening Balance"
@@ -212,7 +222,15 @@
     "name": "Name", "email": "Email", "noRoles": "No roles", "status": "Status",
     "disabled": "Disabled", "active": "Active", "inactive": "Inactive", "actions": "Actions",
     "save": "Save", "cancel": "Cancel", "editRoles": "Edit Roles", "enable": "Enable",
-    "disable": "Disable", "addUser": "Add User", "assignRoles": "Assign Roles"
+    "disable": "Disable", "addUser": "Add User", "assignRoles": "Assign Roles",
+    "description": "Description", "createRole": "Create Role", "roleName": "Role Name",
+    "roleNamePlaceholder": "e.g. Cashier", "descriptionOptional": "Description (optional)",
+    "roleDescriptionPlaceholder": "Role description", "deleteRoleConfirm": "Delete this role?",
+    "permissionTitle": "Permissions — {name}", "savePermissions": "Save Permissions",
+    "createUser": "Create User", "creatingUser": "Creating...",
+    "createUserFailed": "Failed to create user", "namePlaceholder": "John Doe",
+    "emailPlaceholder": "john@example.com", "password": "Password",
+    "passwordPlaceholder": "Minimum 8 characters"
   },
   "procurement": {
     "title": "Procurement",
@@ -399,7 +417,11 @@
     "name": "Name", "phone": "Phone", "salary": "Salary", "hired": "Hired",
     "status": "Status", "active": "Active", "inactive": "Inactive", "actions": "Actions",
     "search": "Search employees...", "add": "Add Employee", "none": "No employees found",
-    "confirmDelete": "Delete this employee?"
+    "confirmDelete": "Delete this employee?", "edit": "Edit Employee", "saving": "Saving...",
+    "saveFailed": "Failed to save employee", "fixed": "Fixed", "hourly": "Hourly",
+    "noLogin": "None (no login)", "noneOption": "None", "namePlaceholder": "John Doe",
+    "salaryType": "Salary Type", "salaryAmount": "Salary Amount", "hireDate": "Hire Date",
+    "linkUser": "Link to User (optional)"
   },
   "payroll": {
     "employee": "Employee", "period": "Period", "base": "Base", "net": "Net",

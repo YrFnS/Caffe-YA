@@ -22,6 +22,7 @@ export default function CheckoutModal({
   onConfirm,
 }: CheckoutModalProps) {
   const t = useTranslations('pos')
+  const common = useTranslations('common')
   const [payments, setPayments] = useState<PaymentLine[]>([{ method: 'cash', amount: total }])
   const [isProcessing, setIsProcessing] = useState(false)
 
@@ -61,7 +62,7 @@ export default function CheckoutModal({
         type="button"
         className="absolute inset-0 bg-surface-container-highest/80 backdrop-blur-xl cursor-default"
         onClick={onClose}
-        aria-label="Close modal"
+        aria-label={common('close')}
       />
 
       {/* Modal */}
@@ -75,6 +76,7 @@ export default function CheckoutModal({
             type="button"
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-surface-container-high transition-colors"
+            aria-label={common('close')}
           >
             <X className="w-5 h-5 text-on-surface-variant" />
           </button>

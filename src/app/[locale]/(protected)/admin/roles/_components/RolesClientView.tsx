@@ -21,8 +21,8 @@ interface RolesClientViewProps {
 }
 
 export default function RolesClientView({ roles: initialRoles, groupedPermissions, rolePermissions }: RolesClientViewProps) {
-  const _t = useTranslations('admin')
-  void _t // used via dynamic t() in JSX
+  const t = useTranslations('admin')
+  const common = useTranslations('common')
   const [roles, setRoles] = useState(initialRoles)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [newRoleName, setNewRoleName] = useState('')
@@ -66,17 +66,17 @@ export default function RolesClientView({ roles: initialRoles, groupedPermission
   }
 
   const handleDeleteRole = async (roleId: string) => {
-    if (!confirm('Delete this role?')) return
+    if (!confirm(t('deleteRoleConfirm'))) return
     await deleteRoleAction(roleId)
     setRoles(prev => prev.filter(r => r.id !== roleId))
   }
 
   const columns = [
-    { key: 'name', label: 'Name', sortable: true },
-    { key: 'description', label: 'Description' },
+    { key: 'name', label: t('name'), sortable: true },
+    { key: 'description', label: t('description') },
     {
       key: 'permissions',
-      label: 'Permissions',
+      label: t('permissions'),
       render: (row: Role) => (
         <div className="flex flex-wrap gap-1">
           {groupedPermissions.flatMap(group => group.permissions)
@@ -92,14 +92,14 @@ export default function RolesClientView({ roles: initialRoles, groupedPermission
     },
     {
       key: 'actions',
-      label: 'Actions',
+      label: t('actions'),
       render: (row: Role) => (
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => openPermissionEditor(row.id)}>
-            Permissions
+            {t('permissions')}
           </Button>
           <Button size="sm" variant="destructive" onClick={() => handleDeleteRole(row.id)}>
-            Delete
+            {common('delete')}
           </Button>
         </div>
       ),
@@ -109,7 +109,7 @@ export default function RolesClientView({ roles: initialRoles, groupedPermission
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={() => setShowCreateModal(true)}>Create Role</Button>
+        <Button onClick={() => setShowCreateModal(true)}>{t('createRole')}</Button>
       </div>
 
       <Table columns={columns} data={roles} />
@@ -118,26 +118,26 @@ export default function RolesClientView({ roles: initialRoles, groupedPermission
       <Modal
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        title="Create Role"
+        title={t('createRole')}
         footer={
           <>
-            <Button variant="ghost" onClick={() => setShowCreateModal(false)}>Cancel</Button>
-            <Button onClick={handleCreateRole}>Create</Button>
+            <Button variant="ghost" onClick={() => setShowCreateModal(false)}>{common('cancel')}</Button>
+            <Button onClick={handleCreateRole}>{common('create')}</Button>
           </>
         }
       >
         <div className="space-y-4">
           <Input
-            label="Role Name"
+            label={t('roleName')}
             value={newRoleName}
             onChange={e => setNewRoleName(e.target.value)}
-            placeholder="e.g. Cashier"
+            placeholder={t('roleNamePlaceholder')}
           />
           <Input
-            label="Description (optional)"
+            label={t('descriptionOptional')}
             value={newRoleDesc}
             onChange={e => setNewRoleDesc(e.target.value)}
-            placeholder="Role description"
+            placeholder={t('roleDescriptionPlaceholder')}
           />
         </div>
       </Modal>
@@ -149,9 +149,9 @@ export default function RolesClientView({ roles: initialRoles, groupedPermission
           <div className="relative z-10 w-full max-w-2xl max-h-[80vh] overflow-auto rounded-2xl bg-surface-container-lowest p-6 outline outline-1 outline-outline/15">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-medium text-on-surface">
-                Permissions — {roles.find(r => r.id === editingRoleId)?.name}
+                {t('permissionTitle', { name: roles.find(r => r.id === editingRoleId)?.name ?? '' })}
               </h2>
-              <button onClick={() => setEditingRoleId(null)} className="text-on-surface-variant hover:text-on-surface">
+              <button aria-label={common('close')} onClick={() => setEditingRoleId(null)} className="text-on-surface-variant hover:text-on-surface">
                 ✕
               </button>
             </div>
@@ -181,8 +181,8 @@ export default function RolesClientView({ roles: initialRoles, groupedPermission
               ))}
             </div>
             <div className="flex justify-end gap-3">
-              <Button variant="ghost" onClick={() => setEditingRoleId(null)}>Cancel</Button>
-              <Button onClick={() => savePermissions(editingRoleId)}>Save Permissions</Button>
+              <Button variant="ghost" onClick={() => setEditingRoleId(null)}>{common('cancel')}</Button>
+              <Button onClick={() => savePermissions(editingRoleId)}>{t('savePermissions')}</Button>
             </div>
           </div>
         </div>

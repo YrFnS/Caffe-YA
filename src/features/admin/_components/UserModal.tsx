@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Modal } from '@/components/ui/modal'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -9,6 +10,8 @@ import { createUserAction } from '@/features/admin/_actions/adminActions'
 
 export default function UserModal() {
   const router = useRouter()
+  const t = useTranslations('admin')
+  const common = useTranslations('common')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({
@@ -42,7 +45,7 @@ export default function UserModal() {
       router.push('/admin/users')
       router.refresh()
     } catch {
-      setError('Failed to create user')
+      setError(t('createUserFailed'))
       setLoading(false)
     }
   }
@@ -51,14 +54,14 @@ export default function UserModal() {
     <Modal
       open={true}
       onClose={handleClose}
-      title="Add User"
+      title={t('addUser')}
       footer={
         <>
           <Button variant="outline" onClick={handleClose}>
-            Cancel
+            {common('cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Creating...' : 'Create User'}
+            {loading ? t('creatingUser') : t('createUser')}
           </Button>
         </>
       }
@@ -68,27 +71,27 @@ export default function UserModal() {
           <div className="text-sm text-error">{error}</div>
         )}
         <Input
-          label="Name"
+          label={t('name')}
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           required
-          placeholder="John Doe"
+          placeholder={t('namePlaceholder')}
         />
         <Input
-          label="Email"
+          label={t('email')}
           type="email"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
           required
-          placeholder="john@example.com"
+          placeholder={t('emailPlaceholder')}
         />
         <Input
-          label="Password"
+          label={t('password')}
           type="password"
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
           required
-          placeholder="Minimum 8 characters"
+          placeholder={t('passwordPlaceholder')}
           minLength={8}
         />
       </form>

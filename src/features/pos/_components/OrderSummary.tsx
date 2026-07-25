@@ -121,6 +121,7 @@ export default function OrderSummary({
                     className="h-6 w-6"
                     onClick={() => onUpdateQuantity(item.productId, item.quantity - 1)}
                     disabled={disabled}
+                    aria-label={t('decreaseQuantity')}
                   >
                     <Minus className="w-3 h-3" />
                   </Button>
@@ -131,6 +132,7 @@ export default function OrderSummary({
                     className="h-6 w-6"
                     onClick={() => onAddItem(item.productId)}
                     disabled={disabled}
+                    aria-label={t('increaseQuantity')}
                   >
                     <Plus className="w-3 h-3" />
                   </Button>
@@ -140,6 +142,7 @@ export default function OrderSummary({
                     className="h-6 w-6 text-tertiary hover:text-tertiary"
                     onClick={() => onVoidItem(item.productId)}
                     disabled={disabled}
+                    aria-label={t('removeItem')}
                   >
                     <Trash2 className="w-3 h-3" />
                   </Button>

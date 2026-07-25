@@ -54,9 +54,11 @@ Legend: 🧑 **You** — owner action · 🤖 **Agent** — code/CLI action · �
 
 ## Phase 6 — Pre-demo verification
 
-- [ ] 🤖 **Run the production browser journey** — 15–25 minutes.
+- [x] 🤖 **Run the production browser journey** — 15–25 minutes.
   > Sign in fresh as every seeded role, verify protected routing, dashboard data, POS products and resources, complete one representative mutation, sign out, and repeat in Arabic RTL.
   **You'll know it worked when:** each role reaches protected data, the mutation persists in Neon, and sign-out returns to sign-in.
+  > Completed 2026-07-26: all four roles, cashier restrictions, item void, split payment,
+  > manager refund, procurement create/receive/pay, finance routes, Arabic RTL, and mobile width passed.
 
 - [ ] 🤝 **Do the final client-device check** — 5 minutes.
   > Open the final URL once on the device used for the presentation and keep the demo credentials available privately.

@@ -10,6 +10,8 @@
     "tryAgain": "حاول مجددًا",
     "save": "حفظ",
     "cancel": "إلغاء",
+    "confirm": "تأكيد",
+    "close": "إغلاق",
     "delete": "حذف",
     "edit": "تعديل",
     "create": "إنشاء",
@@ -110,7 +112,10 @@
     "reference": "مرجع الدفع",
     "addPayment": "إضافة دفعة",
     "removePayment": "حذف دفعة",
-    "remaining": "المتبقي"
+    "remaining": "المتبقي",
+    "decreaseQuantity": "تقليل الكمية",
+    "increaseQuantity": "زيادة الكمية",
+    "removeItem": "إزالة الصنف"
   },
   "resources": {
     "title": "الموارد",
@@ -187,6 +192,11 @@
     "search": "بحث",
     "date": "التاريخ",
     "note": "ملاحظة",
+    "selectUnit": "اختر الوحدة",
+    "selectCategory": "اختر الفئة",
+    "selectIngredient": "اختر المكوّن",
+    "addIngredient": "إضافة مكوّن",
+    "removeIngredient": "إزالة المكوّن",
     "movement": {
       "purchase": "شراء", "sale_deduction": "بيع", "wastage": "هدر",
       "adjustment": "تسوية", "opening_balance": "رصيد افتتاحي"
@@ -212,7 +222,15 @@
     "name": "الاسم", "email": "البريد الإلكتروني", "noRoles": "لا توجد أدوار", "status": "الحالة",
     "disabled": "معطل", "active": "نشط", "inactive": "غير نشط", "actions": "الإجراءات",
     "save": "حفظ", "cancel": "إلغاء", "editRoles": "تعديل الأدوار", "enable": "تفعيل",
-    "disable": "تعطيل", "addUser": "إضافة مستخدم", "assignRoles": "تعيين الأدوار"
+    "disable": "تعطيل", "addUser": "إضافة مستخدم", "assignRoles": "تعيين الأدوار",
+    "description": "الوصف", "createRole": "إنشاء دور", "roleName": "اسم الدور",
+    "roleNamePlaceholder": "مثال: أمين صندوق", "descriptionOptional": "الوصف (اختياري)",
+    "roleDescriptionPlaceholder": "وصف الدور", "deleteRoleConfirm": "هل تريد حذف هذا الدور؟",
+    "permissionTitle": "صلاحيات — {name}", "savePermissions": "حفظ الصلاحيات",
+    "createUser": "إنشاء مستخدم", "creatingUser": "جاري الإنشاء...",
+    "createUserFailed": "تعذر إنشاء المستخدم", "namePlaceholder": "محمد علي",
+    "emailPlaceholder": "name@example.com", "password": "كلمة المرور",
+    "passwordPlaceholder": "8 أحرف على الأقل"
   },
   "procurement": {
     "title": "المشتريات",
@@ -399,7 +417,11 @@
     "name": "الاسم", "phone": "الهاتف", "salary": "الراتب", "hired": "تاريخ التعيين",
     "status": "الحالة", "active": "نشط", "inactive": "غير نشط", "actions": "الإجراءات",
     "search": "بحث عن موظف...", "add": "إضافة موظف", "none": "لا يوجد موظفون",
-    "confirmDelete": "حذف هذا الموظف؟"
+    "confirmDelete": "حذف هذا الموظف؟", "edit": "تعديل الموظف", "saving": "جاري الحفظ...",
+    "saveFailed": "تعذر حفظ الموظف", "fixed": "ثابت", "hourly": "بالساعة",
+    "noLogin": "بدون حساب دخول", "noneOption": "لا شيء", "namePlaceholder": "محمد علي",
+    "salaryType": "نوع الراتب", "salaryAmount": "مبلغ الراتب", "hireDate": "تاريخ التعيين",
+    "linkUser": "ربط بمستخدم (اختياري)"
   },
   "payroll": {
     "employee": "الموظف", "period": "الفترة", "base": "الأساسي", "net": "الصافي",

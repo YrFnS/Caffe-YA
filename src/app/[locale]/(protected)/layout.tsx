@@ -57,6 +57,7 @@ export default function ProtectedLayout({
   const router = useRouter()
   const pathname = usePathname()
   const t = useTranslations('nav')
+  const common = useTranslations('common')
   
   const locale = pathname.split('/')[1] || 'en'
   const [currentLocale, setCurrentLocale] = useState(locale)
@@ -102,7 +103,7 @@ export default function ProtectedLayout({
           </div>
           <div className="hidden min-w-0 lg:block">
             <h1 className="font-display text-xl font-bold tracking-tight">Caffe YA</h1>
-            <p className="truncate text-xs text-slate-400">Cafe × Gaming</p>
+            <p className="truncate text-xs text-slate-400">{common('tagline')}</p>
           </div>
         </div>
 

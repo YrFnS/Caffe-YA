@@ -15,6 +15,7 @@ interface VoidModalProps {
 
 export default function VoidModal({ isOpen, itemName, operation = 'item', onClose, onConfirm }: VoidModalProps) {
   const t = useTranslations('pos')
+  const common = useTranslations('common')
   const [reason, setReason] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
 
@@ -39,7 +40,7 @@ export default function VoidModal({ isOpen, itemName, operation = 'item', onClos
         type="button"
         className="absolute inset-0 bg-surface-container-highest/80 backdrop-blur-xl cursor-default"
         onClick={onClose}
-        aria-label="Close"
+        aria-label={common('close')}
       />
 
       {/* Modal */}
@@ -56,6 +57,7 @@ export default function VoidModal({ isOpen, itemName, operation = 'item', onClos
             type="button"
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-surface-container-high transition-colors ms-auto"
+            aria-label={common('close')}
           >
             <X className="w-5 h-5 text-on-surface-variant" />
           </button>
@@ -91,7 +93,7 @@ export default function VoidModal({ isOpen, itemName, operation = 'item', onClos
             onClick={onClose}
             disabled={isProcessing}
           >
-            {t('cancel')}
+            {common('cancel')}
           </Button>
           <Button
             variant="default"
@@ -100,7 +102,7 @@ export default function VoidModal({ isOpen, itemName, operation = 'item', onClos
             onClick={handleConfirm}
             disabled={!reason.trim() || isProcessing}
           >
-            {t('confirm')}
+            {common('confirm')}
           </Button>
         </div>
       </div>

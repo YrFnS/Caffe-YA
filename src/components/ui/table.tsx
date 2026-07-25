@@ -1,6 +1,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { useSearchParams } from "next/navigation"
+import { useTranslations } from "next-intl"
 
 export interface TableColumn<T> {
   key: string
@@ -21,10 +22,11 @@ function Table<T>({
   columns,
   data,
   loading,
-  emptyMessage = "No results",
+  emptyMessage,
   onSort,
 }: TableProps<T>) {
   const searchParams = useSearchParams()
+  const t = useTranslations("common")
   const sortKey = searchParams.get("sort")
   const sortDir = searchParams.get("dir") as "asc" | "desc" | null
 
@@ -37,7 +39,7 @@ function Table<T>({
   if (loading) {
     return (
       <div className="flex h-32 items-center justify-center">
-        <span className="text-on-surface-variant">Loading...</span>
+        <span className="text-on-surface-variant">{t("loading")}</span>
       </div>
     )
   }
@@ -45,7 +47,7 @@ function Table<T>({
   if (data.length === 0) {
     return (
       <div className="flex h-32 items-center justify-center">
-        <span className="text-on-surface-variant">{emptyMessage}</span>
+        <span className="text-on-surface-variant">{emptyMessage ?? t("noResults")}</span>
       </div>
     )
   }

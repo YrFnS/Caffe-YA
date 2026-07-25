@@ -90,7 +90,7 @@ export default function RecipeEditor({
               options={ingredientOptions}
               value={item.ingredientId}
               onChange={(e) => handleIngredientChange(index, 'ingredientId', e.target.value)}
-              placeholder="Select ingredient"
+              placeholder={t('selectIngredient')}
             />
             <Input
               label={t('quantity')}
@@ -103,6 +103,7 @@ export default function RecipeEditor({
               size="icon"
               variant="ghost"
               onClick={() => handleRemoveIngredient(index)}
+              aria-label={t('removeIngredient')}
             >
               <X className="w-4 h-4" />
             </Button>
@@ -110,7 +111,7 @@ export default function RecipeEditor({
         ))}
         <Button variant="outline" onClick={handleAddIngredient}>
           <Plus className="w-4 h-4" />
-          Add Ingredient
+          {t('addIngredient')}
         </Button>
       </div>
     </Modal>

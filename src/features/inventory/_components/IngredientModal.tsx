@@ -87,7 +87,7 @@ export default function IngredientModal({ units, editId }: IngredientModalProps)
           options={unitOptions}
           value={form.unitId}
           onChange={(e) => setForm({ ...form, unitId: e.target.value })}
-          placeholder="Select unit"
+          placeholder={t('selectUnit')}
         />
         <Input
           label={t('stock')}

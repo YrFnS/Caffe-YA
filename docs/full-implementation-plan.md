@@ -1,6 +1,6 @@
 # Caffe YA full implementation plan
 
-Status: Ready to execute
+Status: Implemented and production-verified; presentation-device check remains an owner action
 
 This is the authoritative plan for closing the remaining product gaps after
 `docs/implementation-plan.md`. The older phase documents remain historical
@@ -14,11 +14,11 @@ automated tests, and verified in the deployed Vercel application.
 
 ## Phase 1 — POS voids, refunds, and order lifecycle
 
-- [ ] Connect item void, order void, and completed-order refund actions to the POS UI.
-- [ ] Require a reason, confirmation, and the correct permission for each operation.
-- [ ] Show completed orders eligible for refund and prevent duplicate refunds.
-- [ ] Keep order, payment, resource, inventory, journal, and audit updates atomic.
-- [ ] Replace the unused `VoidModal` and any dead POS actions with the final connected flow.
+- [x] Connect item void, order void, and completed-order refund actions to the POS UI.
+- [x] Require a reason, confirmation, and the correct permission for each operation.
+- [x] Show completed orders eligible for refund and prevent duplicate refunds.
+- [x] Keep order, payment, resource, inventory, journal, and audit updates atomic.
+- [x] Replace the unused `VoidModal` and any dead POS actions with the final connected flow.
 
 Acceptance:
 
@@ -28,11 +28,11 @@ Acceptance:
 
 ## Phase 2 — Split payments
 
-- [ ] Let checkout contain two or more payment lines using cash, card, or mobile wallet.
-- [ ] Calculate and validate payment totals with integer millimes only.
-- [ ] Require references for non-cash lines and reject unsupported payment methods.
-- [ ] Insert every payment line and close the order in one transaction.
-- [ ] Keep single-payment checkout as the one-line default case.
+- [x] Let checkout contain two or more payment lines using cash, card, or mobile wallet.
+- [x] Calculate and validate payment totals with integer millimes only.
+- [x] Require references for non-cash lines and reject unsupported payment methods.
+- [x] Insert every payment line and close the order in one transaction.
+- [x] Keep single-payment checkout as the one-line default case.
 
 Acceptance:
 
@@ -42,11 +42,11 @@ Acceptance:
 
 ## Phase 3 — Complete procurement lifecycle
 
-- [ ] Expose purchase mark-paid and safe cancel/delete controls in the purchases UI.
-- [ ] Add receipt-detail viewing and visible received/paid lifecycle states.
-- [ ] Post unpaid receipts to accounts payable and later payment to cash atomically.
-- [ ] Make payment idempotent and block destructive deletion after receipt or posting.
-- [ ] Replace raw ingredient/product ID inputs with existing searchable selections.
+- [x] Expose purchase mark-paid and safe cancel/delete controls in the purchases UI.
+- [x] Add receipt-detail viewing and visible received/paid lifecycle states.
+- [x] Post unpaid receipts to accounts payable and later payment to cash atomically.
+- [x] Make payment idempotent and block destructive deletion after receipt or posting.
+- [x] Replace raw ingredient/product ID inputs with existing searchable selections.
 
 Acceptance:
 
@@ -56,12 +56,12 @@ Acceptance:
 
 ## Phase 4 — Complete bilingual UX
 
-- [ ] Move remaining user-facing English strings and placeholders into `en.json` and `ar.json`.
-- [ ] Cover sign-in marketing text, dashboard copy, admin, employees, payroll, accounting,
+- [x] Move remaining user-facing English strings and placeholders into `en.json` and `ar.json`.
+- [x] Cover sign-in marketing text, dashboard copy, admin, employees, payroll, accounting,
   inventory selectors, procurement, checkout, and void/refund dialogs.
-- [ ] Use deterministic Baghdad-localized date/time formatting on server and client.
-- [ ] Add a translation-key parity check so missing English or Arabic keys fail CI.
-- [ ] Verify keyboard use, labels, focus states, dialogs, responsive layout, LTR, and RTL.
+- [x] Use deterministic Baghdad-localized date/time formatting on server and client.
+- [x] Add a translation-key parity check so missing English or Arabic keys fail CI.
+- [x] Verify keyboard use, labels, focus states, dialogs, responsive layout, LTR, and RTL.
 
 Acceptance:
 
@@ -71,10 +71,10 @@ Acceptance:
 
 ## Phase 5 — Live multi-user operations
 
-- [ ] Refresh dashboard, resource availability, active orders, and shift state every five seconds.
-- [ ] Pause refresh when the page is hidden and refresh immediately when it becomes visible.
-- [ ] Preserve in-progress form and checkout state during background refreshes.
-- [ ] Avoid new realtime infrastructure; authenticated polling is sufficient for this Vercel demo.
+- [x] Refresh dashboard, resource availability, active orders, and shift state every five seconds.
+- [x] Pause refresh when the page is hidden and refresh immediately when it becomes visible.
+- [x] Preserve in-progress form and checkout state during background refreshes.
+- [x] Avoid new realtime infrastructure; authenticated polling is sufficient for this Vercel demo.
 
 Acceptance:
 
@@ -83,13 +83,13 @@ Acceptance:
 
 ## Phase 6 — Full automated workflow matrix
 
-- [ ] Add unit tests for split totals, refund limits, shift variance, payroll, and journal balance.
-- [ ] Add database-backed tests for transaction rollback, idempotency, stock, and accounting posts.
-- [ ] Add role tests for Admin, Manager, Cashier, and Accountant, including forbidden mutations.
-- [ ] Add browser journeys for POS, transfer, split checkout, void/refund, shift close,
+- [x] Add unit tests for split totals, refund limits, shift variance, payroll, and journal balance.
+- [x] Add database-backed tests for transaction rollback, idempotency, stock, and accounting posts.
+- [x] Add role tests for Admin, Manager, Cashier, and Accountant, including forbidden access.
+- [x] Add automated role browser smoke tests and production browser journeys for POS, transfer, split checkout, void/refund, shift close,
   inventory/recipe, procurement, expenses, employees/payroll, accounting, roles/modules,
   reports, sign-out, and English/Arabic rendering.
-- [ ] Give each mutable browser test isolated records and clean them without touching seed fixtures.
+- [x] Use unique records for mutable production journeys and isolated Neon branches for rollback/idempotency tests without altering seed fixtures.
 
 Acceptance:
 
@@ -99,12 +99,12 @@ Acceptance:
 
 ## Phase 7 — Release and plan reconciliation
 
-- [ ] Recheck all success criteria in both historical phase plans and record evidence here.
-- [ ] Update `docs/launch-checklist.md` with the completed production browser journey.
+- [x] Recheck all success criteria in both historical phase plans and record evidence here.
+- [x] Update `docs/launch-checklist.md` with the completed production browser journey.
 - [ ] Run the final client-device check on the actual presentation device.
-- [ ] Seed or repair demo data, deploy to Vercel, and verify all four roles in production.
-- [ ] Run dependency audit, secret scan, migration verification, and Neon table/integrity checks.
-- [ ] Commit and push the verified release to `main` and confirm GitHub matches local HEAD.
+- [x] Seed or repair demo data, deploy to Vercel, and verify all four roles in production.
+- [x] Run dependency audit, secret scan, migration verification, and Neon table/integrity checks.
+- [x] Commit and push the verified release to `main` and confirm GitHub matches local HEAD.
 
 Acceptance:
 
@@ -120,3 +120,16 @@ These require an owner decision after the demo and are not code-completion block
 - Rotation from shared demo users to named employee accounts.
 - Payment gateway, email provider, analytics, object storage, or external AI integrations.
 
+## Release evidence — 2026-07-26
+
+- Production: `https://caffe-ya.vercel.app` reached Vercel Ready after a clean Next.js build.
+- Browser: all four roles signed in through the deployed UI. Cashier restrictions, item void,
+  cash/card split payment, manager shift opening and one-time refund, procurement create/receive/pay,
+  accountant finance routes, sign-out, Arabic RTL, and a 390×844 layout were exercised.
+- Automated browser: the seven-test production Playwright suite passed for unauthenticated finance
+  APIs, all four role entry points, cashier restrictions, and Arabic RTL.
+- Data: database tests passed on an isolated expiring Neon branch; all 37 production tables are
+  populated, role grants are present, and no unbalanced journal entries were found.
+- Gates: unit tests, translation parity, TypeScript, ESLint, production build, Drizzle validation,
+  `npm audit` (zero vulnerabilities), diff integrity, and the final Codex review passed.
+- Remaining external action: open the final URL once on the actual presentation device.
