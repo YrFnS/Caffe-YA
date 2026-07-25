@@ -10,11 +10,13 @@ interface PurchasesListProps {
   purchases: PurchaseRow[]
   onNewPurchase: () => void
   onViewReceipt: (id: string) => void
+  onViewDetails: (id: string) => void
+  onPay: (id: string) => void
+  onDelete: (id: string) => void
 }
 
-export default function PurchasesList({ purchases, onNewPurchase, onViewReceipt }: PurchasesListProps) {
+export default function PurchasesList({ purchases, onNewPurchase, onViewReceipt, onViewDetails, onPay, onDelete }: PurchasesListProps) {
   void onNewPurchase // provided for parent use
-  void onViewReceipt // provided for parent use
   const t = useTranslations('procurement')
   const locale = useLocale()
   const [filterPaid, setFilterPaid] = useState<boolean | null>(null)
@@ -69,6 +71,19 @@ export default function PurchasesList({ purchases, onNewPurchase, onViewReceipt 
                     {!p.receivedAt && (
                       <button onClick={() => onViewReceipt(p.id)} className="text-primary text-body-sm hover:underline">
                         {t('receiveGoods')}
+                      </button>
+                    )}
+                    <button onClick={() => onViewDetails(p.id)} className="text-primary text-body-sm hover:underline">
+                      {t('details')}
+                    </button>
+                    {p.receivedAt && !p.isPaid && (
+                      <button onClick={() => onPay(p.id)} className="text-secondary text-body-sm hover:underline">
+                        {t('markPaid')}
+                      </button>
+                    )}
+                    {!p.receivedAt && !p.isPaid && (
+                      <button onClick={() => onDelete(p.id)} className="text-tertiary text-body-sm hover:underline">
+                        {t('delete')}
                       </button>
                     )}
                   </div>

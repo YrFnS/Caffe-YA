@@ -1,19 +1,18 @@
 "use client"
 
 import { useTranslations } from 'next-intl'
-import { X, Banknote, CreditCard, Smartphone } from 'lucide-react'
+import { X, Banknote, CreditCard, Smartphone, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
-import { formatCurrency } from '@/lib/currency'
-
-type PaymentMethod = 'cash' | 'card' | 'mobile_wallet'
+import { formatCurrency, fromCents, toCents } from '@/lib/currency'
+import type { PaymentLine } from '../_types'
 
 interface CheckoutModalProps {
   total: string
   isOpen: boolean
   onClose: () => void
-  onConfirm: (method: PaymentMethod, reference?: string) => Promise<void>
+  onConfirm: (payments: PaymentLine[]) => Promise<void>
 }
 
 export default function CheckoutModal({
@@ -23,29 +22,37 @@ export default function CheckoutModal({
   onConfirm,
 }: CheckoutModalProps) {
   const t = useTranslations('pos')
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null)
-  const [reference, setReference] = useState('')
+  const [payments, setPayments] = useState<PaymentLine[]>([{ method: 'cash', amount: total }])
   const [isProcessing, setIsProcessing] = useState(false)
 
   if (!isOpen) return null
 
   const handleConfirm = async () => {
-    if (!selectedMethod) return
     setIsProcessing(true)
     try {
-      await onConfirm(selectedMethod, reference || undefined)
-      setSelectedMethod(null)
-      setReference('')
+      await onConfirm(payments)
     } finally {
       setIsProcessing(false)
     }
   }
 
-  const paymentMethods = [
-    { id: 'cash' as const, icon: Banknote, label: t('cash') },
-    { id: 'card' as const, icon: CreditCard, label: t('card') },
-    { id: 'mobile_wallet' as const, icon: Smartphone, label: t('mobileWallet') },
-  ]
+  const methods = {
+    cash: { icon: Banknote, label: t('cash') },
+    card: { icon: CreditCard, label: t('card') },
+    mobile_wallet: { icon: Smartphone, label: t('mobileWallet') },
+  }
+  const paid = payments.reduce((sum, payment) => {
+    try { return sum + toCents(payment.amount || '0') } catch { return sum }
+  }, 0)
+  const remaining = fromCents(toCents(total) - paid)
+
+  function updatePayment(index: number, patch: Partial<PaymentLine>) {
+    setPayments(lines => lines.map((line, lineIndex) => lineIndex === index ? { ...line, ...patch } : line))
+  }
+
+  function addPayment() {
+    setPayments(lines => [...lines, { method: 'card', amount: remaining }])
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -84,36 +91,57 @@ export default function CheckoutModal({
         {/* Payment methods */}
         <div className="p-4 space-y-3">
           <p className="text-label-md text-on-surface-variant">{t('paymentMethod')}</p>
-          {paymentMethods.map(({ id, icon: Icon, label }) => (
-            <button
-              type="button"
-              key={id}
-              onClick={() => setSelectedMethod(id)}
-              className={cn(
-                'flex items-center gap-4 w-full p-4 rounded-lg transition-colors',
-                selectedMethod === id
-                  ? 'bg-primary/10 border-2 border-primary text-primary'
-                  : 'bg-surface-container-high hover:bg-surface-container-high/80 text-on-surface'
-              )}
-            >
-              <Icon className="w-6 h-6" />
-              <span className="text-body-md font-medium">{label}</span>
-            </button>
-          ))}
+          {payments.map((payment, index) => {
+            const Icon = methods[payment.method].icon
+            return (
+              <div key={index} className="grid grid-cols-[1fr_7rem_auto] gap-2 rounded-lg bg-surface-container-high p-3">
+                <label className="flex items-center gap-2">
+                  <Icon className="h-5 w-5" />
+                  <select
+                    aria-label={t('paymentMethod')}
+                    value={payment.method}
+                    onChange={event => updatePayment(index, { method: event.target.value as PaymentLine['method'], reference: undefined })}
+                    className="min-w-0 flex-1 bg-transparent"
+                  >
+                    {Object.entries(methods).map(([id, method]) => <option key={id} value={id}>{method.label}</option>)}
+                  </select>
+                </label>
+                <input
+                  aria-label={t('amount')}
+                  inputMode="decimal"
+                  value={payment.amount}
+                  onChange={event => updatePayment(index, { amount: event.target.value })}
+                  className="min-w-0 rounded border border-outline bg-surface-container-lowest px-2"
+                />
+                <button
+                  type="button"
+                  aria-label={t('removePayment')}
+                  onClick={() => setPayments(lines => lines.filter((_, lineIndex) => lineIndex !== index))}
+                  disabled={payments.length === 1}
+                  className="p-2 text-tertiary disabled:opacity-30"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+                {payment.method !== 'cash' && (
+                  <input
+                    aria-label={t('reference')}
+                    placeholder={t('reference')}
+                    value={payment.reference ?? ''}
+                    onChange={event => updatePayment(index, { reference: event.target.value })}
+                    className="col-span-3 h-10 rounded border border-outline bg-surface-container-lowest px-3"
+                  />
+                )}
+              </div>
+            )
+          })}
+          <button type="button" onClick={addPayment} className="flex items-center gap-2 text-primary">
+            <Plus className="h-4 w-4" /> {t('addPayment')}
+          </button>
         </div>
 
-        {/* Reference field (optional) */}
-        {selectedMethod && (
-          <div className="px-4 pb-4">
-            <input
-              type="text"
-              placeholder="Reference (optional)"
-              value={reference}
-              onChange={(e) => setReference(e.target.value)}
-              className="w-full h-12 px-4 bg-surface-container-highest border-b-2 border-outline text-body-md text-on-surface placeholder:text-on-surface-disabled focus:border-outline focus:outline-none"
-            />
-          </div>
-        )}
+        <div className={cn('px-4 text-sm', remaining === '0.000' ? 'text-secondary' : 'text-tertiary')}>
+          {t('remaining')}: {formatCurrency(remaining)} IQD
+        </div>
 
         {/* Actions */}
         <div className="p-4">
@@ -122,7 +150,7 @@ export default function CheckoutModal({
             size="lg"
             className="w-full"
             onClick={handleConfirm}
-            disabled={!selectedMethod || isProcessing}
+            disabled={isProcessing || remaining !== '0.000' || payments.some(payment => payment.method !== 'cash' && !payment.reference?.trim())}
           >
             {isProcessing ? t('processing') : t('confirmPayment')}
           </Button>

@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import { and, eq, gte, inArray, desc } from 'drizzle-orm'
+import { gte, inArray, desc } from 'drizzle-orm'
 import { orders, shifts, transactions } from '@/lib/schema'
 import type { TodaySummary } from '../_types'
 import { fromCents, toCents } from '@/lib/currency'
@@ -26,12 +26,12 @@ export async function getTodaySummary(): Promise<TodaySummary> {
   let salesTotal = '0'
   if (todayOrderIds.length > 0) {
     const todayTxs = await db.query.transactions.findMany({
-      where: and(
-        eq(transactions.isRefund, false),
-        inArray(transactions.orderId, todayOrderIds)
-      ),
+      where: inArray(transactions.orderId, todayOrderIds),
     })
-    salesTotal = fromCents(todayTxs.reduce((sum, transaction) => sum + toCents(transaction.amount), 0))
+    salesTotal = fromCents(todayTxs.reduce(
+      (sum, transaction) => sum + (transaction.isRefund ? -toCents(transaction.amount) : toCents(transaction.amount)),
+      0,
+    ))
   }
 
   // ── Active orders: open orders (created today, not yet closed)

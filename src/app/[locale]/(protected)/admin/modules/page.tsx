@@ -4,6 +4,7 @@ import ModulesClientView from './_components/ModulesClientView'
 import { getAllModules } from '@/features/admin/_services/settingsService'
 import { hasPermission } from '@/features/admin/_actions/adminActions'
 import { MODULES } from '@/features/admin/_types'
+import { getTranslations } from 'next-intl/server'
 
 export default async function AdminModulesPage() {
   const session = await getSession()
@@ -20,11 +21,12 @@ export default async function AdminModulesPage() {
     module: m,
     isActive: moduleMap.get(m) ?? false,
   }))
+  const t = await getTranslations('admin')
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-headline-lg font-semibold text-on-surface">Modules</h1>
+        <h1 className="text-headline-lg font-semibold text-on-surface">{t('modules')}</h1>
       </div>
       <ModulesClientView modules={modulesWithStatus} />
     </div>

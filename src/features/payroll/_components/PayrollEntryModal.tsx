@@ -8,6 +8,7 @@ import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { createPayrollEntryAction, updatePayrollEntryAction } from '@/features/payroll/_actions/payrollActions'
 import type { PayrollEntryRecord } from '@/features/payroll/_services/payrollService'
+import { useTranslations } from 'next-intl'
 
 interface PayrollEntryModalProps {
   editId?: string
@@ -17,6 +18,7 @@ interface PayrollEntryModalProps {
 
 export default function PayrollEntryModal({ editId, existing, employees }: PayrollEntryModalProps) {
   const router = useRouter()
+  const t = useTranslations('payroll')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({
@@ -64,7 +66,7 @@ export default function PayrollEntryModal({ editId, existing, employees }: Payro
       router.push('/payroll')
       router.refresh()
     } catch {
-      setError('Failed to save payroll entry')
+      setError(t('saveFailed'))
       setLoading(false)
     }
   }
@@ -75,14 +77,14 @@ export default function PayrollEntryModal({ editId, existing, employees }: Payro
     <Modal
       open={true}
       onClose={handleClose}
-      title={editId ? 'Edit Payroll Entry' : 'Add Payroll Entry'}
+      title={editId ? t('edit') : t('add')}
       footer={
         <>
           <Button variant="outline" onClick={handleClose}>
-            Cancel
+            {t('cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Saving...' : 'Save'}
+            {loading ? t('saving') : t('save')}
           </Button>
         </>
       }
@@ -92,23 +94,23 @@ export default function PayrollEntryModal({ editId, existing, employees }: Payro
           <div className="text-sm text-error">{error}</div>
         )}
         <Select
-          label="Employee"
+          label={t('employee')}
           options={employeeOptions}
           value={form.employeeId}
           onChange={(e) => setForm({ ...form, employeeId: e.target.value })}
-          placeholder="Select employee"
+          placeholder={t('selectEmployee')}
           required
         />
         <div className="grid grid-cols-2 gap-4">
           <Input
-            label="Period Start"
+            label={t('periodStart')}
             type="date"
             value={form.periodStart}
             onChange={(e) => setForm({ ...form, periodStart: e.target.value })}
             required
           />
           <Input
-            label="Period End"
+            label={t('periodEnd')}
             type="date"
             value={form.periodEnd}
             onChange={(e) => setForm({ ...form, periodEnd: e.target.value })}
@@ -116,7 +118,7 @@ export default function PayrollEntryModal({ editId, existing, employees }: Payro
           />
         </div>
         <Input
-          label="Base Salary"
+          label={t('baseSalary')}
           type="number"
           step="0.001"
           value={form.baseSalary}
@@ -126,7 +128,7 @@ export default function PayrollEntryModal({ editId, existing, employees }: Payro
         />
         <div className="grid grid-cols-2 gap-4">
           <Input
-            label="Bonuses"
+            label={t('bonuses')}
             type="number"
             step="0.001"
             value={form.bonuses}
@@ -134,7 +136,7 @@ export default function PayrollEntryModal({ editId, existing, employees }: Payro
             placeholder="0.000"
           />
           <Input
-            label="Deductions"
+            label={t('deductions')}
             type="number"
             step="0.001"
             value={form.deductions}
@@ -143,10 +145,10 @@ export default function PayrollEntryModal({ editId, existing, employees }: Payro
           />
         </div>
         <Input
-          label="Note (optional)"
+          label={t('note')}
           value={form.note}
           onChange={(e) => setForm({ ...form, note: e.target.value })}
-          placeholder="Any additional notes"
+          placeholder={t('notePlaceholder')}
         />
       </form>
     </Modal>

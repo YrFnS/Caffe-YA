@@ -47,3 +47,18 @@ export function formatCurrency(amount: string): string {
   const fraction = absolute % SCALE
   return `${sign}${whole}${fraction ? `.${String(fraction).padStart(3, '0').replace(/0+$/, '')}` : ''}`
 }
+
+export function calculatePayrollNet(base: string, bonuses = '0', deductions = '0'): string {
+  return fromCents(toCents(base) + toCents(bonuses) - toCents(deductions))
+}
+
+export function calculateShiftVariance(opening: string, cashSales: string, cashExpenses: string, counted: string): string {
+  return fromCents(toCents(counted) - (toCents(opening) + toCents(cashSales) - toCents(cashExpenses)))
+}
+
+export function isJournalBalanced(lines: Array<{ type: 'debit' | 'credit'; amount: string }>): boolean {
+  const total = (type: 'debit' | 'credit') => lines
+    .filter(line => line.type === type)
+    .reduce((sum, line) => sum + toCents(line.amount), 0)
+  return total('debit') === total('credit')
+}

@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { createJournalEntryAction } from '../_actions/accountingActions'
 import type { JournalEntryRow, AccountRow } from '../_types'
 import { formatCurrency, fromCents, toCents } from '@/lib/currency'
+import { formatDate } from '@/lib/format'
 
 interface JournalEntriesListProps {
   entries: JournalEntryRow[]
@@ -19,6 +20,7 @@ function lineAmount(amount: string) {
 
 export default function JournalEntriesList({ entries, accounts }: JournalEntriesListProps) {
   const t = useTranslations('accounting')
+  const locale = useLocale()
   const [showForm, setShowForm] = useState(false)
   const [reference, setReference] = useState('')
   const [description, setDescription] = useState('')
@@ -76,7 +78,7 @@ export default function JournalEntriesList({ entries, accounts }: JournalEntries
               )}
               {entries.map(e => (
                 <tr key={e.id} className="border-b border-outline-variant hover:bg-surface-container-hover">
-                  <td className="p-3 text-body-sm text-on-surface">{e.createdAt.toLocaleDateString()}</td>
+                  <td className="p-3 text-body-sm text-on-surface">{formatDate(e.createdAt, locale)}</td>
                   <td className="p-3 font-mono text-body-sm text-primary">{e.reference ?? '—'}</td>
                   <td className="p-3 text-body-sm text-on-surface">{e.description ?? '—'}</td>
                   <td className="p-3 text-body-sm text-on-surface-variant">{e.sourceType ?? 'manual'}</td>

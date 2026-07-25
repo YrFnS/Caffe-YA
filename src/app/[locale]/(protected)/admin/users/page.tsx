@@ -5,6 +5,7 @@ import UserModal from '@/features/admin/_components/UserModal'
 import { getAllUsers } from '@/features/admin/_services/userService'
 import { getAllRoles } from '@/features/admin/_services/userService'
 import { hasPermission } from '@/features/admin/_actions/adminActions'
+import { getTranslations } from 'next-intl/server'
 
 interface AdminUsersPageProps {
   searchParams: Promise<{ modal?: string }>
@@ -19,11 +20,12 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
 
   const params = await searchParams
   const [users, roles] = await Promise.all([getAllUsers(true), getAllRoles()])
+  const t = await getTranslations('admin')
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-headline-lg font-semibold text-on-surface">Users</h1>
+        <h1 className="text-headline-lg font-semibold text-on-surface">{t('users')}</h1>
       </div>
       <UsersClientView users={users} roles={roles} currentUserId={session.user.id} />
       {params.modal === 'add' && <UserModal />}

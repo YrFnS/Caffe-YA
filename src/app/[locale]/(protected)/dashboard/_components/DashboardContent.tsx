@@ -18,7 +18,7 @@ export default function DashboardContent({ summary, lowStockItems }: DashboardCo
     <div>
       <div className="mb-7">
         <h1 className="font-display text-3xl font-bold tracking-tight text-on-surface">{t('dashboard')}</h1>
-        <p className="mt-1 text-sm text-on-surface-variant">Sales, service, and shift activity at a glance.</p>
+        <p className="mt-1 text-sm text-on-surface-variant">{t('dashboardDescription')}</p>
       </div>
 
       {lowStockItems.length > 0 && (

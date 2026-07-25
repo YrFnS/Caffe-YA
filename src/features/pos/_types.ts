@@ -1,4 +1,5 @@
 import { products, productCategories, orders, orderItems, resources } from '@/lib/schema'
+import type { PaymentLine } from './_services/payment'
 
 export type Product = typeof products.$inferSelect
 export type Category = typeof productCategories.$inferSelect
@@ -26,4 +27,13 @@ export interface ActiveOrder {
   resourceName?: string
   timerStartedAt?: Date
   status: 'draft' | 'open' | 'closed'
+}
+
+export type { PaymentLine }
+
+export interface RefundableOrder {
+  id: string
+  totalAmount: string
+  closedAt: Date | null
+  payments: Array<{ id: string; paymentMethod: PaymentLine['method']; amount: string }>
 }

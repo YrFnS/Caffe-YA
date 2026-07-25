@@ -26,21 +26,21 @@ export default function ReportsClient({ initialPlData, initialBsData }: ReportsC
     setError('')
     try {
       if (reportType === 'pl') {
-        if (!periodStart || !periodEnd) { setError('Period dates required'); return }
+        if (!periodStart || !periodEnd) { setError(t('periodDatesRequired')); return }
         const res = await fetch(`/api/accounting/reports/pl?periodStart=${periodStart}&periodEnd=${periodEnd}`)
-        if (!res.ok) throw new Error((await res.json()).error || 'Failed to fetch P&L report')
+        if (!res.ok) throw new Error((await res.json()).error || t('reportFailed'))
         const data = await res.json()
         setPlData(data)
         setBsData(null)
       } else {
         const res = await fetch(`/api/accounting/reports/balance-sheet?asOfDate=${asOfDate}`)
-        if (!res.ok) throw new Error((await res.json()).error || 'Failed to fetch balance sheet')
+        if (!res.ok) throw new Error((await res.json()).error || t('reportFailed'))
         const data = await res.json()
         setBsData(data)
         setPlData(null)
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to generate report')
+      setError(e instanceof Error ? e.message : t('reportFailed'))
     } finally {
       setLoading(false)
     }
@@ -48,12 +48,12 @@ export default function ReportsClient({ initialPlData, initialBsData }: ReportsC
 
   return (
     <div className="space-y-6">
-      <h1 className="text-headline-lg font-semibold text-on-surface">Financial Reports</h1>
+      <h1 className="text-headline-lg font-semibold text-on-surface">{t('financialReports')}</h1>
 
       <div className="bg-surface-container-lowest rounded-xl p-4">
         <div className="flex flex-wrap gap-4 items-end">
           <div>
-            <label className="block text-body-sm text-on-surface-variant mb-1">Report</label>
+            <label className="block text-body-sm text-on-surface-variant mb-1">{t('report')}</label>
             <select
               value={reportType}
               onChange={e => setReportType(e.target.value as 'pl' | 'bs')}

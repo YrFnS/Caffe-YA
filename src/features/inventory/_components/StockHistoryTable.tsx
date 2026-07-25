@@ -1,31 +1,25 @@
 "use client"
 
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { Table } from '@/components/ui/table'
 import type { StockMovement } from '@/features/inventory/_types'
+import { formatDateTime } from '@/lib/format'
 
 interface StockHistoryTableProps {
   movements: StockMovement[]
 }
 
-const typeLabels: Record<string, string> = {
-  purchase: 'Purchase',
-  sale_deduction: 'Sale',
-  wastage: 'Wastage',
-  adjustment: 'Adjustment',
-  opening_balance: 'Opening Balance',
-}
-
 export default function StockHistoryTable({ movements }: StockHistoryTableProps) {
   const t = useTranslations('inventory')
+  const locale = useLocale()
 
   const columns = [
     {
       key: 'createdAt',
-      label: 'Date',
+      label: t('date'),
       render: (row: StockMovement) => (
         <span className="text-on-surface-variant">
-          {new Date(row.createdAt).toLocaleString()}
+          {formatDateTime(row.createdAt, locale)}
         </span>
       ),
     },
@@ -34,7 +28,7 @@ export default function StockHistoryTable({ movements }: StockHistoryTableProps)
       label: t('type'),
       render: (row: StockMovement) => (
         <span className="text-on-surface-variant capitalize">
-          {typeLabels[row.type] || row.type}
+          {t(`movement.${row.type}`)}
         </span>
       ),
     },
@@ -49,7 +43,7 @@ export default function StockHistoryTable({ movements }: StockHistoryTableProps)
     },
     {
       key: 'note',
-      label: 'Note',
+      label: t('note'),
       render: (row: StockMovement) => (
         <span className="text-on-surface-variant">{row.note || '—'}</span>
       ),

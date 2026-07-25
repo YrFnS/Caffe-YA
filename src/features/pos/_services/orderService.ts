@@ -3,6 +3,7 @@ import { auditLogs, chartOfAccounts, ingredients, journalEntries, journalEntryLi
 import { eq, and, isNull } from 'drizzle-orm'
 import { getProductIngredients } from '@/features/inventory/_services/productService'
 import { toCents, fromCents } from '@/lib/currency'
+import { validatePayments, type PaymentLine } from './payment'
 
 export async function getOrCreateDraftOrder(shiftId: string, userId: string) {
   const existing = await db.query.orders.findFirst({
@@ -75,27 +76,26 @@ export async function updateItemQuantity(itemId: string, quantity: number, userI
   })
 }
 
-export async function checkoutOrder(orderId: string, paymentMethod: string, amount: string, reference: string | undefined, userId: string) {
+export async function checkoutOrder(orderId: string, paymentLines: PaymentLine[], userId: string) {
   return db.transaction(async (tx) => {
     const [order] = await tx.select().from(orders).where(eq(orders.id, orderId)).for('update')
     if (!order) throw new Error('ORDER_NOT_FOUND')
     if (order.cashierId !== userId) throw new Error('ORDER_NOT_OWNED')
     if (!['draft', 'open'].includes(order.status)) throw new Error('ORDER_NOT_OPEN')
-    if (!['cash', 'card', 'mobile_wallet'].includes(paymentMethod)) throw new Error('INVALID_PAYMENT_METHOD')
     if (order.timerStartedAt && !order.timerEndedAt) throw new Error('TIMER_RUNNING')
-    if (toCents(amount) !== toCents(order.totalAmount)) throw new Error('PAYMENT_MISMATCH')
+    const payments = validatePayments(paymentLines, order.totalAmount)
 
     await tx.update(orders)
       .set({ status: 'closed', closedAt: new Date() })
       .where(eq(orders.id, orderId))
 
-    await tx.insert(transactions).values({
+    await tx.insert(transactions).values(payments.map(payment => ({
       orderId,
       shiftId: order.shiftId,
-      paymentMethod: paymentMethod as 'cash' | 'card' | 'mobile_wallet',
-      amount,
-      reference,
-    })
+      paymentMethod: payment.method,
+      amount: payment.amount,
+      reference: payment.reference,
+    })))
 
     if (order.resourceId) {
       await tx.update(resources)
@@ -129,6 +129,15 @@ export async function checkoutOrder(orderId: string, paymentMethod: string, amou
             createdBy: userId,
           })
         }
+      } else if (item.product?.type === 'standard' && item.product.trackStock) {
+        const [product] = await tx.select().from(products).where(eq(products.id, item.productId)).for('update')
+        const deduction = Number(item.quantity)
+        if (!product || Number(product.stockQty ?? '0') < deduction) throw new Error('INSUFFICIENT_STOCK')
+        await tx.update(products).set({ stockQty: String(Number(product.stockQty ?? '0') - deduction) }).where(eq(products.id, product.id))
+        await tx.insert(stockMovements).values({
+          type: 'sale_deduction', quantity: String(-deduction), productId: product.id,
+          orderId, createdBy: userId,
+        })
       }
     }
 
@@ -143,8 +152,8 @@ export async function checkoutOrder(orderId: string, paymentMethod: string, amou
       createdBy: userId,
     }).returning()
     await tx.insert(journalEntryLines).values([
-      { journalEntryId: journal.id, accountId: clearingAccount.id, type: 'debit', amount },
-      { journalEntryId: journal.id, accountId: salesAccount.id, type: 'credit', amount },
+      { journalEntryId: journal.id, accountId: clearingAccount.id, type: 'debit', amount: order.totalAmount },
+      { journalEntryId: journal.id, accountId: salesAccount.id, type: 'credit', amount: order.totalAmount },
     ])
     await tx.insert(auditLogs).values({
       userId,
@@ -152,7 +161,7 @@ export async function checkoutOrder(orderId: string, paymentMethod: string, amou
       targetTable: 'orders',
       targetId: order.id,
       oldValue: { status: order.status },
-      newValue: { status: 'closed', paymentMethod, amount, reference },
+      newValue: { status: 'closed', payments },
     })
   })
 }

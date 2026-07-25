@@ -8,11 +8,12 @@ import { Button } from '@/components/ui/button'
 interface VoidModalProps {
   isOpen: boolean
   itemName: string
+  operation?: 'item' | 'order' | 'refund'
   onClose: () => void
   onConfirm: (reason: string) => Promise<void>
 }
 
-export default function VoidModal({ isOpen, itemName, onClose, onConfirm }: VoidModalProps) {
+export default function VoidModal({ isOpen, itemName, operation = 'item', onClose, onConfirm }: VoidModalProps) {
   const t = useTranslations('pos')
   const [reason, setReason] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
@@ -49,7 +50,7 @@ export default function VoidModal({ isOpen, itemName, onClose, onConfirm }: Void
             <AlertTriangle className="w-5 h-5 text-tertiary" />
           </div>
           <h2 className="text-headline-sm font-semibold text-on-surface">
-            {t('voidItem')}
+            {t(operation === 'refund' ? 'refundOrder' : operation === 'order' ? 'voidOrder' : 'voidItem')}
           </h2>
           <button
             type="button"
@@ -63,7 +64,7 @@ export default function VoidModal({ isOpen, itemName, onClose, onConfirm }: Void
         {/* Content */}
         <div className="p-4 space-y-4">
           <p className="text-body-md text-on-surface">
-            Are you sure you want to void <strong>{itemName}</strong>?
+            {t(operation === 'refund' ? 'confirmRefundDescription' : 'confirmVoidDescription', { name: itemName })}
           </p>
 
           <div>
@@ -74,7 +75,7 @@ export default function VoidModal({ isOpen, itemName, onClose, onConfirm }: Void
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Enter reason for voiding..."
+              placeholder={t(operation === 'refund' ? 'refundReasonPlaceholder' : 'voidReasonPlaceholder')}
               className="w-full h-24 px-4 py-3 bg-surface-container-highest border-b-2 border-outline text-body-md text-on-surface placeholder:text-on-surface-disabled focus:border-outline focus:outline-none resize-none"
               id="void-reason"
             />

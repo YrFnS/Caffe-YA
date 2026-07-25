@@ -66,6 +66,17 @@ export default function ProtectedLayout({
     getNavigationAccessAction().then(setAccess)
   }, [])
 
+  useEffect(() => {
+    if (!/^\/(?:en|ar)\/(?:dashboard|resources|pos|shifts)(?:\/|$)/.test(pathname)) return
+    const refresh = () => { if (!document.hidden) router.refresh() }
+    const interval = window.setInterval(refresh, 5000)
+    document.addEventListener('visibilitychange', refresh)
+    return () => {
+      window.clearInterval(interval)
+      document.removeEventListener('visibilitychange', refresh)
+    }
+  }, [pathname, router])
+
   const visibleNavItems = navItems.filter(item => item.module === null || (
     access?.modules.includes(item.module) && !access.disabledModules.includes(item.module)
   ))

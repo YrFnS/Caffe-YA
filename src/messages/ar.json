@@ -41,7 +41,8 @@
     "open": "مفتوحة",
     "signOut": "تسجيل الخروج",
     "signedIn": "تم تسجيل الدخول",
-    "liveOperations": "العمليات المباشرة"
+    "liveOperations": "العمليات المباشرة",
+    "dashboardDescription": "ملخص المبيعات والخدمة ونشاط الورديات."
   },
   "auth": {
     "signIn": "تسجيل الدخول",
@@ -49,7 +50,15 @@
     "signOut": "تسجيل الخروج",
     "email": "البريد الإلكتروني",
     "password": "كلمة المرور",
-    "name": "الاسم"
+    "name": "الاسم",
+    "operationsCockpit": "لوحة تشغيل موحدة",
+    "marketingTitle": "خدمة المقهى وجلسات الألعاب بتناغم كامل.",
+    "marketingDescription": "أدر الصالة والمخزون والفريق والمحاسبة وكل محطة نشطة من مساحة واحدة.",
+    "marketingFeature": "نقطة بيع مباشرة وموارد مؤقتة وتحكم بالمخزون",
+    "welcomeBack": "مرحباً بعودتك",
+    "signInToOperations": "تسجيل الدخول إلى العمليات",
+    "signInDescription": "تابع وردية اليوم ونظرة الصالة المباشرة.",
+    "demo": "تجريبي"
   },
   "validation": {
     "required": "هذا الحقل مطلوب",
@@ -88,7 +97,20 @@
     "processing": "جاري المعالجة...",
     "loadingPos": "جاري تحميل نقاط البيع...",
     "voidItem": "إلغاء الصنف",
-    "voidReason": "سبب الإلغاء"
+    "voidOrder": "إلغاء الطلب",
+    "refundOrder": "استرداد الطلب",
+    "voidReason": "السبب",
+    "voidReasonPlaceholder": "أدخل سبب الإلغاء",
+    "refundReasonPlaceholder": "أدخل سبب الاسترداد",
+    "confirmVoidDescription": "هل تريد بالتأكيد إلغاء {name}؟",
+    "confirmRefundDescription": "هل تريد بالتأكيد استرداد {name}؟",
+    "currentOrder": "الطلب الحالي",
+    "completedOrders": "طلبات مكتملة متاحة للاسترداد",
+    "amount": "المبلغ",
+    "reference": "مرجع الدفع",
+    "addPayment": "إضافة دفعة",
+    "removePayment": "حذف دفعة",
+    "remaining": "المتبقي"
   },
   "resources": {
     "title": "الموارد",
@@ -162,10 +184,21 @@
     "cancel": "إلغاء",
     "loading": "جاري التحميل...",
     "noResults": "لا توجد نتائج",
-    "search": "بحث"
+    "search": "بحث",
+    "date": "التاريخ",
+    "note": "ملاحظة",
+    "movement": {
+      "purchase": "شراء", "sale_deduction": "بيع", "wastage": "هدر",
+      "adjustment": "تسوية", "opening_balance": "رصيد افتتاحي"
+    }
   },
   "admin": {
     "title": "الإدارة",
+    "users": "المستخدمون",
+    "roles": "الأدوار",
+    "permissions": "الصلاحيات",
+    "settings": "الإعدادات",
+    "modules": "الوحدات",
     "products": "المنتجات",
     "categories": "الفئات",
     "ingredients": "المكونات",
@@ -175,7 +208,11 @@
     "productsDescription": "إدارة كتالوج المنتجات والأسعار والفئات",
     "categoriesDescription": "تنظيم المنتجات في فئات هرمية",
     "ingredientsDescription": "تتبع المواد الخام ومستويات المخزون",
-    "unitsDescription": "تعريف وحدات القياس للمكونات"
+    "unitsDescription": "تعريف وحدات القياس للمكونات",
+    "name": "الاسم", "email": "البريد الإلكتروني", "noRoles": "لا توجد أدوار", "status": "الحالة",
+    "disabled": "معطل", "active": "نشط", "inactive": "غير نشط", "actions": "الإجراءات",
+    "save": "حفظ", "cancel": "إلغاء", "editRoles": "تعديل الأدوار", "enable": "تفعيل",
+    "disable": "تعطيل", "addUser": "إضافة مستخدم", "assignRoles": "تعيين الأدوار"
   },
   "procurement": {
     "title": "المشتريات",
@@ -214,7 +251,22 @@
     "addItem": "إضافة بند",
     "note": "ملاحظة",
     "receiveGoods": "استلام البضاعة",
-    "confirmDelete": "هل أنت متأكد من حذف هذا العنصر؟"
+    "confirmDelete": "هل أنت متأكد من حذف هذا العنصر؟",
+    "item": "صنف الشراء",
+    "selectItem": "اختر مادة أو منتجاً",
+    "ingredients": "المواد",
+    "products": "المنتجات",
+    "details": "التفاصيل",
+    "purchaseDetails": "تفاصيل الشراء",
+    "received": "تم الاستلام",
+    "markPaid": "تسجيل الدفع",
+    "receiptNote": "ملاحظة الاستلام",
+    "yes": "نعم",
+    "no": "لا",
+    "close": "إغلاق",
+    "receiveBeforePayment": "استلم البضاعة قبل تسجيل الدفع.",
+    "cannotDelete": "لا يمكن حذف عملية شراء مستلمة أو مدفوعة أو مرحلة.",
+    "operationFailed": "فشلت العملية."
   },
   "expenses": {
     "title": "المصروفات",
@@ -290,7 +342,11 @@
     "totalLiabilities": "إجمالي الالتزامات",
     "totalEquity": "إجمالي حقوق الملكية",
     "asOfDate": "حتى تاريخ",
-    "generateReport": "إنشاء تقرير"
+    "generateReport": "إنشاء تقرير",
+    "financialReports": "التقارير المالية",
+    "report": "التقرير",
+    "periodDatesRequired": "تواريخ الفترة مطلوبة.",
+    "reportFailed": "تعذر إنشاء التقرير."
   },
   "reports": {
     "title": "التقارير",
@@ -338,5 +394,21 @@
     "cancel": "إلغاء",
     "save": "حفظ",
     "noPartners": "لا يوجد شركاء"
+  },
+  "employees": {
+    "name": "الاسم", "phone": "الهاتف", "salary": "الراتب", "hired": "تاريخ التعيين",
+    "status": "الحالة", "active": "نشط", "inactive": "غير نشط", "actions": "الإجراءات",
+    "search": "بحث عن موظف...", "add": "إضافة موظف", "none": "لا يوجد موظفون",
+    "confirmDelete": "حذف هذا الموظف؟"
+  },
+  "payroll": {
+    "employee": "الموظف", "period": "الفترة", "base": "الأساسي", "net": "الصافي",
+    "status": "الحالة", "paid": "مدفوع", "unpaid": "غير مدفوع", "actions": "الإجراءات",
+    "markPaid": "تسجيل الدفع", "add": "إضافة راتب", "none": "لا توجد قيود رواتب",
+    "confirmDelete": "حذف قيد الراتب؟", "unknown": "غير معروف",
+    "edit": "تعديل قيد الراتب", "cancel": "إلغاء", "saving": "جاري الحفظ...", "save": "حفظ",
+    "selectEmployee": "اختر الموظف", "periodStart": "بداية الفترة", "periodEnd": "نهاية الفترة",
+    "baseSalary": "الراتب الأساسي", "bonuses": "المكافآت", "deductions": "الاستقطاعات",
+    "note": "ملاحظة (اختياري)", "notePlaceholder": "أي ملاحظات إضافية", "saveFailed": "تعذر حفظ قيد الراتب"
   }
 }

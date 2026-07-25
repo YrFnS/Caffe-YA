@@ -2,7 +2,7 @@ import { db } from '@/lib/db'
 import { eq, desc, sql } from 'drizzle-orm'
 import { journalEntries, journalEntryLines } from '@/lib/schema'
 import type { JournalEntryRow } from '../_types'
-import { toCents } from '@/lib/currency'
+import { isJournalBalanced } from '@/lib/currency'
 
 export async function getAllJournalEntries(limit = 50): Promise<JournalEntryRow[]> {
   const rows = await db.query.journalEntries.findMany({
@@ -65,16 +65,7 @@ export async function createJournalEntry(data: {
   lines: { accountId: string; type: 'debit' | 'credit'; amount: string; note?: string | null }[]
 }): Promise<JournalEntryRow> {
   // Validate double-entry: total debits must equal total credits
-  const totalDebit = data.lines
-    .filter(l => l.type === 'debit')
-    .reduce((sum, l) => sum + toCents(l.amount), 0)
-  const totalCredit = data.lines
-    .filter(l => l.type === 'credit')
-    .reduce((sum, l) => sum + toCents(l.amount), 0)
-
-  if (totalDebit !== totalCredit) {
-    throw new Error(`Debits (${totalDebit}) must equal credits (${totalCredit})`)
-  }
+  if (!isJournalBalanced(data.lines)) throw new Error('JOURNAL_NOT_BALANCED')
 
   const entryId = await db.transaction(async (tx) => {
     const [entry] = await tx.insert(journalEntries).values({

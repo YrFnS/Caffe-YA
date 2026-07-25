@@ -117,10 +117,9 @@ export async function getCashSales(shiftId: string): Promise<string> {
     where: and(
       eq(transactions.shiftId, shiftId),
       eq(transactions.paymentMethod, 'cash'),
-      eq(transactions.isRefund, false),
     ),
   })
-  const total = txs.reduce((sum, tx) => sum + toCents(tx.amount), 0)
+  const total = txs.reduce((sum, tx) => sum + (tx.isRefund ? -toCents(tx.amount) : toCents(tx.amount)), 0)
   return fromCents(total)
 }
 

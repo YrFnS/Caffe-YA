@@ -1,8 +1,9 @@
 "use client"
 
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import type { ShiftSummary } from '../_types'
 import { formatCurrency, toCents } from '@/lib/currency'
+import { formatDateTime } from '@/lib/format'
 
 interface ShiftHistoryTableProps {
   history: ShiftSummary[]
@@ -10,6 +11,7 @@ interface ShiftHistoryTableProps {
 
 export default function ShiftHistoryTable({ history }: ShiftHistoryTableProps) {
   const t = useTranslations('shifts')
+  const locale = useLocale()
 
   if (history.length === 0) {
     return (
@@ -44,10 +46,10 @@ export default function ShiftHistoryTable({ history }: ShiftHistoryTableProps) {
               >
                 <td className="px-4 py-3.5 text-body-md text-on-surface">{shift.cashierName}</td>
                 <td className="px-4 py-3.5 text-body-md text-on-surface">
-                  {new Date(shift.openedAt).toLocaleString()}
+                  {formatDateTime(shift.openedAt, locale)}
                 </td>
                 <td className="px-4 py-3.5 text-body-md text-on-surface">
-                  {shift.closedAt ? new Date(shift.closedAt).toLocaleString() : '—'}
+                  {shift.closedAt ? formatDateTime(shift.closedAt, locale) : '—'}
                 </td>
                 <td className="px-4 py-3.5 text-body-md text-end text-on-surface font-mono">
                   {formatCurrency(shift.openingFloat)}

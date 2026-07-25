@@ -41,7 +41,8 @@
     "open": "Open",
     "signOut": "Sign Out",
     "signedIn": "Signed in",
-    "liveOperations": "Live operations"
+    "liveOperations": "Live operations",
+    "dashboardDescription": "Sales, service, and shift activity at a glance."
   },
   "auth": {
     "signIn": "Sign In",
@@ -49,7 +50,15 @@
     "signOut": "Sign Out",
     "email": "Email",
     "password": "Password",
-    "name": "Name"
+    "name": "Name",
+    "operationsCockpit": "One operations cockpit",
+    "marketingTitle": "Coffee service and gaming sessions, perfectly in sync.",
+    "marketingDescription": "Run the floor, inventory, team, accounting, and every active station from a workspace built for busy shifts.",
+    "marketingFeature": "Live POS, timed resources, and stock control",
+    "welcomeBack": "WELCOME BACK",
+    "signInToOperations": "Sign in to operations",
+    "signInDescription": "Continue to today's shift and live floor overview.",
+    "demo": "Demo"
   },
   "validation": {
     "required": "This field is required",
@@ -88,7 +97,20 @@
     "processing": "Processing...",
     "loadingPos": "Loading POS...",
     "voidItem": "Void item",
-    "voidReason": "Reason for void"
+    "voidOrder": "Void order",
+    "refundOrder": "Refund order",
+    "voidReason": "Reason",
+    "voidReasonPlaceholder": "Enter the reason for voiding",
+    "refundReasonPlaceholder": "Enter the reason for the refund",
+    "confirmVoidDescription": "Are you sure you want to void {name}?",
+    "confirmRefundDescription": "Are you sure you want to refund {name}?",
+    "currentOrder": "current order",
+    "completedOrders": "Completed orders eligible for refund",
+    "amount": "Amount",
+    "reference": "Payment reference",
+    "addPayment": "Add payment line",
+    "removePayment": "Remove payment line",
+    "remaining": "Remaining"
   },
   "resources": {
     "title": "Resources",
@@ -162,7 +184,13 @@
     "cancel": "Cancel",
     "loading": "Loading...",
     "noResults": "No results found",
-    "search": "Search"
+    "search": "Search",
+    "date": "Date",
+    "note": "Note",
+    "movement": {
+      "purchase": "Purchase", "sale_deduction": "Sale", "wastage": "Wastage",
+      "adjustment": "Adjustment", "opening_balance": "Opening Balance"
+    }
   },
   "admin": {
     "title": "Admin",
@@ -180,7 +208,11 @@
     "productsDescription": "Manage product catalog, pricing, and categories",
     "categoriesDescription": "Organize products into hierarchical categories",
     "ingredientsDescription": "Track raw materials and inventory levels",
-    "unitsDescription": "Define measurement units for ingredients"
+    "unitsDescription": "Define measurement units for ingredients",
+    "name": "Name", "email": "Email", "noRoles": "No roles", "status": "Status",
+    "disabled": "Disabled", "active": "Active", "inactive": "Inactive", "actions": "Actions",
+    "save": "Save", "cancel": "Cancel", "editRoles": "Edit Roles", "enable": "Enable",
+    "disable": "Disable", "addUser": "Add User", "assignRoles": "Assign Roles"
   },
   "procurement": {
     "title": "Procurement",
@@ -219,7 +251,22 @@
     "addItem": "Add item",
     "note": "Note",
     "receiveGoods": "Receive Goods",
-    "confirmDelete": "Are you sure you want to delete this item?"
+    "confirmDelete": "Are you sure you want to delete this item?",
+    "item": "Purchase item",
+    "selectItem": "Select an ingredient or product",
+    "ingredients": "Ingredients",
+    "products": "Products",
+    "details": "Details",
+    "purchaseDetails": "Purchase details",
+    "received": "Received",
+    "markPaid": "Mark paid",
+    "receiptNote": "Receipt note",
+    "yes": "Yes",
+    "no": "No",
+    "close": "Close",
+    "receiveBeforePayment": "Receive the goods before recording payment.",
+    "cannotDelete": "Received, paid, or posted purchases cannot be deleted.",
+    "operationFailed": "The operation failed."
   },
   "expenses": {
     "title": "Expenses",
@@ -295,7 +342,11 @@
     "totalLiabilities": "Total Liabilities",
     "totalEquity": "Total Equity",
     "asOfDate": "As of Date",
-    "generateReport": "Generate Report"
+    "generateReport": "Generate Report",
+    "financialReports": "Financial Reports",
+    "report": "Report",
+    "periodDatesRequired": "Period dates are required.",
+    "reportFailed": "Failed to generate report."
   },
   "reports": {
     "title": "Reports",
@@ -343,5 +394,21 @@
     "cancel": "Cancel",
     "save": "Save",
     "noPartners": "No partners found"
+  },
+  "employees": {
+    "name": "Name", "phone": "Phone", "salary": "Salary", "hired": "Hired",
+    "status": "Status", "active": "Active", "inactive": "Inactive", "actions": "Actions",
+    "search": "Search employees...", "add": "Add Employee", "none": "No employees found",
+    "confirmDelete": "Delete this employee?"
+  },
+  "payroll": {
+    "employee": "Employee", "period": "Period", "base": "Base", "net": "Net",
+    "status": "Status", "paid": "Paid", "unpaid": "Unpaid", "actions": "Actions",
+    "markPaid": "Mark as paid", "add": "Add Payroll Entry", "none": "No payroll entries found",
+    "confirmDelete": "Delete this payroll entry?", "unknown": "Unknown",
+    "edit": "Edit Payroll Entry", "cancel": "Cancel", "saving": "Saving...", "save": "Save",
+    "selectEmployee": "Select employee", "periodStart": "Period Start", "periodEnd": "Period End",
+    "baseSalary": "Base Salary", "bonuses": "Bonuses", "deductions": "Deductions",
+    "note": "Note (optional)", "notePlaceholder": "Any additional notes", "saveFailed": "Failed to save payroll entry"
   }
 }

@@ -19,7 +19,7 @@ interface OrderSummaryProps {
   timerDisplay?: string
   orderCreatedAt?: Date
   onAddItem: (productId: string) => void
-  onRemoveItem: (productId: string) => void
+  onVoidItem: (productId: string) => void
   onUpdateQuantity: (productId: string, quantity: number) => void
   onCheckout: () => void
   onClear: () => void
@@ -37,7 +37,7 @@ export default function OrderSummary({
   timerDisplay,
   orderCreatedAt,
   onAddItem,
-  onRemoveItem,
+  onVoidItem,
   onUpdateQuantity,
   onCheckout,
   onClear,
@@ -138,7 +138,7 @@ export default function OrderSummary({
                     variant="ghost"
                     size="icon"
                     className="h-6 w-6 text-tertiary hover:text-tertiary"
-                    onClick={() => onRemoveItem(item.productId)}
+                    onClick={() => onVoidItem(item.productId)}
                     disabled={disabled}
                   >
                     <Trash2 className="w-3 h-3" />

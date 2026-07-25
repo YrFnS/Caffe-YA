@@ -32,7 +32,7 @@ const productImages = {
 
 const permissionRows = [
   ['admin.view', 'admin'], ['admin.manage_users', 'admin'], ['admin.manage_roles', 'admin'], ['admin.manage_permissions', 'admin'], ['admin.manage_settings', 'admin'], ['admin.manage_modules', 'admin'],
-  ['pos.view', 'pos'], ['pos.checkout', 'pos'], ['pos.void_item', 'pos'], ['pos.void_order', 'pos'], ['pos.open_shift', 'pos'], ['pos.close_shift', 'pos'],
+  ['pos.view', 'pos'], ['pos.checkout', 'pos'], ['pos.void_item', 'pos'], ['pos.void_order', 'pos'], ['pos.refund', 'pos'], ['pos.open_shift', 'pos'], ['pos.close_shift', 'pos'],
   ['shifts.view', 'shifts'], ['shifts.open', 'shifts'], ['shifts.close', 'shifts'], ['shifts.approve', 'shifts'],
   ['inventory.view', 'inventory'], ['inventory.manage_products', 'inventory'], ['inventory.manage_ingredients', 'inventory'], ['inventory.manage_categories', 'inventory'], ['inventory.stock_movement', 'inventory'],
   ['resources.view', 'resources'], ['resources.manage', 'resources'],
@@ -42,7 +42,7 @@ const permissionRows = [
   ['accounting.view', 'accounting'], ['accounting.manage', 'accounting'], ['partners.view', 'partners'], ['partners.manage', 'partners'], ['reports.view', 'reports'],
 ].map(([key, module], index) => ({ id: `b0000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`, key, module, description: key.replaceAll('.', ' ') }))
 
-const cashierPermissionKeys = new Set(['pos.view', 'pos.checkout', 'pos.void_item', 'pos.open_shift', 'pos.close_shift', 'shifts.view', 'shifts.open', 'shifts.close', 'resources.view'])
+const cashierPermissionKeys = new Set(['pos.view', 'pos.checkout', 'pos.void_item', 'pos.void_order', 'pos.open_shift', 'pos.close_shift', 'shifts.view', 'shifts.open', 'shifts.close', 'resources.view'])
 const accountantModules = new Set(['accounting', 'expenses', 'employees', 'payroll', 'reports'])
 
 async function syncPermissionMatrix() {

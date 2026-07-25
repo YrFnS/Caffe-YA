@@ -8,6 +8,8 @@ import { formatCurrency, fromCents, multiplyDecimalMoney, toCents } from '@/lib/
 
 interface PurchaseFormProps {
   vendors: VendorRow[]
+  ingredients: Array<{ id: string; name: string }>
+  products: Array<{ id: string; name: string }>
   onSuccess: () => void
   onClose: () => void
 }
@@ -24,7 +26,7 @@ function lineTotal(item: LineItem) {
   try { return multiplyDecimalMoney(item.unitCost || '0', item.quantity || '0') } catch { return '0.000' }
 }
 
-export default function PurchaseForm({ vendors, onSuccess, onClose }: PurchaseFormProps) {
+export default function PurchaseForm({ vendors, ingredients, products, onSuccess, onClose }: PurchaseFormProps) {
   const t = useTranslations('procurement')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -91,7 +93,25 @@ export default function PurchaseForm({ vendors, onSuccess, onClose }: PurchaseFo
             <label className="block text-body-sm text-on-surface-variant mb-1">{t('items')}</label>
             {items.map((item, idx) => (
               <div key={idx} className="flex gap-2 mb-2 items-center">
-                <input placeholder={t('ingredientId')} value={item.ingredientId} onChange={e => updateItem(idx, 'ingredientId', e.target.value)} className="flex-1 px-2 py-1 rounded border border-outline bg-surface-container-lowest text-on-surface text-sm" />
+                <select
+                  aria-label={t('item')}
+                  value={item.ingredientId ? `ingredient:${item.ingredientId}` : item.productId ? `product:${item.productId}` : ''}
+                  onChange={event => {
+                    const [kind, id] = event.target.value.split(':')
+                    setItems(rows => rows.map((row, rowIndex) => rowIndex === idx
+                      ? { ...row, ingredientId: kind === 'ingredient' ? id : '', productId: kind === 'product' ? id : '' }
+                      : row))
+                  }}
+                  className="flex-1 px-2 py-1 rounded border border-outline bg-surface-container-lowest text-on-surface text-sm"
+                >
+                  <option value="">{t('selectItem')}</option>
+                  <optgroup label={t('ingredients')}>
+                    {ingredients.map(item => <option key={item.id} value={`ingredient:${item.id}`}>{item.name}</option>)}
+                  </optgroup>
+                  <optgroup label={t('products')}>
+                    {products.map(item => <option key={item.id} value={`product:${item.id}`}>{item.name}</option>)}
+                  </optgroup>
+                </select>
                 <input placeholder={t('qty')} value={item.quantity} onChange={e => updateItem(idx, 'quantity', e.target.value)} className="w-20 px-2 py-1 rounded border border-outline bg-surface-container-lowest text-on-surface text-sm" />
                 <input placeholder={t('unitCost')} value={item.unitCost} onChange={e => updateItem(idx, 'unitCost', e.target.value)} className="w-28 px-2 py-1 rounded border border-outline bg-surface-container-lowest text-on-surface text-sm" />
                 <span className="w-24 text-body-sm">{formatCurrency(lineTotal(item))}</span>

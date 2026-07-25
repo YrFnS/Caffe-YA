@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge'
 import { deleteEmployeeAction } from '@/features/employees/_actions/employeeActions'
 import type { EmployeeRecord } from '@/features/employees/_services/employeeService'
 import { formatCurrency } from '@/lib/currency'
+import { useLocale, useTranslations } from 'next-intl'
+import { formatDate } from '@/lib/format'
 
 interface EmployeeTableProps {
   employees: EmployeeRecord[]
@@ -16,6 +18,8 @@ interface EmployeeTableProps {
 
 export default function EmployeeTable({ employees: initialEmployees }: EmployeeTableProps) {
   const router = useRouter()
+  const t = useTranslations('employees')
+  const locale = useLocale()
   const [employeeList, setEmployeeList] = useState(initialEmployees)
   const [search, setSearch] = useState('')
 
@@ -24,7 +28,7 @@ export default function EmployeeTable({ employees: initialEmployees }: EmployeeT
   )
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this employee?')) return
+    if (!confirm(t('confirmDelete'))) return
     await deleteEmployeeAction(id)
     setEmployeeList(prev => prev.filter(e => e.id !== id))
     router.refresh()
@@ -33,21 +37,21 @@ export default function EmployeeTable({ employees: initialEmployees }: EmployeeT
   const columns = [
     {
       key: 'name',
-      label: 'Name',
+      label: t('name'),
       render: (row: EmployeeRecord) => (
         <span className="font-medium text-on-surface">{row.name}</span>
       ),
     },
     {
       key: 'phone',
-      label: 'Phone',
+      label: t('phone'),
       render: (row: EmployeeRecord) => (
         <span className="text-on-surface-variant">{row.phone ?? '-'}</span>
       ),
     },
     {
       key: 'salary',
-      label: 'Salary',
+      label: t('salary'),
       render: (row: EmployeeRecord) => (
         <span className="font-mono text-on-surface">
           {formatCurrency(row.salaryAmount)} ({row.salaryType})
@@ -56,25 +60,25 @@ export default function EmployeeTable({ employees: initialEmployees }: EmployeeT
     },
     {
       key: 'hiredAt',
-      label: 'Hired',
+      label: t('hired'),
       render: (row: EmployeeRecord) => (
         <span className="text-on-surface-variant">
-          {row.hiredAt ? new Date(row.hiredAt).toLocaleDateString() : '-'}
+          {row.hiredAt ? formatDate(row.hiredAt, locale) : '-'}
         </span>
       ),
     },
     {
       key: 'status',
-      label: 'Status',
+      label: t('status'),
       render: (row: EmployeeRecord) => (
         row.isActive
-          ? <Badge variant="success">Active</Badge>
-          : <Badge variant="neutral">Inactive</Badge>
+          ? <Badge variant="success">{t('active')}</Badge>
+          : <Badge variant="neutral">{t('inactive')}</Badge>
       ),
     },
     {
       key: 'actions',
-      label: 'Actions',
+      label: t('actions'),
       render: (row: EmployeeRecord) => (
         <div className="flex gap-2">
           <Button
@@ -101,17 +105,17 @@ export default function EmployeeTable({ employees: initialEmployees }: EmployeeT
       <div className="flex items-center justify-between">
         <input
           type="text"
-          placeholder="Search employees..."
+          placeholder={t('search')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="h-10 px-4 rounded-lg border-b-2 border-outline bg-surface-container-highest text-sm outline-none focus:border-outline"
         />
         <Button onClick={() => router.push('/employees?modal=add')}>
-          Add Employee
+          {t('add')}
         </Button>
       </div>
       <div className="bg-surface-container-lowest rounded-xl overflow-hidden">
-        <Table columns={columns} data={filtered} emptyMessage="No employees found" />
+        <Table columns={columns} data={filtered} emptyMessage={t('none')} />
       </div>
     </div>
   )

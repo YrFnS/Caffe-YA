@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { createExpenseAction, deleteExpenseAction } from '../_actions/expenseActions'
 import type { ExpenseRow, ExpenseCategoryRow } from '../_types'
 import { formatCurrency } from '@/lib/currency'
+import { formatDate } from '@/lib/format'
 
 interface ExpensesListProps {
   expenses: ExpenseRow[]
@@ -14,6 +15,7 @@ interface ExpensesListProps {
 
 export default function ExpensesList({ expenses, categories, currentShiftId }: ExpensesListProps) {
   const t = useTranslations('expenses')
+  const locale = useLocale()
   const [showForm, setShowForm] = useState(false)
   const [categoryId, setCategoryId] = useState('')
   const [amount, setAmount] = useState('')
@@ -75,7 +77,7 @@ export default function ExpensesList({ expenses, categories, currentShiftId }: E
                   <td className="p-3 text-on-surface">{e.categoryName ?? '—'}</td>
                   <td className="p-3 text-on-surface">{formatCurrency(e.amount)}</td>
                   <td className="p-3 text-on-surface text-body-sm">{e.description ?? '—'}</td>
-                  <td className="p-3 text-on-surface-variant text-body-sm">{new Date(e.createdAt).toLocaleDateString()}</td>
+                  <td className="p-3 text-on-surface-variant text-body-sm">{formatDate(e.createdAt, locale)}</td>
                   <td className="p-3">
                     <button onClick={() => handleDelete(e.id)} className="text-error text-body-sm hover:underline">{t('delete')}</button>
                   </td>

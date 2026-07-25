@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge'
 import { deletePayrollEntryAction, markPayrollPaidAction } from '@/features/payroll/_actions/payrollActions'
 import type { PayrollEntryRecord } from '@/features/payroll/_services/payrollService'
 import { formatCurrency } from '@/lib/currency'
+import { useLocale, useTranslations } from 'next-intl'
+import { formatDate } from '@/lib/format'
 
 interface PayrollEntryTableProps {
   entries: PayrollEntryRecord[]
@@ -17,10 +19,12 @@ interface PayrollEntryTableProps {
 
 export default function PayrollEntryTable({ entries: initialEntries, employeeNames }: PayrollEntryTableProps) {
   const router = useRouter()
+  const t = useTranslations('payroll')
+  const locale = useLocale()
   const [entryList, setEntryList] = useState(initialEntries)
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this payroll entry?')) return
+    if (!confirm(t('confirmDelete'))) return
     await deletePayrollEntryAction(id)
     setEntryList(prev => prev.filter(e => e.id !== id))
     router.refresh()
@@ -38,46 +42,46 @@ export default function PayrollEntryTable({ entries: initialEntries, employeeNam
   const columns = [
     {
       key: 'employee',
-      label: 'Employee',
+      label: t('employee'),
       render: (row: PayrollEntryRecord) => (
-        <span className="font-medium text-on-surface">{employeeNames[row.employeeId] ?? 'Unknown'}</span>
+        <span className="font-medium text-on-surface">{employeeNames[row.employeeId] ?? t('unknown')}</span>
       ),
     },
     {
       key: 'period',
-      label: 'Period',
+      label: t('period'),
       render: (row: PayrollEntryRecord) => (
         <span className="text-on-surface-variant">
-          {new Date(row.periodStart).toLocaleDateString()} - {new Date(row.periodEnd).toLocaleDateString()}
+          {formatDate(row.periodStart, locale)} - {formatDate(row.periodEnd, locale)}
         </span>
       ),
     },
     {
       key: 'baseSalary',
-      label: 'Base',
+      label: t('base'),
       render: (row: PayrollEntryRecord) => (
         <span className="font-mono text-on-surface">{formatCurrency(row.baseSalary)}</span>
       ),
     },
     {
       key: 'netAmount',
-      label: 'Net',
+      label: t('net'),
       render: (row: PayrollEntryRecord) => (
         <span className="font-mono text-on-surface font-medium">{formatCurrency(row.netAmount)}</span>
       ),
     },
     {
       key: 'status',
-      label: 'Status',
+      label: t('status'),
       render: (row: PayrollEntryRecord) => (
         row.isPaid
-          ? <Badge variant="success">Paid</Badge>
-          : <Badge variant="neutral">Unpaid</Badge>
+          ? <Badge variant="success">{t('paid')}</Badge>
+          : <Badge variant="neutral">{t('unpaid')}</Badge>
       ),
     },
     {
       key: 'actions',
-      label: 'Actions',
+      label: t('actions'),
       render: (row: PayrollEntryRecord) => (
         <div className="flex gap-1">
           {!row.isPaid && (
@@ -85,7 +89,7 @@ export default function PayrollEntryTable({ entries: initialEntries, employeeNam
               size="icon"
               variant="ghost"
               onClick={() => handleMarkPaid(row.id)}
-              title="Mark as paid"
+              title={t('markPaid')}
             >
               <CheckCircle className="w-4 h-4 text-success" />
             </Button>
@@ -114,11 +118,11 @@ export default function PayrollEntryTable({ entries: initialEntries, employeeNam
       <div className="flex items-center justify-between">
         <div />
         <Button onClick={() => router.push('/payroll?modal=add')}>
-          Add Payroll Entry
+          {t('add')}
         </Button>
       </div>
       <div className="bg-surface-container-lowest rounded-xl overflow-hidden">
-        <Table columns={columns} data={entryList} emptyMessage="No payroll entries found" />
+        <Table columns={columns} data={entryList} emptyMessage={t('none')} />
       </div>
     </div>
   )

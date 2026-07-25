@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth'
 import SettingsClientView from './_components/SettingsClientView'
 import { getAllSettings } from '@/features/admin/_services/settingsService'
 import { hasPermission } from '@/features/admin/_actions/adminActions'
+import { getTranslations } from 'next-intl/server'
 
 export default async function AdminSettingsPage() {
   const session = await getSession()
@@ -12,11 +13,12 @@ export default async function AdminSettingsPage() {
   if (!canAccess) redirect('/dashboard')
 
   const settings = await getAllSettings()
+  const t = await getTranslations('admin')
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-headline-lg font-semibold text-on-surface">Settings</h1>
+        <h1 className="text-headline-lg font-semibold text-on-surface">{t('settings')}</h1>
       </div>
       <SettingsClientView settings={settings} />
     </div>

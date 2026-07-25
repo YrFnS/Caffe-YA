@@ -5,6 +5,8 @@ import { getAllActiveProducts, getCategories } from '@/features/pos/_services/pr
 import { getResourcesWithCategories } from '@/features/pos/_services/resourceService'
 import POSClientView from './_components/POSClientView'
 import type { CartItem } from '@/features/pos/_types'
+import { getRefundableOrders } from '@/features/pos/_services/voidService'
+import { hasPermission } from '@/features/admin/_actions/adminActions'
 
 function mapOrderItemsToCartItems(items: Awaited<ReturnType<typeof getDraftOrderItems>>): CartItem[] {
   return items.map(item => ({
@@ -37,11 +39,13 @@ export default async function POSPage({
   const existingItems = await getDraftOrderItems(draftOrder.id)
   const initialCartItems = mapOrderItemsToCartItems(existingItems)
 
-  const [products, categories, resources] = await Promise.all([
+  const [products, categories, resources, canRefund] = await Promise.all([
     getAllActiveProducts(),
     getCategories(),
     getResourcesWithCategories(),
+    hasPermission(userId, 'pos.refund'),
   ])
+  const refundableOrders = canRefund ? await getRefundableOrders() : []
 
   return (
     <POSClientView
@@ -56,6 +60,7 @@ export default async function POSPage({
       initialTimerStartedAt={draftOrder.timerStartedAt}
       initialTimerCharge={draftOrder.timerChargeAmount ?? '0'}
       initialResourceId={draftOrder.resourceId}
+      refundableOrders={refundableOrders}
     />
   )
 }

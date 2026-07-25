@@ -17,8 +17,7 @@ interface UsersClientViewProps {
 
 export default function UsersClientView({ users, roles, currentUserId }: UsersClientViewProps) {
   const router = useRouter()
-  const _t = useTranslations('admin')
-  void _t // used via dynamic t() in JSX
+  const t = useTranslations('admin')
   const [userList, setUserList] = useState(users)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [selectedRoles, setSelectedRoles] = useState<Record<string, string[]>>({})
@@ -51,15 +50,15 @@ export default function UsersClientView({ users, roles, currentUserId }: UsersCl
   }
 
   const columns = [
-    { key: 'name', label: 'Name', sortable: true },
-    { key: 'email', label: 'Email', sortable: true },
+    { key: 'name', label: t('name'), sortable: true },
+    { key: 'email', label: t('email'), sortable: true },
     {
       key: 'roles',
-      label: 'Roles',
+      label: t('roles'),
       render: (row: UserWithRoles) => (
         <div className="flex flex-wrap gap-1">
           {row.roles.length === 0 ? (
-            <span className="text-on-surface-variant text-sm">No roles</span>
+            <span className="text-on-surface-variant text-sm">{t('noRoles')}</span>
           ) : (
             row.roles.map(r => (
               <Badge key={r.id} variant="neutral">{r.name}</Badge>
@@ -70,24 +69,24 @@ export default function UsersClientView({ users, roles, currentUserId }: UsersCl
     },
     {
       key: 'status',
-      label: 'Status',
+      label: t('status'),
       render: (row: UserWithRoles) => (
         row.isDisabled
-          ? <Badge variant="error">Disabled</Badge>
+          ? <Badge variant="error">{t('disabled')}</Badge>
           : row.isActive
-            ? <Badge variant="success">Active</Badge>
-            : <Badge variant="warning">Inactive</Badge>
+            ? <Badge variant="success">{t('active')}</Badge>
+            : <Badge variant="warning">{t('inactive')}</Badge>
       ),
     },
     {
       key: 'actions',
-      label: 'Actions',
+      label: t('actions'),
       render: (row: UserWithRoles) => (
         <div className="flex gap-2">
           {editingId === row.id ? (
             <>
-              <Button size="sm" onClick={() => saveRoles(row.id)}>Save</Button>
-              <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancel</Button>
+              <Button size="sm" onClick={() => saveRoles(row.id)}>{t('save')}</Button>
+              <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>{t('cancel')}</Button>
             </>
           ) : (
             <>
@@ -99,7 +98,7 @@ export default function UsersClientView({ users, roles, currentUserId }: UsersCl
                   setSelectedRoles(prev => ({ ...prev, [row.id]: row.roles.map(r => r.id) }))
                 }}
               >
-                Edit Roles
+                {t('editRoles')}
               </Button>
               {row.id !== currentUserId && (
                 <Button
@@ -107,7 +106,7 @@ export default function UsersClientView({ users, roles, currentUserId }: UsersCl
                   variant={row.isDisabled ? 'success' : 'destructive'}
                   onClick={() => toggleDisabled(row.id, !row.isDisabled)}
                 >
-                  {row.isDisabled ? 'Enable' : 'Disable'}
+                  {row.isDisabled ? t('enable') : t('disable')}
                 </Button>
               )}
             </>
@@ -121,13 +120,13 @@ export default function UsersClientView({ users, roles, currentUserId }: UsersCl
     <div className="space-y-4">
       <div className="flex justify-end">
         <Button size="sm" onClick={() => router.push('?modal=add')}>
-          Add User
+          {t('addUser')}
         </Button>
       </div>
       {editingId && (
         <div className="bg-surface-container-lowest border border-outline rounded-lg p-4">
           <h3 className="text-sm font-medium text-on-surface mb-3">
-            Assign Roles - {userList.find(u => u.id === editingId)?.name}
+            {t('assignRoles')} - {userList.find(u => u.id === editingId)?.name}
           </h3>
           <div className="flex flex-wrap gap-2">
             {roles.map(role => {

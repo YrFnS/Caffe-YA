@@ -64,6 +64,7 @@ export async function seedDefaultPermissions(): Promise<void> {
     { key: 'pos.checkout', module: 'pos', description: 'Process checkout' },
     { key: 'pos.void_item', module: 'pos', description: 'Void order items' },
     { key: 'pos.void_order', module: 'pos', description: 'Void entire order' },
+    { key: 'pos.refund', module: 'pos', description: 'Refund completed orders' },
     { key: 'pos.open_shift', module: 'pos', description: 'Open shift' },
     { key: 'pos.close_shift', module: 'pos', description: 'Close shift' },
 

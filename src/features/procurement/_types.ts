@@ -19,6 +19,9 @@ export interface PurchaseRow {
   creatorName: string | null
   createdAt: Date
   receivedAt?: Date | null
+  receiptId?: string | null
+  receiptNote?: string | null
+  items?: PurchaseItemRow[]
 }
 
 export interface PurchaseItemRow {

@@ -12,7 +12,7 @@ import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { requirePermission } from '@/features/admin/_actions/adminActions'
-import { fromCents, toCents } from '@/lib/currency'
+import { calculatePayrollNet } from '@/lib/currency'
 
 export async function getPayrollEntriesAction() {
   const session = await getSession()
@@ -45,7 +45,7 @@ export async function createPayrollEntryAction(formData: FormData) {
     return { error: 'INVALID_INPUT' }
   }
 
-  const netAmount = fromCents(toCents(baseSalary) + toCents(bonuses || '0') - toCents(deductions || '0'))
+  const netAmount = calculatePayrollNet(baseSalary, bonuses || '0', deductions || '0')
 
   try {
     await createPayrollEntry({
@@ -93,7 +93,7 @@ export async function updatePayrollEntryAction(formData: FormData) {
   if (note !== null) data.note = note || null
 
   if (baseSalary) {
-    const netAmount = fromCents(toCents(baseSalary) + toCents(bonuses || '0') - toCents(deductions || '0'))
+    const netAmount = calculatePayrollNet(baseSalary, bonuses || '0', deductions || '0')
     data.netAmount = netAmount
   }
 

@@ -163,7 +163,7 @@ export async function markPurchasePaidAction(id: string) {
   if (!session?.user) redirect('/sign-in')
   await requirePermission(session.user.id, 'procurement.approve_invoice')
   try {
-    await markPurchasePaid(id)
+    await markPurchasePaid(id, session.user.id)
     revalidatePath('/procurement/purchases')
     return { success: true }
   } catch (e) {
