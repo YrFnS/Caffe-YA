@@ -1,4 +1,4 @@
-# Caffe YA full implementation plan
+# RoastGrid full implementation plan
 
 Status: Implemented and production-verified; presentation-device check remains an owner action
 
@@ -8,7 +8,7 @@ references; their unchecked boxes are not a second active backlog.
 
 ## Definition of done
 
-Caffe YA is complete when every workflow below is reachable through the UI,
+RoastGrid is complete when every workflow below is reachable through the UI,
 authorized by role, atomic in Neon, bilingual in English and Arabic, covered by
 automated tests, and verified in the deployed Vercel application.
 
@@ -122,7 +122,7 @@ These require an owner decision after the demo and are not code-completion block
 
 ## Release evidence — 2026-07-26
 
-- Production: `https://caffe-ya.vercel.app` reached Vercel Ready after a clean Next.js build.
+- Production: `https://roastgrid.vercel.app` reached Vercel Ready after a clean Next.js build.
 - Browser: all four roles signed in through the deployed UI. Cashier restrictions, item void,
   cash/card split payment, manager shift opening and one-time refund, procurement create/receive/pay,
   accountant finance routes, sign-out, Arabic RTL, and a 390×844 layout were exercised.

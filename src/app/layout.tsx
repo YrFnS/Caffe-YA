@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Caffe YA — Operations",
+  title: "RoastGrid — Operations",
   description: "Cafe and gaming operations, in one workspace.",
 };
 

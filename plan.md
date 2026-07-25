@@ -1,8 +1,8 @@
-# Caffe-YA — Audit Fix Plan
+# RoastGrid — Audit Fix Plan
 
 **Date:** 2026-05-13
 **Status:** Planning
-**Context:** Full audit of Caffe-YA completed. Build passes. 10 npm vulnerabilities patched. ESLint: 0 errors, 40 warnings. Multiple Rule.md and DESIGN.md violations remain.
+**Context:** Full audit of RoastGrid completed. Build passes. 10 npm vulnerabilities patched. ESLint: 0 errors, 40 warnings. Multiple Rule.md and DESIGN.md violations remain.
 
 ---
 
@@ -252,7 +252,7 @@ Already replaced all 34 occurrences across 9 files. No further action.
 After each phase:
 
 ```bash
-cd /home/lich/Caffe-YA
+cd /home/lich/RoastGrid
 
 # Phase 1 end
 npm run lint  # 0 errors

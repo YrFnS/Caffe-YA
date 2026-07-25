@@ -1,10 +1,10 @@
-# Design System Specification: Caffe-YA POS
+# Design System Specification: RoastGrid POS
 
 ## 1. Overview & Creative North Star
 
 **Creative North Star: "The Kinetic Atelier"**
 
-Caffe-YA is a hybrid cafe + gaming center POS built for speed, clarity, and authority. In high-volume environments, "standard" UI feels cluttered or clinical. This design system rejects the "web-page" look in favor of a high-end, editorial POS experience. We treat the interface as a physical workspace—an "Atelier"—where efficiency is derived from spatial clarity, not just buttons.
+RoastGrid is a hybrid cafe + gaming center POS built for speed, clarity, and authority. In high-volume environments, "standard" UI feels cluttered or clinical. This design system rejects the "web-page" look in favor of a high-end, editorial POS experience. We treat the interface as a physical workspace—an "Atelier"—where efficiency is derived from spatial clarity, not just buttons.
 
 By utilizing **Kinetic Layering**, we break the rigid grid. We use intentional asymmetry to draw the eye toward primary actions (like the checkout summary) while keeping secondary data (maintenance logs, audit trails) in a supportive, peripheral role. The aesthetic is "Precision-Utility": it feels like a professional tool used by an expert, utilizing bold typography and tonal depth rather than lines and boxes.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""E2E screenshot taker for Caffe-YA using Playwright + Chromium"""
+"""E2E screenshot taker for RoastGrid using Playwright + Chromium"""
 import asyncio
 import sys
 from pathlib import Path
@@ -25,8 +25,8 @@ async def take_screenshot(url: str, path: str, wait_for: str = None):
 async def main():
     base = "http://213.199.56.120:3000"
     screens = [
-        (f"{base}/ar", "/tmp/caffe-ya-landing.png", "[data-testid='sign-in-form'], form, [type='email']"),
-        (f"{base}/ar/sign-in", "/tmp/caffe-ya-signin.png", "form"),
+        (f"{base}/ar", "/tmp/roastgrid-landing.png", "[data-testid='sign-in-form'], form, [type='email']"),
+        (f"{base}/ar/sign-in", "/tmp/roastgrid-signin.png", "form"),
     ]
 
     for url, path, _ in screens:
@@ -40,11 +40,11 @@ async def main():
         )
         page = await browser.new_page()
         await page.goto(f"{base}/ar/sign-in", timeout=15000)
-        await page.fill("input[type='email'], input[name='email']", "test_admin@caffe.ya")
-        await page.fill("input[type='password']", "test1234")
+        await page.fill("input[type='email'], input[name='email']", "admin@roastgrid.app")
+        await page.fill("input[type='password']", "RoastGridDemo2026!")
         await page.click("button[type='submit']")
         await page.wait_for_url("**/dashboard**", timeout=10000)
-        await page.screenshot(path="/tmp/caffe-ya-dashboard.png", full_page=True)
+        await page.screenshot(path="/tmp/roastgrid-dashboard.png", full_page=True)
         print("OK: login -> dashboard")
         await browser.close()
 

@@ -23,8 +23,8 @@ async function screenshot(url, file) {
 
 async function main() {
   // Landing + sign-in
-  await screenshot(`${BASE}/ar`, `${OUT}/caffe-ya-landing.png`);
-  await screenshot(`${BASE}/ar/sign-in`, `${OUT}/caffe-ya-signin.png`);
+  await screenshot(`${BASE}/ar`, `${OUT}/roastgrid-landing.png`);
+  await screenshot(`${BASE}/ar/sign-in`, `${OUT}/roastgrid-signin.png`);
 
   // Login flow
   const browser = await chromium.launch({
@@ -32,11 +32,11 @@ async function main() {
   });
   const page = await browser.newPage();
   await page.goto(`${BASE}/ar/sign-in`, { timeout: 15000 });
-  await page.fill("input[type='email'], input[name='email']", 'test_admin@caffe.ya');
-  await page.fill("input[type='password']", 'test1234');
+  await page.fill("input[type='email'], input[name='email']", 'admin@roastgrid.app');
+  await page.fill("input[type='password']", 'RoastGridDemo2026!');
   await page.click("button[type='submit']");
   await page.waitForURL('**/dashboard**', { timeout: 10000 });
-  await page.screenshot({ path: `${OUT}/caffe-ya-dashboard.png`, fullPage: true });
+  await page.screenshot({ path: `${OUT}/roastgrid-dashboard.png`, fullPage: true });
   console.log(`OK: login -> dashboard`);
   await browser.close();
 

@@ -1,6 +1,6 @@
-# Caffe YA Launch Checklist
+# RoastGrid Launch Checklist
 
-Caffe YA is a bilingual Next.js operations app hosted on Vercel, with Better Auth and a PostgreSQL database on Neon. Expected demo cost: **$0/month** on the Vercel and Neon free tiers. Estimated hands-on time: **45–75 minutes**.
+RoastGrid is a bilingual Next.js operations app hosted on Vercel, with Better Auth and a PostgreSQL database on Neon. Expected demo cost: **$0/month** on the Vercel and Neon free tiers. Estimated hands-on time: **45–75 minutes**.
 
 Legend: 🧑 **You** — owner action · 🤖 **Agent** — code/CLI action · 🤝 **Together** — shared verification
 
@@ -37,13 +37,14 @@ Legend: 🧑 **You** — owner action · 🤖 **Agent** — code/CLI action · �
   **You'll know it worked when:** Neon reports all schema changes applied.
 
 - [x] 🤖 **Seed meaningful demo data** — 5 minutes.
-  > Populate every business table transactionally with users, roles, products, resources, orders, inventory, procurement, payroll, accounting, settings, and audit data. Leave session and verification-token tables runtime-owned.
+  > Run `npm run seed` to populate new databases or synchronize the RoastGrid identity,
+  > demo credentials, permissions, and settings in an existing database.
   **You'll know it worked when:** every demo-domain table has at least one row and all foreign keys resolve.
 
 ## Phase 4 — Deploy the app
 
 - [x] 🤖 **Deploy the production build to Vercel** — 10–20 minutes.
-  > Link `YrFnS/Caffe-YA`, add the production environment variables, deploy `main`, and wait for the canonical alias to become Ready.
+  > Link `YrFnS/RoastGrid`, add the production environment variables, deploy `main`, and wait for the canonical alias to become Ready.
   **You'll know it worked when:** the public Vercel URL returns the bilingual sign-in screen over HTTPS.
 
 ## Phase 5 — Domain

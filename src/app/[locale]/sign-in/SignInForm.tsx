@@ -58,7 +58,7 @@ export default function SignInForm({ locale }: SignInFormProps) {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="admin@caffe.ya"
+          placeholder="admin@roastgrid.app"
           className="h-12 w-full rounded-xl border border-outline-variant bg-white px-4 ps-11 text-on-surface outline-none transition focus:border-secondary focus:ring-4 focus:ring-secondary/10 placeholder:text-on-surface-disabled"
           required
         /></div>

@@ -22,7 +22,7 @@ Establish the development environment, initialize the Next.js application with t
 
 ### Step 1: Initialize Next.js Project
 ```bash
-npx create-next-app@latest caffe-ya --typescript --tailwind --eslint --app --src-dir --import-alias "@/*" --no-git --yes
+npx create-next-app@latest roastgrid --typescript --tailwind --eslint --app --src-dir --import-alias "@/*" --no-git --yes
 ```
 
 ### Step 2: Install Core Dependencies
@@ -71,7 +71,7 @@ Manual installation (shadcn init interactive issues):
 ### Step 8: Create Base Layout
 - Create `(protected)` route group at `app/[locale]/(protected)/`
 - Build a responsive sidebar in `(protected)/layout.tsx`:
-  - Logo and shop name ("Caffe-YA")
+  - Logo and shop name ("RoastGrid")
   - Navigation links (13 modules)
   - Language toggle (EN/العربية)
   - User menu (profile, logout)
@@ -89,7 +89,7 @@ Create `docker-compose.yml`:
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: caffe-ya-db
+    container_name: roastgrid-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
@@ -102,7 +102,7 @@ services:
 
 volumes:
   postgres_data:
-    name: caffe-ya-postgres
+    name: roastgrid-postgres
 ```
 
 Start the container:
@@ -126,7 +126,7 @@ npm run lint   # zero warnings
 
 ## Project Structure
 ```
-caffe-ya/
+roastgrid/
 ├── src/
 │   ├── app/
 │   │   ├── [locale]/

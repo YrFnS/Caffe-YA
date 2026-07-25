@@ -28,7 +28,7 @@ const cairo = Cairo({
 })
 
 export const metadata = {
-  title: 'Caffe-YA',
+  title: 'RoastGrid',
   description: 'Hybrid coffee shop + gaming center POS system',
   icons: {
     icon: '/favicon.ico',

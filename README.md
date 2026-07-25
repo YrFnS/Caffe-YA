@@ -1,4 +1,4 @@
-# Caffe-YA
+# RoastGrid
 
 Hybrid coffee shop + gaming center POS system built with Next.js 16.
 
@@ -15,7 +15,7 @@ Hybrid coffee shop + gaming center POS system built with Next.js 16.
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 22.6+
 - Docker (for PostgreSQL)
 
 ### Setup

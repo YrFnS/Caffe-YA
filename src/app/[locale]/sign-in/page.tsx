@@ -16,6 +16,7 @@ export default async function SignInPage({
     redirect(`/${locale}/dashboard`)
   }
   const t = await getTranslations({ locale, namespace: 'auth' })
+  const common = await getTranslations({ locale, namespace: 'common' })
 
   return (
     <div className="grid min-h-screen bg-[#111923] lg:grid-cols-[1.15fr_0.85fr]">
@@ -25,7 +26,7 @@ export default async function SignInPage({
       >
         <div className="flex items-center gap-3 text-white">
           <div className="grid h-11 w-11 place-items-center rounded-2xl bg-secondary"><Coffee className="h-5 w-5" /></div>
-          <span className="font-display text-xl font-bold">Caffe YA</span>
+          <span className="font-display text-xl font-bold">{common('appName')}</span>
         </div>
         <div className="max-w-xl text-white">
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] backdrop-blur">
@@ -40,7 +41,7 @@ export default async function SignInPage({
       <section className="flex min-h-screen items-center justify-center bg-[#f4f6f8] p-5 sm:p-10">
         <div className="w-full max-w-md">
           <div className="mb-8 flex items-center justify-between lg:hidden">
-            <div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-secondary text-white"><Coffee className="h-5 w-5" /></div><span className="font-display text-xl font-bold">Caffe YA</span></div>
+            <div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-secondary text-white"><Coffee className="h-5 w-5" /></div><span className="font-display text-xl font-bold">{common('appName')}</span></div>
             <LanguageSwitcher />
           </div>
           <div className="mb-8">
@@ -52,7 +53,7 @@ export default async function SignInPage({
           <div className="rounded-3xl border border-outline-variant/60 bg-white p-6 shadow-[0_24px_70px_rgba(24,34,48,.12)] sm:p-8">
             <SignInForm locale={locale} />
           </div>
-          <p className="mt-5 text-center text-xs text-on-surface-variant">{t('demo')}: admin@caffe.ya · CaffeDemo2026!</p>
+          <p className="mt-5 text-center text-xs text-on-surface-variant">{t('demo')}: admin@roastgrid.app · RoastGridDemo2026!</p>
         </div>
       </section>
     </div>

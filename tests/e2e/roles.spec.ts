@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-const password = process.env.DEMO_PASSWORD ?? 'CaffeDemo2026!'
+const password = process.env.DEMO_PASSWORD ?? 'RoastGridDemo2026!'
 
 async function signIn(page: Page, email: string) {
   await page.goto('/en/sign-in')
@@ -24,10 +24,10 @@ test('financial APIs reject unauthenticated requests', async ({ request }) => {
 })
 
 for (const role of [
-  { email: 'admin@caffe.ya', page: '/en/admin/roles', heading: 'Roles', visible: ['Admin', 'Reports'] },
-  { email: 'manager@caffe.ya', page: '/en/procurement/purchases', heading: 'Purchases', visible: ['Procurement', 'Reports'] },
-  { email: 'cashier@caffe.ya', page: '/en/pos', heading: 'Point of Sale', visible: ['POS', 'Shifts'] },
-  { email: 'accountant@caffe.ya', page: '/en/accounting/accounts', heading: 'Accounting', visible: ['Accounting', 'Payroll'] },
+  { email: 'admin@roastgrid.app', page: '/en/admin/roles', heading: 'Roles', visible: ['Admin', 'Reports'] },
+  { email: 'manager@roastgrid.app', page: '/en/procurement/purchases', heading: 'Purchases', visible: ['Procurement', 'Reports'] },
+  { email: 'cashier@roastgrid.app', page: '/en/pos', heading: 'Point of Sale', visible: ['POS', 'Shifts'] },
+  { email: 'accountant@roastgrid.app', page: '/en/accounting/accounts', heading: 'Accounting', visible: ['Accounting', 'Payroll'] },
 ]) {
   test(`${role.email} signs in and sees its primary workflow`, async ({ page }) => {
     await signIn(page, role.email)
@@ -39,7 +39,7 @@ for (const role of [
 }
 
 test('cashier cannot open admin and does not see finance/admin navigation', async ({ page }) => {
-  await signIn(page, 'cashier@caffe.ya')
+  await signIn(page, 'cashier@roastgrid.app')
   await expect(page.getByRole('link', { name: 'Admin' })).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Accounting' })).toHaveCount(0)
   await page.goto('/en/admin/users')
@@ -49,7 +49,7 @@ test('cashier cannot open admin and does not see finance/admin navigation', asyn
 })
 
 test('Arabic mode renders an RTL protected shell', async ({ page }) => {
-  await signIn(page, 'accountant@caffe.ya')
+  await signIn(page, 'accountant@roastgrid.app')
   await page.goto('/ar/accounting/accounts')
   await expect(page.locator('[dir="rtl"]')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'المحاسبة' })).toBeVisible()

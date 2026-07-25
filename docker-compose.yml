@@ -3,7 +3,7 @@ version: '3.8'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: caffe-ya-db
+    container_name: roastgrid-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
@@ -16,4 +16,5 @@ services:
 
 volumes:
   postgres_data:
+    # Keep the legacy storage name so existing local databases survive the rebrand.
     name: caffe-ya-postgres

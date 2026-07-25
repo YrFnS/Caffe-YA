@@ -3,7 +3,7 @@ import { hashPassword } from '@better-auth/utils/password'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { eq, inArray } from 'drizzle-orm'
 import { Pool } from 'pg'
-import * as schema from './src/lib/schema'
+import * as schema from './src/lib/schema.ts'
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL })
 const db = drizzle(pool, { schema })
@@ -45,6 +45,25 @@ const permissionRows = [
 const cashierPermissionKeys = new Set(['pos.view', 'pos.checkout', 'pos.void_item', 'pos.void_order', 'pos.open_shift', 'pos.close_shift', 'shifts.view', 'shifts.open', 'shifts.close', 'resources.view'])
 const accountantModules = new Set(['accounting', 'expenses', 'employees', 'payroll', 'reports'])
 
+async function syncBrandIdentity() {
+  const password = await hashPassword('RoastGridDemo2026!')
+  const demoUsers = [
+    { id: ids.admin, email: 'admin@roastgrid.app' },
+    { id: ids.manager, email: 'manager@roastgrid.app' },
+    { id: ids.cashier, email: 'cashier@roastgrid.app' },
+    { id: ids.accountant, email: 'accountant@roastgrid.app' },
+  ]
+
+  await db.transaction(async tx => {
+    for (const user of demoUsers) {
+      await tx.update(schema.users).set({ email: user.email, passwordHash: password, updatedAt: new Date() }).where(eq(schema.users.id, user.id))
+      await tx.update(schema.accounts).set({ accountId: user.email, password, updatedAt: new Date() }).where(eq(schema.accounts.userId, user.id))
+    }
+    await tx.update(schema.verifications).set({ identifier: 'demo@roastgrid.app' }).where(eq(schema.verifications.id, 'demo-expired-verification'))
+    await tx.update(schema.systemSettings).set({ value: 'RoastGrid Baghdad', updatedAt: new Date() }).where(eq(schema.systemSettings.key, 'shop_name'))
+  })
+}
+
 async function syncPermissionMatrix() {
   const payable = await db.select().from(schema.chartOfAccounts).where(eq(schema.chartOfAccounts.code, '2001')).limit(1)
   if (!payable.length) await db.insert(schema.chartOfAccounts).values({ id: ids.payableAccount, code: '2001', name: 'Accounts Payable', nameAr: 'الحسابات الدائنة', type: 'liability' })
@@ -61,7 +80,7 @@ async function syncPermissionMatrix() {
     })
   }
   const verification = await db.select().from(schema.verifications).limit(1)
-  if (!verification.length) await db.insert(schema.verifications).values({ id: 'demo-expired-verification', identifier: 'demo@caffe.ya', value: 'expired-demo-record', expiresAt: new Date(0) })
+  if (!verification.length) await db.insert(schema.verifications).values({ id: 'demo-expired-verification', identifier: 'demo@roastgrid.app', value: 'expired-demo-record', expiresAt: new Date(0) })
   let currentPermissions = await db.select().from(schema.permissions)
   for (const permission of permissionRows) {
     const matches = currentPermissions.filter((current) => current.key === permission.key)
@@ -87,26 +106,27 @@ async function syncPermissionMatrix() {
 async function seed() {
   const existing = await db.select({ id: schema.users.id }).from(schema.users).limit(1)
   if (existing.length) {
+    await syncBrandIdentity()
     await syncPermissionMatrix()
-    console.log('Demo data already exists; permission matrix synchronized.')
+    console.log('Demo data already exists; RoastGrid identity and permission matrix synchronized.')
     return
   }
 
-  const password = await hashPassword('CaffeDemo2026!')
+  const password = await hashPassword('RoastGridDemo2026!')
   const now = new Date()
   const yesterday = new Date(now.getTime() - 86_400_000)
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
   await db.transaction(async (tx) => {
     const demoUsers = [
-      { id: ids.admin, name: 'Yara Hassan', email: 'admin@caffe.ya' },
-      { id: ids.manager, name: 'Omar Kareem', email: 'manager@caffe.ya' },
-      { id: ids.cashier, name: 'Sara Ali', email: 'cashier@caffe.ya' },
-      { id: ids.accountant, name: 'Noor Ahmed', email: 'accountant@caffe.ya' },
+      { id: ids.admin, name: 'Yara Hassan', email: 'admin@roastgrid.app' },
+      { id: ids.manager, name: 'Omar Kareem', email: 'manager@roastgrid.app' },
+      { id: ids.cashier, name: 'Sara Ali', email: 'cashier@roastgrid.app' },
+      { id: ids.accountant, name: 'Noor Ahmed', email: 'accountant@roastgrid.app' },
     ]
     await tx.insert(schema.users).values(demoUsers.map((user) => ({ ...user, passwordHash: password, emailVerified: true })))
     await tx.insert(schema.accounts).values(demoUsers.map((user) => ({ id: `account-${user.id}`, userId: user.id, accountId: user.email, providerId: 'credential', password })))
-    await tx.insert(schema.verifications).values({ id: 'demo-expired-verification', identifier: 'demo@caffe.ya', value: 'expired-demo-record', expiresAt: new Date(0) })
+    await tx.insert(schema.verifications).values({ id: 'demo-expired-verification', identifier: 'demo@roastgrid.app', value: 'expired-demo-record', expiresAt: new Date(0) })
 
     const roleRows = [
       { id: ids.superAdmin, name: 'Super Admin', description: 'Full system access' },
@@ -215,7 +235,7 @@ async function seed() {
       { journalEntryId: ids.journal, accountId: ids.salesAccount, type: 'credit', amount: '16000', note: 'Cafe revenue' },
     ])
     await tx.insert(schema.systemSettings).values([
-      { key: 'shop_name', value: 'Caffe YA Baghdad', updatedBy: ids.admin },
+      { key: 'shop_name', value: 'RoastGrid Baghdad', updatedBy: ids.admin },
       { key: 'currency', value: 'IQD', updatedBy: ids.admin },
       { key: 'receipt_footer', value: 'Thank you — شكراً لزيارتكم', updatedBy: ids.admin },
     ])
@@ -224,7 +244,7 @@ async function seed() {
   })
 
   console.log('Seed complete: all 33 demo-domain tables populated.')
-  console.log('Demo password for all users: CaffeDemo2026!')
+  console.log('Demo password for all users: RoastGridDemo2026!')
 }
 
 seed().catch((error) => {

@@ -1,4 +1,4 @@
-# Caffe YA completion plan
+# RoastGrid completion plan
 
 Status: Complete
 

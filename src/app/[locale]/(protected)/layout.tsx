@@ -102,7 +102,7 @@ export default function ProtectedLayout({
             <Coffee className="h-5 w-5" />
           </div>
           <div className="hidden min-w-0 lg:block">
-            <h1 className="font-display text-xl font-bold tracking-tight">Caffe YA</h1>
+            <h1 className="font-display text-xl font-bold tracking-tight">{common('appName')}</h1>
             <p className="truncate text-xs text-slate-400">{common('tagline')}</p>
           </div>
         </div>
@@ -135,7 +135,7 @@ export default function ProtectedLayout({
               <User className="h-4 w-4 text-slate-300" />
             </div>
             <div className="hidden min-w-0 flex-1 lg:block">
-              <p className="truncate text-sm font-medium text-white">{access?.userName ?? 'Caffe YA'}</p>
+              <p className="truncate text-sm font-medium text-white">{access?.userName ?? common('appName')}</p>
               <p className="truncate text-xs text-slate-400">{t('signedIn')}</p>
             </div>
           </div>
