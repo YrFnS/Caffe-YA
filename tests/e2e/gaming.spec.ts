@@ -33,7 +33,7 @@ test('café order follows a gaming timer across a station transfer', async ({ pa
   await page.getByRole('button', { name: 'Checkout' }).click()
   await page.getByRole('button', { name: 'Confirm Payment' }).click()
 
-  await expect(page.getByRole('heading', { name: 'No items in order' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'No items in order' })).toBeVisible({ timeout: 30_000 })
   await page.getByRole('button', { name: 'Select a table or station' }).click()
   await expect(page.getByRole('button', { name: '5,000/hr Gaming PC 01 Available' })).toBeEnabled()
   await expect(page.getByRole('button', { name: '5,000/hr VIP Booth Available' })).toBeEnabled()

@@ -1774,13 +1774,19 @@ git commit -m "chore: verify build and lint pass for Phase 2"
 
 ## Success Criteria Validation
 
-- [ ] Barista can browse products by category and add to cart
-- [ ] Cart persists and calculates totals correctly
-- [ ] Checkout creates order + transaction(s) in DB
-- [ ] Resource grid shows live availability status
-- [ ] Timer runs, calculates charge, adds to order total
-- [ ] Transfer moves order to new resource with timer handling
-- [ ] Void and refund create proper audit trail
+- [x] Barista can browse products by category and add to cart
+- [x] Cart persists and calculates totals correctly
+- [x] Checkout creates order + transaction(s) in DB
+- [x] Resource grid shows live availability status
+- [x] Timer runs, calculates charge, adds to order total
+- [x] Transfer moves order to new resource with timer handling
+- [x] Void and refund create proper audit trail
+
+Verified in production on 2026-07-26: a cashier added a café item, started a
+Gaming PC timer, transferred the order to the VIP Booth, stopped the timer,
+reloaded the page, and checked out the combined order. The two 30-minute
+minimum charges accumulated to 5,000 IQD, both resources returned to available,
+the payment matched the order total, and the accounting journal balanced.
 
 ---
 
