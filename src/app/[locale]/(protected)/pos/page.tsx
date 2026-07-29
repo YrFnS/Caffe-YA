@@ -51,10 +51,10 @@ export default async function POSPage({
 
   return (
     <POSClientView
+      key={draftOrder.id}
       products={products}
       categories={categories}
       resources={resources}
-      shiftId={activeShift.id}
       orderId={draftOrder.id}
       cashierName={session.user.name || 'Cashier'}
       shiftOpenedAt={activeShift.openedAt}
