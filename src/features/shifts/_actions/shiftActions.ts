@@ -5,7 +5,18 @@ import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { hasPermission, requirePermission } from '@/features/admin/_actions/adminActions'
+import { getSetting } from '@/features/admin/_services/settingsService'
 import { toCents } from '@/lib/currency'
+
+function normalizeApprovalThreshold(value: unknown): string {
+  if (typeof value !== 'string' && typeof value !== 'number') return '0'
+  const threshold = String(value)
+  try {
+    return toCents(threshold) >= 0 ? threshold : '0'
+  } catch {
+    return '0'
+  }
+}
 
 export async function openShiftAction(formData: FormData) {
   const session = await getSession()
@@ -24,9 +35,12 @@ export async function openShiftAction(formData: FormData) {
     revalidatePath('/shifts')
     revalidatePath('/pos')
     return { success: true, shiftId: shift.id }
-  } catch (e) {
-    if (e instanceof Error && e.message === 'SHIFT_ALREADY_OPEN') {
+  } catch (error) {
+    if (error instanceof Error && error.message === 'SHIFT_ALREADY_OPEN') {
       return { error: 'SHIFT_ALREADY_OPEN' }
+    }
+    if (error instanceof Error && error.message === 'USER_NOT_FOUND') {
+      return { error: 'USER_NOT_FOUND' }
     }
     return { error: 'OPEN_SHIFT_FAILED' }
   }
@@ -48,20 +62,32 @@ export async function closeShiftAction(formData: FormData) {
   }
 
   try {
-    const canApprove = await hasPermission(session.user.id, 'shifts.approve')
-    await closeShift(shiftId, session.user.id, countedCash, canApprove ? session.user.id : undefined, notes)
+    const [canApprove, canCloseOthers, thresholdSetting] = await Promise.all([
+      hasPermission(session.user.id, 'shifts.approve'),
+      hasPermission(session.user.id, 'shifts.close_others'),
+      getSetting('shift_variance_approval_threshold'),
+    ])
+
+    await closeShift(shiftId, session.user.id, countedCash, {
+      approvedBy: canApprove ? session.user.id : undefined,
+      notes,
+      canCloseOthers,
+      approvalThreshold: normalizeApprovalThreshold(thresholdSetting),
+    })
+
     revalidatePath('/shifts')
     revalidatePath('/pos')
     return { success: true }
-  } catch (e) {
-    if (e instanceof Error && e.message === 'ACTIVE_RESOURCES') {
-      return { error: 'ACTIVE_RESOURCES' }
-    }
-    if (e instanceof Error && e.message === 'SHIFT_NOT_FOUND') {
-      return { error: 'SHIFT_NOT_FOUND' }
-    }
-    if (e instanceof Error && e.message === 'APPROVAL_REQUIRED') {
-      return { error: 'APPROVAL_REQUIRED' }
+  } catch (error) {
+    const knownErrors = new Set([
+      'ACTIVE_RESOURCES',
+      'SHIFT_NOT_FOUND',
+      'SHIFT_ALREADY_CLOSED',
+      'SHIFT_NOT_OWNED',
+      'APPROVAL_REQUIRED',
+    ])
+    if (error instanceof Error && knownErrors.has(error.message)) {
+      return { error: error.message }
     }
     return { error: 'CLOSE_SHIFT_FAILED' }
   }
