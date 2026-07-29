@@ -1,6 +1,7 @@
 import { db } from '@/lib/db'
 import { auditLogs, chartOfAccounts, goodsReceiptItems, goodsReceipts, ingredients, journalEntries, journalEntryLines, products, purchases, purchaseItems, stockMovements } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
+import { addMoney, weightedAverageUnitCost } from '@/lib/currency'
 import type { GoodsReceiptRow } from '../_types'
 
 export async function getAllGoodsReceipts(): Promise<GoodsReceiptRow[]> {
@@ -49,11 +50,23 @@ export async function receivePurchase(purchaseId: string, userId: string, note?:
       if (item.ingredientId) {
         const [ingredient] = await tx.select().from(ingredients).where(eq(ingredients.id, item.ingredientId)).for('update')
         if (!ingredient) throw new Error('INGREDIENT_NOT_FOUND')
-        await tx.update(ingredients).set({ stockQty: String(Number(ingredient.stockQty) + Number(item.quantity)) }).where(eq(ingredients.id, item.ingredientId))
+        const nextStockQty = addMoney(ingredient.stockQty, item.quantity)
+        const nextUnitCost = weightedAverageUnitCost(
+          ingredient.stockQty,
+          ingredient.costPerUnit ?? '0',
+          item.quantity,
+          item.unitCost,
+        )
+        await tx.update(ingredients).set({
+          stockQty: nextStockQty,
+          costPerUnit: nextUnitCost,
+        }).where(eq(ingredients.id, item.ingredientId))
       } else if (item.productId) {
         const [product] = await tx.select().from(products).where(eq(products.id, item.productId)).for('update')
         if (!product) throw new Error('PRODUCT_NOT_FOUND')
-        await tx.update(products).set({ stockQty: String(Number(product.stockQty ?? '0') + Number(item.quantity)) }).where(eq(products.id, item.productId))
+        await tx.update(products).set({
+          stockQty: addMoney(product.stockQty ?? '0', item.quantity),
+        }).where(eq(products.id, item.productId))
       }
       await tx.insert(stockMovements).values({
         ingredientId: item.ingredientId,
@@ -84,7 +97,10 @@ export async function receivePurchase(purchaseId: string, userId: string, note?:
       action: 'RECEIVE_PURCHASE',
       targetTable: 'purchases',
       targetId: purchaseId,
-      newValue: { goodsReceiptId: receipt.id },
+      newValue: {
+        goodsReceiptId: receipt.id,
+        inventoryValue: purchase.totalAmount,
+      },
     })
     return receipt
   })
