@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { requirePermission } from '@/features/admin/_actions/adminActions'
 import { getSession } from '@/lib/auth'
-import { getActiveShift, getOrCreateDraftOrder } from './orderService'
+import { getActiveShift, getOrCreateDraftOrder } from '../_services/orderService'
 import { assignResourceToOrder, stopTimer, transferOrder } from '../_services/resourceService'
 
 const RESOURCE_ERRORS = new Set([
