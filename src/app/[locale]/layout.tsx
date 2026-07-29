@@ -2,40 +2,8 @@ import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { routing } from '@/lib/routing'
 import { notFound } from 'next/navigation'
-import { Inter, Manrope, IBM_Plex_Sans_Arabic, Cairo } from 'next/font/google'
-import '../globals.css'
 
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-})
-
-const manrope = Manrope({
-  subsets: ['latin'],
-  variable: '--font-manrope',
-})
-
-const ibmPlexArabic = IBM_Plex_Sans_Arabic({
-  subsets: ['arabic'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-ibm-plex-arabic',
-})
-
-const cairo = Cairo({
-  subsets: ['arabic'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-cairo',
-})
-
-export const metadata = {
-  title: 'RoastGrid',
-  description: 'Hybrid coffee shop + gaming center POS system',
-  icons: {
-    icon: '/favicon.ico',
-  },
-}
-
-export default async function RootLayout({
+export default async function LocaleLayout({
   children,
   params,
 }: {
@@ -50,22 +18,9 @@ export default async function RootLayout({
 
   const messages = await getMessages()
 
-  const isRTL = locale === 'ar'
-
   return (
-    <div
-      lang={locale}
-      dir={isRTL ? 'rtl' : 'ltr'}
-      suppressHydrationWarning
-      className={`
-        ${inter.variable} ${manrope.variable}
-        ${ibmPlexArabic.variable} ${cairo.variable}
-        font-sans min-h-full antialiased flex flex-col
-      `}
-    >
-      <NextIntlClientProvider messages={messages}>
-        {children}
-      </NextIntlClientProvider>
-    </div>
+    <NextIntlClientProvider messages={messages}>
+      {children}
+    </NextIntlClientProvider>
   )
 }

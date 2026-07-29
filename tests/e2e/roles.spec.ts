@@ -48,9 +48,10 @@ test('cashier cannot open admin and does not see finance/admin navigation', asyn
   await expect(page).toHaveURL(/\/en\/dashboard$/)
 })
 
-test('Arabic mode renders an RTL protected shell', async ({ page }) => {
+test('Arabic mode renders an RTL protected document', async ({ page }) => {
   await signIn(page, 'accountant@roastgrid.app')
   await page.goto('/ar/accounting/accounts')
-  await expect(page.locator('[dir="rtl"]')).toBeVisible()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ar')
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
   await expect(page.getByRole('heading', { name: 'المحاسبة' })).toBeVisible()
 })
