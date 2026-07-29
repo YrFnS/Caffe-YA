@@ -62,8 +62,8 @@ export async function getAllModules(): Promise<Array<{ module: string; isActive:
   const rows = await db.query.systemModules.findMany()
   const modules = new Map(rows.map(row => [row.module, { module: row.module, isActive: row.isActive }]))
 
-  for (const module of CORE_MODULES) {
-    modules.set(module, { module, isActive: true })
+  for (const moduleName of CORE_MODULES) {
+    modules.set(moduleName, { module: moduleName, isActive: true })
   }
 
   return [...modules.values()].sort((a, b) => a.module.localeCompare(b.module))
