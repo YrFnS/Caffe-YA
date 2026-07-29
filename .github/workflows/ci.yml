@@ -43,6 +43,16 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Regenerate package lock
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Upload regenerated package lock
+        uses: actions/upload-artifact@v4
+        with:
+          name: regenerated-package-lock
+          path: package-lock.json
+          retention-days: 1
+
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
