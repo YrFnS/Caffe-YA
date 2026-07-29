@@ -40,8 +40,6 @@ export default function VoidModal({
   useEffect(() => {
     if (!isOpen) return
 
-    setReason('')
-    setError('')
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     window.setTimeout(() => dialogRef.current?.querySelector<HTMLTextAreaElement>('textarea')?.focus(), 0)
@@ -77,6 +75,13 @@ export default function VoidModal({
   const isRefund = operation === 'refund'
   const title = t(isRefund ? 'refundOrder' : operation === 'order' ? 'voidOrder' : 'voidItem')
 
+  const handleClose = () => {
+    if (isProcessing) return
+    setReason('')
+    setError('')
+    onClose()
+  }
+
   const handleConfirm = async () => {
     if (!reason.trim()) return
     setIsProcessing(true)
@@ -88,6 +93,7 @@ export default function VoidModal({
         return
       }
       setReason('')
+      setError('')
       onClose()
     } catch (actionError) {
       console.error('Reversal confirmation failed:', actionError)
@@ -102,7 +108,7 @@ export default function VoidModal({
       <button
         type="button"
         className="absolute inset-0 cursor-default bg-surface-container-highest/80 backdrop-blur-xl"
-        onClick={() => !isProcessing && onClose()}
+        onClick={handleClose}
         aria-label={common('close')}
       />
 
@@ -120,7 +126,7 @@ export default function VoidModal({
           <h2 id="reversal-title" className="font-display text-xl font-semibold text-on-surface">
             {title}
           </h2>
-          <Button type="button" variant="ghost" size="icon" onClick={onClose} disabled={isProcessing} className="ms-auto" aria-label={common('close')}>
+          <Button type="button" variant="ghost" size="icon" onClick={handleClose} disabled={isProcessing} className="ms-auto" aria-label={common('close')}>
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -152,7 +158,7 @@ export default function VoidModal({
         </div>
 
         <div className="flex gap-3 border-t border-outline-variant/40 p-4 sm:p-5">
-          <Button variant="secondary" className="flex-1" onClick={onClose} disabled={isProcessing}>
+          <Button variant="secondary" className="flex-1" onClick={handleClose} disabled={isProcessing}>
             {common('cancel')}
           </Button>
           <Button
