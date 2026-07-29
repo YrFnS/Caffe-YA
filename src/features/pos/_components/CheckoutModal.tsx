@@ -24,9 +24,14 @@ export default function CheckoutModal({
   const t = useTranslations('pos')
   const common = useTranslations('common')
   const dialogRef = useRef<HTMLDivElement>(null)
+  const processingRef = useRef(false)
   const [payments, setPayments] = useState<PaymentLine[]>([{ method: 'cash', amount: total }])
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    processingRef.current = isProcessing
+  }, [isProcessing])
 
   useEffect(() => {
     if (!isOpen) return
@@ -35,11 +40,12 @@ export default function CheckoutModal({
     setError('')
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    const firstControl = dialogRef.current?.querySelector<HTMLElement>('button, select, input')
-    firstControl?.focus()
+    window.setTimeout(() => {
+      dialogRef.current?.querySelector<HTMLElement>('button, select, input')?.focus()
+    }, 0)
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !isProcessing) onClose()
+      if (event.key === 'Escape' && !processingRef.current) onClose()
       if (event.key !== 'Tab' || !dialogRef.current) return
 
       const controls = [...dialogRef.current.querySelectorAll<HTMLElement>(
@@ -62,7 +68,7 @@ export default function CheckoutModal({
       document.body.style.overflow = previousOverflow
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [isOpen, isProcessing, onClose, total])
+  }, [isOpen, onClose, total])
 
   if (!isOpen) return null
 
@@ -91,7 +97,7 @@ export default function CheckoutModal({
       if (result) setError(result)
     } catch (actionError) {
       console.error('Checkout confirmation failed:', actionError)
-      setError(t('operationFailed'))
+      setError(common('error_description'))
     } finally {
       setIsProcessing(false)
     }
