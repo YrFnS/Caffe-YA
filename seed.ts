@@ -42,6 +42,7 @@ const permissionRows = [
   ['accounting.view', 'accounting'], ['accounting.manage', 'accounting'], ['partners.view', 'partners'], ['partners.manage', 'partners'], ['reports.view', 'reports'],
 ].map(([key, module], index) => ({ id: `b0000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`, key, module, description: key.replaceAll('.', ' ') }))
 
+const permissionKeys = new Set(permissionRows.map(permission => permission.key))
 const cashierPermissionKeys = new Set(['pos.view', 'pos.checkout', 'pos.void_item', 'pos.void_order', 'pos.open_shift', 'pos.close_shift', 'shifts.view', 'shifts.open', 'shifts.close', 'resources.view'])
 const accountantModules = new Set(['accounting', 'expenses', 'employees', 'payroll', 'reports'])
 
@@ -109,11 +110,11 @@ async function syncPermissionMatrix() {
   const demoRoleIds = [ids.superAdmin, ids.managerRole, ids.cashierRole, ids.accountantRole]
   await db.delete(schema.rolePermissions).where(inArray(schema.rolePermissions.roleId, demoRoleIds))
   currentPermissions = await db.select().from(schema.permissions)
-  const managedPermissions = currentPermissions.filter(permission => permissionRows.some(row => row.key === permission.key))
+  const managedPermissions = currentPermissions.filter(permission => permissionKeys.has(permission.key))
   await db.insert(schema.rolePermissions).values(managedPermissions.map(permission => ({ roleId: ids.superAdmin, permissionId: permission.id })))
-  await db.insert(schema.rolePermissions).values(managedPermissions.filter(p => p.module !== 'admin').map(permission => ({ roleId: ids.managerRole, permissionId: permission.id })))
-  await db.insert(schema.rolePermissions).values(managedPermissions.filter(p => cashierPermissionKeys.has(p.key)).map(p => ({ roleId: ids.cashierRole, permissionId: p.id })))
-  await db.insert(schema.rolePermissions).values(managedPermissions.filter(p => accountantModules.has(p.module)).map(p => ({ roleId: ids.accountantRole, permissionId: p.id })))
+  await db.insert(schema.rolePermissions).values(managedPermissions.filter(permission => permission.module !== 'admin').map(permission => ({ roleId: ids.managerRole, permissionId: permission.id })))
+  await db.insert(schema.rolePermissions).values(managedPermissions.filter(permission => cashierPermissionKeys.has(permission.key)).map(permission => ({ roleId: ids.cashierRole, permissionId: permission.id })))
+  await db.insert(schema.rolePermissions).values(managedPermissions.filter(permission => accountantModules.has(permission.module)).map(permission => ({ roleId: ids.accountantRole, permissionId: permission.id })))
 }
 
 async function seed() {
@@ -148,11 +149,14 @@ async function seed() {
       { id: ids.accountantRole, name: 'Accountant', description: 'Accounting, expenses, and payroll' },
     ]
     await tx.insert(schema.roles).values(roleRows)
-    await tx.insert(schema.permissions).values(permissionRows)
-    await tx.insert(schema.rolePermissions).values(permissionRows.map(permission => ({ roleId: ids.superAdmin, permissionId: permission.id })))
-    await tx.insert(schema.rolePermissions).values(permissionRows.filter(p => p.module !== 'admin').map(permission => ({ roleId: ids.managerRole, permissionId: permission.id })))
-    await tx.insert(schema.rolePermissions).values(permissionRows.filter(p => cashierPermissionKeys.has(p.key)).map(p => ({ roleId: ids.cashierRole, permissionId: p.id })))
-    await tx.insert(schema.rolePermissions).values(permissionRows.filter(p => accountantModules.has(p.module)).map(p => ({ roleId: ids.accountantRole, permissionId: p.id })))
+    await tx.insert(schema.permissions).values(permissionRows).onConflictDoNothing({ target: schema.permissions.key })
+
+    const currentPermissions = await tx.select().from(schema.permissions)
+    const managedPermissions = currentPermissions.filter(permission => permissionKeys.has(permission.key))
+    await tx.insert(schema.rolePermissions).values(managedPermissions.map(permission => ({ roleId: ids.superAdmin, permissionId: permission.id })))
+    await tx.insert(schema.rolePermissions).values(managedPermissions.filter(permission => permission.module !== 'admin').map(permission => ({ roleId: ids.managerRole, permissionId: permission.id })))
+    await tx.insert(schema.rolePermissions).values(managedPermissions.filter(permission => cashierPermissionKeys.has(permission.key)).map(permission => ({ roleId: ids.cashierRole, permissionId: permission.id })))
+    await tx.insert(schema.rolePermissions).values(managedPermissions.filter(permission => accountantModules.has(permission.module)).map(permission => ({ roleId: ids.accountantRole, permissionId: permission.id })))
     await tx.insert(schema.userRoles).values([
       { userId: ids.admin, roleId: ids.superAdmin }, { userId: ids.manager, roleId: ids.managerRole },
       { userId: ids.cashier, roleId: ids.cashierRole }, { userId: ids.accountant, roleId: ids.accountantRole },
