@@ -23,9 +23,14 @@ export default function VoidModal({
   const t = useTranslations('pos')
   const common = useTranslations('common')
   const dialogRef = useRef<HTMLDivElement>(null)
+  const processingRef = useRef(false)
   const [reason, setReason] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    processingRef.current = isProcessing
+  }, [isProcessing])
 
   useEffect(() => {
     if (!isOpen) return
@@ -37,7 +42,7 @@ export default function VoidModal({
     window.setTimeout(() => dialogRef.current?.querySelector<HTMLTextAreaElement>('textarea')?.focus(), 0)
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !isProcessing) onClose()
+      if (event.key === 'Escape' && !processingRef.current) onClose()
       if (event.key !== 'Tab' || !dialogRef.current) return
 
       const controls = [...dialogRef.current.querySelectorAll<HTMLElement>(
@@ -60,7 +65,7 @@ export default function VoidModal({
       document.body.style.overflow = previousOverflow
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [isOpen, isProcessing, onClose])
+  }, [isOpen, onClose])
 
   if (!isOpen) return null
 
@@ -81,7 +86,7 @@ export default function VoidModal({
       onClose()
     } catch (actionError) {
       console.error('Reversal confirmation failed:', actionError)
-      setError(t('operationFailed'))
+      setError(common('error_description'))
     } finally {
       setIsProcessing(false)
     }
