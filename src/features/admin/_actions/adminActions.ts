@@ -29,6 +29,7 @@ import {
   setSetting,
   getAllModules,
   getModuleStatus,
+  isCoreModule,
   setModuleStatus,
 } from '../_services/settingsService'
 import { revalidatePath } from 'next/cache'
@@ -40,8 +41,10 @@ export async function hasPermission(userId: string, permissionKey: string): Prom
   if (!session?.user || session.user.id !== userId) return false
 
   const user = await getUserById(userId)
-  if (!user) return false
-  if (!await getModuleStatus(permissionKey.split('.')[0])) return false
+  if (!user || user.isDisabled || !user.isActive) return false
+
+  const moduleName = permissionKey.split('.')[0]
+  if (!moduleName || !await getModuleStatus(moduleName)) return false
 
   for (const role of user.roles) {
     const perms = await getPermissionsByRole(role.id)
@@ -77,13 +80,21 @@ export async function updateUserAction(
 ) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
-
-  // Check admin permission
   await requirePermission(session.user.id, 'admin.manage_users')
 
-  const result = await updateUser(userId, data)
-  revalidatePath('/admin/users')
-  return { success: true, user: result }
+  if (userId === session.user.id && (data.isDisabled === true || data.isActive === false)) {
+    return { error: 'CANNOT_DISABLE_SELF' }
+  }
+
+  try {
+    const result = await updateUser(userId, data)
+    if (!result) return { error: 'USER_NOT_FOUND' }
+    revalidatePath('/admin/users')
+    return { success: true, user: result }
+  } catch (error) {
+    console.error('Update user failed:', error)
+    return { error: 'UPDATE_USER_FAILED' }
+  }
 }
 
 export async function setUserRolesAction(userId: string, roleIds: string[]) {
@@ -91,9 +102,18 @@ export async function setUserRolesAction(userId: string, roleIds: string[]) {
   if (!session?.user) redirect('/sign-in')
   await requirePermission(session.user.id, 'admin.manage_users')
 
-  await setUserRoles(userId, roleIds)
-  revalidatePath('/admin/users')
-  return { success: true }
+  if (userId === session.user.id) {
+    return { error: 'CANNOT_CHANGE_OWN_ROLES' }
+  }
+
+  try {
+    await setUserRoles(userId, roleIds)
+    revalidatePath('/admin/users')
+    return { success: true }
+  } catch (error) {
+    console.error('Set user roles failed:', error)
+    return { error: 'SET_ROLES_FAILED' }
+  }
 }
 
 export async function createUserAction(formData: FormData) {
@@ -101,9 +121,9 @@ export async function createUserAction(formData: FormData) {
   if (!session?.user) redirect('/sign-in')
   await requirePermission(session.user.id, 'admin.manage_users')
 
-  const name = formData.get('name') as string
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
+  const name = (formData.get('name') as string | null)?.trim()
+  const email = (formData.get('email') as string | null)?.trim().toLowerCase()
+  const password = formData.get('password') as string | null
 
   if (!name || !email || !password) return { error: 'INVALID_INPUT' }
   if (password.length < 8) return { error: 'PASSWORD_TOO_SHORT' }
@@ -111,24 +131,30 @@ export async function createUserAction(formData: FormData) {
   try {
     const passwordHash = await hashPassword(password)
     const userId = crypto.randomUUID()
-    await db.insert(users).values({
-      id: userId,
-      name,
-      email,
-      passwordHash,
-      isActive: true,
+
+    await db.transaction(async tx => {
+      await tx.insert(users).values({
+        id: userId,
+        name,
+        email,
+        passwordHash,
+        emailVerified: true,
+        isActive: true,
+      })
+      await tx.insert(accounts).values({
+        id: `acc_${crypto.randomUUID().replace(/-/g, '').slice(0, 16)}`,
+        userId,
+        accountId: email,
+        providerId: 'credential',
+        password: passwordHash,
+      })
     })
-    await db.insert(accounts).values({
-      id: `acc_${crypto.randomUUID().replace(/-/g, '').slice(0, 16)}`,
-      userId,
-      accountId: email,
-      providerId: 'credential',
-      password: passwordHash,
-    })
+
     revalidatePath('/admin/users')
     return { success: true }
-  } catch (e) {
-    return { error: e instanceof Error ? e.message : 'CREATE_USER_FAILED' }
+  } catch (error) {
+    console.error('Create user failed:', error)
+    return { error: 'CREATE_USER_FAILED' }
   }
 }
 
@@ -283,8 +309,10 @@ export async function getModulesAction() {
 export async function getNavigationAccessAction() {
   const session = await getSession()
   if (!session?.user) return null
+
   const user = await getUserById(session.user.id)
-  if (!user) return null
+  if (!user || user.isDisabled || !user.isActive) return null
+
   const permissionSets = await Promise.all(user.roles.map(role => getPermissionsByRole(role.id)))
   const moduleRows = await getAllModules()
   return {
@@ -299,9 +327,17 @@ export async function setModuleStatusAction(module: string, isActive: boolean) {
   if (!session?.user) redirect('/sign-in')
   await requirePermission(session.user.id, 'admin.manage_modules')
 
-  await setModuleStatus(module, isActive, session.user.id)
-  revalidatePath('/admin/modules')
-  return { success: true }
+  if (isCoreModule(module) && !isActive) {
+    return { error: 'CORE_MODULE_REQUIRED' }
+  }
+
+  try {
+    await setModuleStatus(module, isActive, session.user.id)
+    revalidatePath('/admin/modules')
+    return { success: true }
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'UPDATE_MODULE_FAILED' }
+  }
 }
 
 // ─── Seed Action ────────────────────────────────────────────────────────────────
