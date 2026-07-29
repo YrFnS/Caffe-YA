@@ -45,7 +45,7 @@ export default function POSLayout({
   const duration = useShiftDuration(shiftOpenedAt)
 
   return (
-    <div className="flex min-h-0 flex-col lg:h-[calc(100vh-10rem)]">
+    <div className="flex min-h-0 flex-col lg:h-[calc(100vh_-_10rem)]">
       <header className="flex flex-col gap-3 rounded-2xl bg-surface-container-low p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
         <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
           <h1 className="font-display text-2xl font-bold tracking-tight text-on-surface sm:text-3xl">
