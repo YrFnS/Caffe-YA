@@ -41,8 +41,6 @@ export default function CheckoutModal({
   useEffect(() => {
     if (!isOpen) return
 
-    setPayments([{ method: 'cash', amount: total }])
-    setError('')
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     window.setTimeout(() => {
@@ -73,7 +71,7 @@ export default function CheckoutModal({
       document.body.style.overflow = previousOverflow
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [isOpen, total])
+  }, [isOpen])
 
   if (!isOpen) return null
 
