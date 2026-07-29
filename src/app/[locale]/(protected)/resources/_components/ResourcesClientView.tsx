@@ -1,36 +1,55 @@
 "use client"
 
 import { useState } from 'react'
-import { useTranslations } from 'next-intl'
-import { Clock, Monitor } from 'lucide-react'
+import { useLocale, useTranslations } from 'next-intl'
+import { Clock, Monitor, UserRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { useRouter } from '@/lib/navigation'
 import { cn } from '@/lib/utils'
-import type { Resource } from '@/features/pos/_types'
+import { assignAvailableResourceAction } from '@/features/pos/_actions/resource'
+import { useTimer } from '@/features/pos/_hooks/useTimer'
+import type { ResourceCategory, ResourceOperationsView } from '@/features/pos/_types'
 import { formatCurrency } from '@/lib/currency'
 
 interface ResourcesClientViewProps {
-  resources: (Resource & { category?: { isTimed: boolean; hourlyRate: string | null; name: string } })[]
-  categories: { id: string; name: string; isTimed: boolean }[]
-  shiftId: string
+  resources: ResourceOperationsView[]
+  categories: ResourceCategory[]
+  currentUserId: string
 }
 
-export default function ResourcesClientView({
-  resources,
-  categories,
-}: ResourcesClientViewProps) {
-  const t = useTranslations('resources')
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
+interface ResourceOperationsCardProps {
+  resource: ResourceOperationsView
+  currentUserId: string
+  pending: boolean
+  onAssign: (resourceId: string) => void
+  onOpenOrder: (orderId: string) => void
+}
 
-  const filtered = selectedCategoryId
-    ? resources.filter(r => r.categoryId === selectedCategoryId)
-    : resources
+function ResourceOperationsCard({
+  resource,
+  currentUserId,
+  pending,
+  onAssign,
+  onOpenOrder,
+}: ResourceOperationsCardProps) {
+  const t = useTranslations('resources')
+  const tPos = useTranslations('pos')
+  const tShifts = useTranslations('shifts')
+  const activeOrder = resource.activeOrder
+  const isOwnOrder = activeOrder?.cashierId === currentUserId
+  const timerRunning = Boolean(activeOrder?.timerStartedAt && !activeOrder.timerEndedAt)
+  const { display: timerDisplay } = useTimer({
+    startedAt: activeOrder?.timerStartedAt ?? null,
+    isRunning: timerRunning,
+  })
+  const imageSrc = resource.localImageName?.startsWith('http') ? resource.localImageName : null
 
   const statusStyles = {
-    available: 'border-s-4 border-secondary bg-surface-container-lowest',
-    occupied: 'border-s-4 border-tertiary bg-surface-container-lowest',
-    maintenance: 'border-s-4 border-tertiary-fixed-dim bg-surface-container-low',
+    available: 'border-s-secondary bg-surface-container-lowest',
+    occupied: 'border-s-tertiary bg-surface-container-lowest',
+    maintenance: 'border-s-tertiary-fixed-dim bg-surface-container-low',
   }
-
   const statusBadgeStyles = {
     available: 'bg-secondary/10 text-secondary',
     occupied: 'bg-tertiary/10 text-tertiary',
@@ -38,105 +57,180 @@ export default function ResourcesClientView({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="font-display text-headline-lg font-semibold text-on-surface">
-          {t('title')}
-        </h1>
-        <p className="text-body-md text-on-surface-variant mt-1">
-          {t('description')}
-        </p>
+    <article className={cn(
+      'flex min-h-72 flex-col overflow-hidden rounded-2xl border-s-4 p-4 shadow-[0_8px_28px_rgba(24,34,48,.06)]',
+      statusStyles[resource.status],
+    )}>
+      {imageSrc && (
+        <div className="-mx-4 -mt-4 mb-4 h-32 overflow-hidden bg-surface-container-low">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={imageSrc} alt="" className="h-full w-full object-cover" />
+        </div>
+      )}
+
+      <div className="flex items-start justify-between gap-3">
+        <div className="grid h-12 w-12 place-items-center rounded-xl bg-surface-container-low">
+          <Monitor className={cn(
+            'h-6 w-6',
+            resource.status === 'available' ? 'text-secondary' : 'text-on-surface-variant',
+          )} />
+        </div>
+        <span className={cn(
+          'inline-flex min-h-8 items-center rounded-full px-3 text-xs font-semibold',
+          statusBadgeStyles[resource.status],
+        )}>
+          {resource.status === 'available' && t('available')}
+          {resource.status === 'occupied' && t('occupied')}
+          {resource.status === 'maintenance' && t('maintenance')}
+        </span>
       </div>
 
-      {/* Category filter tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      <h3 className="mt-4 font-display text-lg font-semibold text-on-surface">{resource.name}</h3>
+      <p className="mt-1 text-sm text-on-surface-variant">{resource.category?.name ?? '—'}</p>
+
+      {resource.category?.isTimed && resource.category.hourlyRate && (
+        <p className="mt-3 font-mono text-sm font-semibold text-secondary">
+          {formatCurrency(resource.category.hourlyRate)} IQD / 60m
+        </p>
+      )}
+
+      {activeOrder && (
+        <div className="mt-4 space-y-2 rounded-xl bg-surface-container-low p-3">
+          <div className="flex items-center justify-between gap-3 text-sm">
+            <span className="flex min-w-0 items-center gap-2 text-on-surface-variant">
+              <UserRound className="h-4 w-4 shrink-0" />
+              <span className="truncate">{tShifts('cashier')}</span>
+            </span>
+            <span className="truncate font-semibold text-on-surface">{activeOrder.cashierName}</span>
+          </div>
+          {timerRunning && (
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <span className="flex items-center gap-2 text-on-surface-variant">
+                <Clock className="h-4 w-4" /> {tPos('timer')}
+              </span>
+              <span className="font-mono font-bold tabular-nums text-warning">{timerDisplay}</span>
+            </div>
+          )}
+          <div className="flex items-center justify-between gap-3 text-sm">
+            <span className="text-on-surface-variant">{tPos('total')}</span>
+            <span className="font-mono font-bold text-on-surface">{formatCurrency(activeOrder.totalAmount)} IQD</span>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-auto pt-4">
+        {resource.status === 'available' && (
+          <Button
+            variant="success"
+            className="w-full"
+            onClick={() => onAssign(resource.id)}
+            disabled={pending}
+          >
+            {pending ? t('loading') : t('assign')}
+          </Button>
+        )}
+        {resource.status === 'occupied' && activeOrder && isOwnOrder && (
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() => onOpenOrder(activeOrder.id)}
+            disabled={pending}
+          >
+            {tPos('currentOrder')}
+          </Button>
+        )}
+      </div>
+    </article>
+  )
+}
+
+export default function ResourcesClientView({
+  resources,
+  categories,
+  currentUserId,
+}: ResourcesClientViewProps) {
+  const t = useTranslations('resources')
+  const common = useTranslations('common')
+  const locale = useLocale()
+  const router = useRouter()
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
+  const [pendingResourceId, setPendingResourceId] = useState<string | null>(null)
+  const [error, setError] = useState('')
+
+  const filtered = selectedCategoryId
+    ? resources.filter(resource => resource.categoryId === selectedCategoryId)
+    : resources
+
+  const handleAssign = async (resourceId: string) => {
+    setPendingResourceId(resourceId)
+    setError('')
+    try {
+      const result = await assignAvailableResourceAction(resourceId)
+      if (result.error || !result.orderId) {
+        setError(common('error_description'))
+        return
+      }
+      router.push(`/pos?orderId=${encodeURIComponent(result.orderId)}`)
+    } catch (actionError) {
+      console.error('Resource assignment failed:', actionError)
+      setError(common('error_description'))
+    } finally {
+      setPendingResourceId(null)
+    }
+  }
+
+  const handleOpenOrder = (orderId: string) => {
+    router.push(`/pos?orderId=${encodeURIComponent(orderId)}`)
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-on-surface">{t('title')}</h1>
+        <p className="mt-1 text-sm text-on-surface-variant">{t('description')}</p>
+      </div>
+
+      {error && (
+        <div role="alert" className="rounded-xl bg-error/10 px-4 py-3 text-sm text-error">
+          {error}
+        </div>
+      )}
+
+      <div className="flex gap-2 overflow-x-auto pb-2" role="tablist" aria-label={t('title')}>
         <Button
+          role="tab"
+          aria-selected={selectedCategoryId === null}
           variant={selectedCategoryId === null ? 'secondary' : 'ghost'}
-          size="sm"
           onClick={() => setSelectedCategoryId(null)}
         >
           {t('all')}
         </Button>
-        {categories.map((cat) => (
+        {categories.map(category => (
           <Button
-            key={cat.id}
-            variant={selectedCategoryId === cat.id ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => setSelectedCategoryId(cat.id)}
+            role="tab"
+            aria-selected={selectedCategoryId === category.id}
+            key={category.id}
+            variant={selectedCategoryId === category.id ? 'secondary' : 'ghost'}
+            onClick={() => setSelectedCategoryId(category.id)}
           >
-            {cat.name}
+            <span dir={locale === 'ar' ? 'rtl' : 'ltr'}>{category.name}</span>
           </Button>
         ))}
       </div>
 
-      {/* Resource grid */}
       {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 text-on-surface-variant">
-          <Monitor className="w-12 h-12 mb-4" />
-          <p className="text-body-lg">{t('noResources')}</p>
-        </div>
+        <EmptyState icon={Monitor} title={t('noResources')} />
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {filtered.map((resource) => (
-            <div
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {filtered.map(resource => (
+            <ResourceOperationsCard
               key={resource.id}
-              className={cn(
-                'relative flex flex-col p-4 rounded-lg transition-all hover:scale-[1.02]',
-                statusStyles[resource.status]
-              )}
-            >
-              {/* Timed indicator */}
-              {resource.category?.isTimed && (
-                <div className="absolute top-3 end-3">
-                  <Clock className="w-4 h-4 text-on-surface-variant" />
-                </div>
-              )}
-
-              {/* Icon */}
-              <div className="mb-3">
-                <Monitor className={cn(
-                  'w-8 h-8',
-                  resource.status === 'available' ? 'text-secondary' : 'text-on-surface-variant'
-                )} />
-              </div>
-
-              {/* Name */}
-              <h3 className="text-body-md font-medium text-on-surface mb-1">
-                {resource.name}
-              </h3>
-
-              {/* Category */}
-              <p className="text-label-sm text-on-surface-variant mb-2">
-                {resource.category?.name || 'Unknown'}
-              </p>
-
-              {/* Hourly rate for timed resources */}
-              {resource.category?.isTimed && resource.category?.hourlyRate && (
-                <p className="text-label-sm text-secondary font-medium mb-3">
-                  {formatCurrency(resource.category.hourlyRate)}/hr
-                </p>
-              )}
-
-              {/* Status badge */}
-              <div className={cn(
-                'inline-flex items-center gap-1 text-label-sm px-2 py-0.5 rounded self-start',
-                statusBadgeStyles[resource.status]
-              )}>
-                {resource.status === 'available' && t('available')}
-                {resource.status === 'occupied' && t('occupied')}
-                {resource.status === 'maintenance' && t('maintenance')}
-              </div>
-
-              {/* Action button for available resources */}
-              {resource.status === 'available' && (
-                <div className="mt-3 pt-3">
-                  <Button variant="ghost" size="sm" className="w-full">
-                    {t('assign')}
-                  </Button>
-                </div>
-              )}
-            </div>
+              resource={resource}
+              currentUserId={currentUserId}
+              pending={pendingResourceId === resource.id}
+              onAssign={handleAssign}
+              onOpenOrder={handleOpenOrder}
+            />
           ))}
         </div>
       )}
