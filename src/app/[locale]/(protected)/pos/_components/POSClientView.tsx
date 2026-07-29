@@ -55,6 +55,7 @@ export default function POSClientView({
   refundableOrders = [],
 }: POSClientViewProps) {
   const t = useTranslations('pos')
+  const common = useTranslations('common')
   const locale = useLocale()
   const router = useRouter()
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
@@ -78,7 +79,7 @@ export default function POSClientView({
     status: resourceOverrides[resource.id] ?? resource.status,
   }))
 
-  const operationFailed = t('operationFailed')
+  const operationFailed = common('error_description')
   const reportError = useCallback((code?: string) => {
     if (code) console.error('POS operation failed:', code)
     setError(operationFailed)
@@ -351,7 +352,7 @@ export default function POSClientView({
           {error && (
             <div role="alert" className="mb-3 flex items-center justify-between gap-3 rounded-xl bg-error/10 px-4 py-3 text-sm text-error">
               <span>{error}</span>
-              <Button variant="ghost" size="icon" onClick={() => setError('')} aria-label={t('dismissError')}>
+              <Button variant="ghost" size="icon" onClick={() => setError('')} aria-label={common('close')}>
                 <X className="h-5 w-5" />
               </Button>
             </div>
@@ -391,7 +392,7 @@ export default function POSClientView({
             )}
           </div>
 
-          <div className="min-h-[55vh] lg:h-[calc(100%-3.75rem)]">
+          <div className="min-h-[55vh]">
             {showResourceGrid ? (
               <div className="space-y-4">
                 <h2 className="font-display text-xl font-semibold text-on-surface">{t('selectResource')}</h2>
@@ -424,7 +425,7 @@ export default function POSClientView({
           onClick={() => setShowMobileOrder(true)}
         >
           <ShoppingCart className="h-5 w-5" />
-          <span>{t('viewOrder')}</span>
+          <span>{t('title')}</span>
           <span className="rounded-full bg-white/15 px-2 py-0.5 font-mono text-xs">{itemCount}</span>
           <span className="ms-auto font-mono">{formatCurrency(total)}</span>
         </Button>
@@ -434,7 +435,7 @@ export default function POSClientView({
         <div className="fixed inset-0 z-[70] flex flex-col bg-surface lg:hidden" role="dialog" aria-modal="true" aria-label={t('title')}>
           <div className="flex h-16 items-center justify-between border-b border-outline-variant/50 px-4">
             <h2 className="font-display text-xl font-bold text-on-surface">{t('title')}</h2>
-            <Button variant="ghost" size="icon" onClick={() => setShowMobileOrder(false)} aria-label={t('closeOrder')}>
+            <Button variant="ghost" size="icon" onClick={() => setShowMobileOrder(false)} aria-label={common('close')}>
               <X className="h-5 w-5" />
             </Button>
           </div>
