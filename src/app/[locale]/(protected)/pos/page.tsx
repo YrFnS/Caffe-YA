@@ -8,11 +8,16 @@ import type { CartItem } from '@/features/pos/_types'
 import { getRefundableOrders } from '@/features/pos/_services/voidService'
 import { hasPermission } from '@/features/admin/_actions/adminActions'
 
-function mapOrderItemsToCartItems(items: Awaited<ReturnType<typeof getDraftOrderItems>>): CartItem[] {
+function mapOrderItemsToCartItems(
+  items: Awaited<ReturnType<typeof getDraftOrderItems>>,
+  locale: string,
+): CartItem[] {
   return items.map(item => ({
     productId: item.productId,
-    productName: item.product?.name ?? 'Unknown',
-    quantity: typeof item.quantity === 'string' ? parseFloat(item.quantity) : item.quantity,
+    productName: locale === 'ar'
+      ? item.product?.nameAr || item.product?.name || '—'
+      : item.product?.name || '—',
+    quantity: typeof item.quantity === 'string' ? Number.parseFloat(item.quantity) : item.quantity,
     unitPrice: item.unitPrice,
     totalPrice: item.totalPrice,
     orderItemId: item.id,
@@ -29,15 +34,12 @@ export default async function POSPage({
   if (!session?.user) redirect(`/${locale}/sign-in`)
 
   const userId = session.user.id as string
-
   const activeShift = await getActiveShift(userId)
-  if (!activeShift) {
-    redirect(`/${locale}/shifts`)
-  }
+  if (!activeShift) redirect(`/${locale}/shifts`)
 
   const draftOrder = await getOrCreateDraftOrder(activeShift.id, userId)
   const existingItems = await getDraftOrderItems(draftOrder.id)
-  const initialCartItems = mapOrderItemsToCartItems(existingItems)
+  const initialCartItems = mapOrderItemsToCartItems(existingItems, locale)
 
   const [products, categories, resources, canRefund] = await Promise.all([
     getAllActiveProducts(),
