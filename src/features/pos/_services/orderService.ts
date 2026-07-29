@@ -1,9 +1,24 @@
 import { db } from '@/lib/db'
-import { auditLogs, chartOfAccounts, ingredients, journalEntries, journalEntryLines, orders, orderItems, products, transactions, resources, shifts, stockMovements } from '@/lib/schema'
-import { eq, and, inArray, isNull } from 'drizzle-orm'
-import { getProductIngredients } from '@/features/inventory/_services/productService'
-import { toCents, fromCents } from '@/lib/currency'
+import {
+  auditLogs,
+  chartOfAccounts,
+  goodsReceiptItems,
+  ingredients,
+  journalEntries,
+  journalEntryLines,
+  orders,
+  orderItems,
+  productIngredients,
+  products,
+  resources,
+  shifts,
+  stockMovements,
+  transactions,
+} from '@/lib/schema'
+import { and, eq, inArray, isNull } from 'drizzle-orm'
+import { fromCents, multiplyDecimalMoney, toCents } from '@/lib/currency'
 import { getPaymentAccountCode } from '@/lib/accounting'
+import { calculateRecipeLineCost, calculateStandardLineCost } from './costing'
 import { validatePayments, type PaymentLine } from './payment'
 
 export async function getOrCreateDraftOrder(shiftId: string, userId: string) {
@@ -48,7 +63,11 @@ export async function addItemToOrder(orderId: string, productId: string, quantit
     const [product] = await tx.select().from(products).where(and(eq(products.id, productId), eq(products.isActive, true))).limit(1)
     if (!product) throw new Error('PRODUCT_NOT_FOUND')
 
-    const [existing] = await tx.select().from(orderItems).where(and(eq(orderItems.orderId, orderId), eq(orderItems.productId, productId), isNull(orderItems.voidedAt))).limit(1)
+    const [existing] = await tx.select().from(orderItems).where(and(
+      eq(orderItems.orderId, orderId),
+      eq(orderItems.productId, productId),
+      isNull(orderItems.voidedAt),
+    )).limit(1)
     const nextQuantity = Number(existing?.quantity ?? 0) + quantity
     const totalPrice = fromCents(toCents(product.price) * nextQuantity)
     const [item] = existing
@@ -57,7 +76,10 @@ export async function addItemToOrder(orderId: string, productId: string, quantit
 
     const items = await tx.select().from(orderItems).where(and(eq(orderItems.orderId, orderId), isNull(orderItems.voidedAt)))
     const subtotal = items.reduce((sum, row) => sum + toCents(row.totalPrice), 0)
-    await tx.update(orders).set({ subtotal: fromCents(subtotal), totalAmount: fromCents(subtotal + toCents(order.timerChargeAmount ?? '0')) }).where(eq(orders.id, orderId))
+    await tx.update(orders).set({
+      subtotal: fromCents(subtotal),
+      totalAmount: fromCents(subtotal + toCents(order.timerChargeAmount ?? '0')),
+    }).where(eq(orders.id, orderId))
     return item
   })
 }
@@ -72,11 +94,20 @@ export async function updateItemQuantity(itemId: string, quantity: number, userI
     if (!item) throw new Error('ITEM_NOT_FOUND')
     const [order] = await tx.select().from(orders).where(eq(orders.id, item.orderId)).for('update')
     if (!order || order.cashierId !== userId || !['draft', 'open'].includes(order.status)) throw new Error('ORDER_NOT_OPEN')
-    if (quantity <= 0) await tx.update(orderItems).set({ voidedAt: new Date() }).where(eq(orderItems.id, itemId))
-    else await tx.update(orderItems).set({ quantity: String(quantity), totalPrice: fromCents(toCents(item.unitPrice) * quantity) }).where(eq(orderItems.id, itemId))
+    if (quantity <= 0) {
+      await tx.update(orderItems).set({ voidedAt: new Date() }).where(eq(orderItems.id, itemId))
+    } else {
+      await tx.update(orderItems).set({
+        quantity: String(quantity),
+        totalPrice: fromCents(toCents(item.unitPrice) * quantity),
+      }).where(eq(orderItems.id, itemId))
+    }
     const items = await tx.select().from(orderItems).where(and(eq(orderItems.orderId, order.id), isNull(orderItems.voidedAt)))
     const subtotal = items.reduce((sum, row) => sum + toCents(row.totalPrice), 0)
-    await tx.update(orders).set({ subtotal: fromCents(subtotal), totalAmount: fromCents(subtotal + toCents(order.timerChargeAmount ?? '0')) }).where(eq(orders.id, order.id))
+    await tx.update(orders).set({
+      subtotal: fromCents(subtotal),
+      totalAmount: fromCents(subtotal + toCents(order.timerChargeAmount ?? '0')),
+    }).where(eq(orders.id, order.id))
   })
 }
 
@@ -107,41 +138,71 @@ export async function checkoutOrder(orderId: string, paymentLines: PaymentLine[]
         .where(eq(resources.id, order.resourceId))
     }
 
-    // Deduct recipe ingredients and tracked standard-product stock atomically.
     const items = await tx.query.orderItems.findMany({
       where: and(eq(orderItems.orderId, orderId), isNull(orderItems.voidedAt)),
       with: { product: true },
     })
+    let costOfGoods = 0
 
     for (const item of items) {
-      if (item.product && item.product.type === 'recipe') {
-        const recipeIngredients = await getProductIngredients(item.productId)
-        for (const ri of recipeIngredients) {
-          const deduction = Number(ri.quantityUsed) * Number(item.quantity)
+      if (item.product?.type === 'recipe') {
+        const recipeRows = await tx.select().from(productIngredients)
+          .where(eq(productIngredients.productId, item.productId))
+        const recipeCosts: Array<{ quantityUsed: string; unitCost: string }> = []
+
+        for (const recipeRow of recipeRows) {
           const [ingredient] = await tx.select().from(ingredients)
-            .where(eq(ingredients.id, ri.ingredientId)).for('update')
-          if (!ingredient || Number(ingredient.stockQty) < deduction) throw new Error('INSUFFICIENT_STOCK')
-          await tx.update(ingredients)
-            .set({ stockQty: String(Number(ingredient.stockQty) - deduction) })
-            .where(eq(ingredients.id, ri.ingredientId))
+            .where(eq(ingredients.id, recipeRow.ingredientId)).for('update')
+          if (!ingredient) throw new Error('INGREDIENT_NOT_FOUND')
+
+          const deductionQuantity = multiplyDecimalMoney(recipeRow.quantityUsed, item.quantity)
+          const deduction = toCents(deductionQuantity)
+          const currentStock = toCents(ingredient.stockQty)
+          if (currentStock < deduction) throw new Error('INSUFFICIENT_STOCK')
+
+          await tx.update(ingredients).set({
+            stockQty: fromCents(currentStock - deduction),
+          }).where(eq(ingredients.id, recipeRow.ingredientId))
           await tx.insert(stockMovements).values({
             type: 'sale_deduction',
-            quantity: String(-deduction),
-            ingredientId: ri.ingredientId,
+            quantity: fromCents(-deduction),
+            ingredientId: recipeRow.ingredientId,
             productId: item.productId,
             orderId,
             createdBy: userId,
           })
+          recipeCosts.push({
+            quantityUsed: recipeRow.quantityUsed,
+            unitCost: ingredient.costPerUnit ?? '0',
+          })
         }
+
+        costOfGoods += toCents(calculateRecipeLineCost(recipeCosts, item.quantity))
       } else if (item.product?.type === 'standard' && item.product.trackStock) {
-        const [product] = await tx.select().from(products).where(eq(products.id, item.productId)).for('update')
-        const deduction = Number(item.quantity)
-        if (!product || Number(product.stockQty ?? '0') < deduction) throw new Error('INSUFFICIENT_STOCK')
-        await tx.update(products).set({ stockQty: String(Number(product.stockQty ?? '0') - deduction) }).where(eq(products.id, product.id))
+        const [product] = await tx.select().from(products)
+          .where(eq(products.id, item.productId)).for('update')
+        if (!product) throw new Error('PRODUCT_NOT_FOUND')
+
+        const deduction = toCents(item.quantity)
+        const currentStock = toCents(product.stockQty ?? '0')
+        if (currentStock < deduction) throw new Error('INSUFFICIENT_STOCK')
+
+        await tx.update(products).set({
+          stockQty: fromCents(currentStock - deduction),
+        }).where(eq(products.id, product.id))
         await tx.insert(stockMovements).values({
-          type: 'sale_deduction', quantity: String(-deduction), productId: product.id,
-          orderId, createdBy: userId,
+          type: 'sale_deduction',
+          quantity: fromCents(-deduction),
+          productId: product.id,
+          orderId,
+          createdBy: userId,
         })
+
+        const receivedCosts = await tx.select({
+          quantity: goodsReceiptItems.quantity,
+          unitCost: goodsReceiptItems.unitCost,
+        }).from(goodsReceiptItems).where(eq(goodsReceiptItems.productId, product.id))
+        costOfGoods += toCents(calculateStandardLineCost(receivedCosts, item.quantity))
       }
     }
 
@@ -151,11 +212,15 @@ export async function checkoutOrder(orderId: string, paymentLines: PaymentLine[]
       paymentTotals.set(accountCode, (paymentTotals.get(accountCode) ?? 0) + toCents(payment.amount))
     }
 
-    const paymentAccountCodes = [...paymentTotals.keys()]
-    const paymentAccounts = await tx.select().from(chartOfAccounts).where(inArray(chartOfAccounts.code, paymentAccountCodes))
-    const paymentAccountsByCode = new Map(paymentAccounts.map(account => [account.code, account]))
-    const [salesAccount] = await tx.select().from(chartOfAccounts).where(eq(chartOfAccounts.code, '4001')).limit(1)
-    if (!salesAccount || paymentAccountCodes.some(code => !paymentAccountsByCode.has(code))) {
+    const requiredAccountCodes = [
+      ...paymentTotals.keys(),
+      '4001',
+      ...(costOfGoods > 0 ? ['1201', '5001'] : []),
+    ]
+    const accounts = await tx.select().from(chartOfAccounts)
+      .where(inArray(chartOfAccounts.code, requiredAccountCodes))
+    const accountsByCode = new Map(accounts.map(account => [account.code, account]))
+    if (requiredAccountCodes.some(code => !accountsByCode.has(code))) {
       throw new Error('ACCOUNTING_NOT_CONFIGURED')
     }
 
@@ -167,15 +232,37 @@ export async function checkoutOrder(orderId: string, paymentLines: PaymentLine[]
       createdBy: userId,
     }).returning()
 
-    await tx.insert(journalEntryLines).values([
-      ...paymentAccountCodes.map(code => ({
+    const journalLines: Array<typeof journalEntryLines.$inferInsert> = [
+      ...[...paymentTotals.keys()].map(code => ({
         journalEntryId: journal.id,
-        accountId: paymentAccountsByCode.get(code)!.id,
+        accountId: accountsByCode.get(code)!.id,
         type: 'debit' as const,
         amount: fromCents(paymentTotals.get(code)!),
       })),
-      { journalEntryId: journal.id, accountId: salesAccount.id, type: 'credit' as const, amount: order.totalAmount },
-    ])
+      {
+        journalEntryId: journal.id,
+        accountId: accountsByCode.get('4001')!.id,
+        type: 'credit',
+        amount: order.totalAmount,
+      },
+    ]
+    if (costOfGoods > 0) {
+      journalLines.push(
+        {
+          journalEntryId: journal.id,
+          accountId: accountsByCode.get('5001')!.id,
+          type: 'debit',
+          amount: fromCents(costOfGoods),
+        },
+        {
+          journalEntryId: journal.id,
+          accountId: accountsByCode.get('1201')!.id,
+          type: 'credit',
+          amount: fromCents(costOfGoods),
+        },
+      )
+    }
+    await tx.insert(journalEntryLines).values(journalLines)
 
     await tx.insert(auditLogs).values({
       userId,
@@ -186,7 +273,10 @@ export async function checkoutOrder(orderId: string, paymentLines: PaymentLine[]
       newValue: {
         status: 'closed',
         payments,
-        paymentAccounts: Object.fromEntries(paymentAccountCodes.map(code => [code, fromCents(paymentTotals.get(code)!)])),
+        costOfGoods: fromCents(costOfGoods),
+        paymentAccounts: Object.fromEntries(
+          [...paymentTotals.keys()].map(code => [code, fromCents(paymentTotals.get(code)!)]),
+        ),
       },
     })
   })
