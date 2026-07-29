@@ -1,5 +1,17 @@
 import { db } from '@/lib/db'
-import { orderItems, transactions, auditLogs, orders, resources, ingredients, products, stockMovements, chartOfAccounts, journalEntries, journalEntryLines } from '@/lib/schema'
+import {
+  auditLogs,
+  chartOfAccounts,
+  ingredients,
+  journalEntries,
+  journalEntryLines,
+  orders,
+  orderItems,
+  products,
+  resources,
+  stockMovements,
+  transactions,
+} from '@/lib/schema'
 import { and, desc, eq, inArray, isNull } from 'drizzle-orm'
 import { fromCents, toCents } from '@/lib/currency'
 import { getPaymentAccountCode } from '@/lib/accounting'
@@ -26,7 +38,7 @@ export async function voidOrderItem(itemId: string, userId: string, reason: stri
       .from(orderItems)
       .where(eq(orderItems.orderId, item.orderId))
 
-    const activeItems = remainingItems.filter(i => !i.voidedAt)
+    const activeItems = remainingItems.filter(row => !row.voidedAt)
     const newSubtotal = activeItems.reduce((sum, row) => sum + toCents(row.totalPrice), 0)
     await tx.update(orders)
       .set({
@@ -56,8 +68,12 @@ export async function voidOrder(orderId: string, userId: string, reason: string)
       .where(eq(orders.id, orderId))
     if (order.resourceId) await tx.update(resources).set({ status: 'available' }).where(eq(resources.id, order.resourceId))
     await tx.insert(auditLogs).values({
-      userId, action: 'VOID_ORDER', targetTable: 'orders', targetId: orderId,
-      oldValue: { status: order.status }, newValue: { status: 'cancelled', reason },
+      userId,
+      action: 'VOID_ORDER',
+      targetTable: 'orders',
+      targetId: orderId,
+      oldValue: { status: order.status },
+      newValue: { status: 'cancelled', reason },
     })
   })
 }
@@ -66,6 +82,7 @@ export async function refundOrder(orderId: string, userId: string, reason: strin
   return db.transaction(async tx => {
     const [order] = await tx.select().from(orders).where(eq(orders.id, orderId)).for('update')
     if (!order || !isRefundableOrder(order.status, true)) throw new Error('ORDER_NOT_REFUNDABLE')
+
     const orderTransactions = await tx.select().from(transactions).where(eq(transactions.orderId, orderId))
     if (orderTransactions.some(transaction => transaction.isRefund)) throw new Error('ORDER_ALREADY_REFUNDED')
     const payments = orderTransactions.filter(transaction => !transaction.isRefund)
@@ -85,28 +102,49 @@ export async function refundOrder(orderId: string, userId: string, reason: strin
     const deductions = await tx.select().from(stockMovements)
       .where(and(eq(stockMovements.orderId, orderId), eq(stockMovements.type, 'sale_deduction')))
     for (const movement of deductions) {
-      const quantity = -Number(movement.quantity)
+      const restoredQuantity = -toCents(movement.quantity)
+      if (restoredQuantity <= 0) continue
+
       if (movement.ingredientId) {
-        const [ingredient] = await tx.select().from(ingredients).where(eq(ingredients.id, movement.ingredientId)).for('update')
+        const [ingredient] = await tx.select().from(ingredients)
+          .where(eq(ingredients.id, movement.ingredientId)).for('update')
         if (!ingredient) throw new Error('INGREDIENT_NOT_FOUND')
-        await tx.update(ingredients).set({ stockQty: String(Number(ingredient.stockQty) + quantity) }).where(eq(ingredients.id, ingredient.id))
+        await tx.update(ingredients).set({
+          stockQty: fromCents(toCents(ingredient.stockQty) + restoredQuantity),
+        }).where(eq(ingredients.id, ingredient.id))
       } else if (movement.productId) {
-        const [product] = await tx.select().from(products).where(eq(products.id, movement.productId)).for('update')
+        const [product] = await tx.select().from(products)
+          .where(eq(products.id, movement.productId)).for('update')
         if (!product) throw new Error('PRODUCT_NOT_FOUND')
-        await tx.update(products).set({ stockQty: String(Number(product.stockQty ?? '0') + quantity) }).where(eq(products.id, product.id))
+        await tx.update(products).set({
+          stockQty: fromCents(toCents(product.stockQty ?? '0') + restoredQuantity),
+        }).where(eq(products.id, product.id))
       } else {
         continue
       }
+
       await tx.insert(stockMovements).values({
         ingredientId: movement.ingredientId,
         productId: movement.productId,
         orderId,
         type: 'adjustment',
-        quantity: String(quantity),
+        quantity: fromCents(restoredQuantity),
         note: `Refund: ${reason}`,
         createdBy: userId,
       })
     }
+
+    const originalCostLines = await tx.select({ amount: journalEntryLines.amount })
+      .from(journalEntryLines)
+      .innerJoin(journalEntries, eq(journalEntryLines.journalEntryId, journalEntries.id))
+      .innerJoin(chartOfAccounts, eq(journalEntryLines.accountId, chartOfAccounts.id))
+      .where(and(
+        eq(journalEntries.sourceType, 'order'),
+        eq(journalEntries.sourceId, orderId),
+        eq(chartOfAccounts.code, '5001'),
+        eq(journalEntryLines.type, 'debit'),
+      ))
+    const costOfGoods = originalCostLines.reduce((sum, line) => sum + toCents(line.amount), 0)
 
     const paymentTotals = new Map<string, number>()
     for (const payment of payments) {
@@ -114,11 +152,15 @@ export async function refundOrder(orderId: string, userId: string, reason: strin
       paymentTotals.set(accountCode, (paymentTotals.get(accountCode) ?? 0) + toCents(payment.amount))
     }
 
-    const paymentAccountCodes = [...paymentTotals.keys()]
-    const paymentAccounts = await tx.select().from(chartOfAccounts).where(inArray(chartOfAccounts.code, paymentAccountCodes))
-    const paymentAccountsByCode = new Map(paymentAccounts.map(account => [account.code, account]))
-    const [salesAccount] = await tx.select().from(chartOfAccounts).where(eq(chartOfAccounts.code, '4001')).limit(1)
-    if (!salesAccount || paymentAccountCodes.some(code => !paymentAccountsByCode.has(code))) {
+    const requiredAccountCodes = [
+      ...paymentTotals.keys(),
+      '4001',
+      ...(costOfGoods > 0 ? ['1201', '5001'] : []),
+    ]
+    const accounts = await tx.select().from(chartOfAccounts)
+      .where(inArray(chartOfAccounts.code, requiredAccountCodes))
+    const accountsByCode = new Map(accounts.map(account => [account.code, account]))
+    if (requiredAccountCodes.some(code => !accountsByCode.has(code))) {
       throw new Error('ACCOUNTING_NOT_CONFIGURED')
     }
 
@@ -130,15 +172,37 @@ export async function refundOrder(orderId: string, userId: string, reason: strin
       createdBy: userId,
     }).returning()
 
-    await tx.insert(journalEntryLines).values([
-      { journalEntryId: journal.id, accountId: salesAccount.id, type: 'debit' as const, amount: order.totalAmount },
-      ...paymentAccountCodes.map(code => ({
+    const journalLines: Array<typeof journalEntryLines.$inferInsert> = [
+      {
         journalEntryId: journal.id,
-        accountId: paymentAccountsByCode.get(code)!.id,
+        accountId: accountsByCode.get('4001')!.id,
+        type: 'debit',
+        amount: order.totalAmount,
+      },
+      ...[...paymentTotals.keys()].map(code => ({
+        journalEntryId: journal.id,
+        accountId: accountsByCode.get(code)!.id,
         type: 'credit' as const,
         amount: fromCents(paymentTotals.get(code)!),
       })),
-    ])
+    ]
+    if (costOfGoods > 0) {
+      journalLines.push(
+        {
+          journalEntryId: journal.id,
+          accountId: accountsByCode.get('1201')!.id,
+          type: 'debit',
+          amount: fromCents(costOfGoods),
+        },
+        {
+          journalEntryId: journal.id,
+          accountId: accountsByCode.get('5001')!.id,
+          type: 'credit',
+          amount: fromCents(costOfGoods),
+        },
+      )
+    }
+    await tx.insert(journalEntryLines).values(journalLines)
 
     await tx.update(orders).set({ status: 'cancelled' }).where(eq(orders.id, orderId))
 
@@ -151,7 +215,10 @@ export async function refundOrder(orderId: string, userId: string, reason: strin
       newValue: {
         status: 'cancelled',
         reason,
-        paymentAccounts: Object.fromEntries(paymentAccountCodes.map(code => [code, fromCents(paymentTotals.get(code)!)])),
+        costOfGoodsReversed: fromCents(costOfGoods),
+        paymentAccounts: Object.fromEntries(
+          [...paymentTotals.keys()].map(code => [code, fromCents(paymentTotals.get(code)!)]),
+        ),
       },
     })
   })
