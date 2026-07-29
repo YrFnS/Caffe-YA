@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
 import { getActiveShift, getOrCreateDraftOrder, getDraftOrderItems } from '@/features/pos/_services/orderService'
+import { getEditableOrder } from '@/features/pos/_services/orderSelection'
 import { getAllActiveProducts, getCategories } from '@/features/pos/_services/productService'
 import { getResourcesWithCategories } from '@/features/pos/_services/resourceService'
 import POSClientView from './_components/POSClientView'
@@ -26,10 +27,12 @@ function mapOrderItemsToCartItems(
 
 export default async function POSPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>
+  searchParams: Promise<{ orderId?: string }>
 }) {
-  const { locale } = await params
+  const [{ locale }, query] = await Promise.all([params, searchParams])
   const session = await getSession()
   if (!session?.user) redirect(`/${locale}/sign-in`)
 
@@ -37,7 +40,10 @@ export default async function POSPage({
   const activeShift = await getActiveShift(userId)
   if (!activeShift) redirect(`/${locale}/shifts`)
 
-  const draftOrder = await getOrCreateDraftOrder(activeShift.id, userId)
+  const selectedOrder = query.orderId
+    ? await getEditableOrder(query.orderId, userId, activeShift.id)
+    : null
+  const draftOrder = selectedOrder ?? await getOrCreateDraftOrder(activeShift.id, userId)
   const existingItems = await getDraftOrderItems(draftOrder.id)
   const initialCartItems = mapOrderItemsToCartItems(existingItems, locale)
 
