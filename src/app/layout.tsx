@@ -1,33 +1,54 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import type { Metadata } from 'next'
+import { getLocale } from 'next-intl/server'
+import { Cairo, IBM_Plex_Sans_Arabic, Inter, Manrope } from 'next/font/google'
+import './globals.css'
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+})
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const manrope = Manrope({
+  subsets: ['latin'],
+  variable: '--font-manrope',
+})
+
+const ibmPlexArabic = IBM_Plex_Sans_Arabic({
+  subsets: ['arabic'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-ibm-plex-arabic',
+})
+
+const cairo = Cairo({
+  subsets: ['arabic'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-cairo',
+})
 
 export const metadata: Metadata = {
-  title: "RoastGrid — Operations",
-  description: "Cafe and gaming operations, in one workspace.",
-};
+  title: 'RoastGrid — Operations',
+  description: 'Cafe and gaming operations, in one workspace.',
+  icons: {
+    icon: '/favicon.ico',
+  },
+}
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
+  const locale = await getLocale()
+  const isRTL = locale === 'ar'
+
   return (
     <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      lang={locale}
+      dir={isRTL ? 'rtl' : 'ltr'}
+      suppressHydrationWarning
+      className={`${inter.variable} ${manrope.variable} ${ibmPlexArabic.variable} ${cairo.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="flex min-h-full flex-col font-sans">{children}</body>
     </html>
-  );
+  )
 }
