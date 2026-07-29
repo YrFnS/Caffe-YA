@@ -24,6 +24,7 @@ export default function VoidModal({
   const common = useTranslations('common')
   const dialogRef = useRef<HTMLDivElement>(null)
   const processingRef = useRef(false)
+  const onCloseRef = useRef(onClose)
   const [reason, setReason] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState('')
@@ -31,6 +32,10 @@ export default function VoidModal({
   useEffect(() => {
     processingRef.current = isProcessing
   }, [isProcessing])
+
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
 
   useEffect(() => {
     if (!isOpen) return
@@ -42,7 +47,7 @@ export default function VoidModal({
     window.setTimeout(() => dialogRef.current?.querySelector<HTMLTextAreaElement>('textarea')?.focus(), 0)
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !processingRef.current) onClose()
+      if (event.key === 'Escape' && !processingRef.current) onCloseRef.current()
       if (event.key !== 'Tab' || !dialogRef.current) return
 
       const controls = [...dialogRef.current.querySelectorAll<HTMLElement>(
@@ -65,7 +70,7 @@ export default function VoidModal({
       document.body.style.overflow = previousOverflow
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [isOpen, onClose])
+  }, [isOpen])
 
   if (!isOpen) return null
 
