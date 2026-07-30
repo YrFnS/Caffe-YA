@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { useRouter } from '@/lib/navigation'
 import { Modal } from '@/components/ui/modal'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
@@ -20,6 +20,7 @@ export default function ProductModal({ categories, product, editId }: ProductMod
   const t = useTranslations('inventory')
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [form, setForm] = useState({
     name: product?.name || '',
     nameAr: product?.nameAr || '',
@@ -29,20 +30,18 @@ export default function ProductModal({ categories, product, editId }: ProductMod
     trackStock: product?.trackStock || false,
     stockQty: product?.stockQty || '0',
     lowStockThreshold: product?.lowStockThreshold || '0',
+    costPerUnit: product?.costPerUnit || '0',
   })
 
-  const handleClose = () => {
-    router.push('/inventory/products')
-  }
+  const handleClose = () => router.push('/inventory/products')
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
     setLoading(true)
+    setError('')
     try {
       const formData = new FormData()
-      if (editId) {
-        formData.set('productId', editId)
-      }
+      if (editId) formData.set('productId', editId)
       formData.set('name', form.name)
       formData.set('nameAr', form.nameAr)
       formData.set('categoryId', form.categoryId)
@@ -51,55 +50,68 @@ export default function ProductModal({ categories, product, editId }: ProductMod
       formData.set('trackStock', String(form.trackStock))
       formData.set('stockQty', form.stockQty)
       formData.set('lowStockThreshold', form.lowStockThreshold)
+      formData.set('costPerUnit', form.costPerUnit)
 
-      if (editId) {
-        await updateProductAction(formData)
-      } else {
-        await createProductAction(formData)
+      const result = editId
+        ? await updateProductAction(formData)
+        : await createProductAction(formData)
+      if ('error' in result && result.error) {
+        setError(result.error.replaceAll('_', ' '))
+        return
       }
+
       router.push('/inventory/products')
       router.refresh()
-    } catch {
+    } catch (actionError) {
+      console.error('Product save failed:', actionError)
+      setError('SAVE FAILED')
+    } finally {
       setLoading(false)
     }
   }
 
-  const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }))
+  const categoryOptions = categories.map(category => ({ value: category.id, label: category.name }))
+  const tracksInventory = form.type === 'standard' && form.trackStock
 
   return (
     <Modal
-      open={true}
+      open
       onClose={handleClose}
       title={editId ? t('edit') : t('add')}
-      footer={
+      footer={(
         <>
-          <Button variant="outline" onClick={handleClose}>
+          <Button variant="outline" onClick={handleClose} disabled={loading}>
             {t('cancel')}
           </Button>
-          <Button onClick={handleSubmit} disabled={loading}>
+          <Button type="submit" form="product-form" disabled={loading}>
             {loading ? t('loading') : t('save')}
           </Button>
         </>
-      }
+      )}
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form id="product-form" onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div role="alert" className="rounded-lg bg-error/10 p-3 text-sm text-error">
+            {error}
+          </div>
+        )}
         <Input
           label={t('name')}
           value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          onChange={event => setForm({ ...form, name: event.target.value })}
           required
         />
         <Input
           label={t('nameAr')}
           value={form.nameAr}
-          onChange={(e) => setForm({ ...form, nameAr: e.target.value })}
+          onChange={event => setForm({ ...form, nameAr: event.target.value })}
           dir="rtl"
         />
         <Select
           label={t('categories')}
           options={categoryOptions}
           value={form.categoryId}
-          onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+          onChange={event => setForm({ ...form, categoryId: event.target.value })}
           placeholder={t('selectCategory')}
         />
         <Select
@@ -110,40 +122,64 @@ export default function ProductModal({ categories, product, editId }: ProductMod
             { value: 'service', label: t('service') },
           ]}
           value={form.type}
-          onChange={(e) => setForm({ ...form, type: e.target.value as 'standard' | 'recipe' | 'service' })}
+          onChange={event => {
+            const type = event.target.value as 'standard' | 'recipe' | 'service'
+            setForm({
+              ...form,
+              type,
+              trackStock: type === 'standard' ? form.trackStock : false,
+            })
+          }}
         />
         <Input
           label={t('price')}
           type="number"
+          min="0.001"
           step="0.001"
           value={form.price}
-          onChange={(e) => setForm({ ...form, price: e.target.value })}
+          onChange={event => setForm({ ...form, price: event.target.value })}
           required
         />
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="trackStock"
-            checked={form.trackStock}
-            onChange={(e) => setForm({ ...form, trackStock: e.target.checked })}
-          />
-          <label htmlFor="trackStock" className="text-sm text-on-surface">{t('tracked')}</label>
-        </div>
-        {form.trackStock && (
+        {form.type === 'standard' && (
+          <div className="flex min-h-12 items-center gap-3">
+            <input
+              type="checkbox"
+              id="trackStock"
+              className="h-5 w-5"
+              checked={form.trackStock}
+              onChange={event => setForm({ ...form, trackStock: event.target.checked })}
+            />
+            <label htmlFor="trackStock" className="text-sm text-on-surface">
+              {t('tracked')}
+            </label>
+          </div>
+        )}
+        {tracksInventory && (
           <>
             <Input
               label={t('stock')}
               type="number"
+              min="0"
               step="0.001"
               value={form.stockQty}
-              onChange={(e) => setForm({ ...form, stockQty: e.target.value })}
+              onChange={event => setForm({ ...form, stockQty: event.target.value })}
+            />
+            <Input
+              label={t('costPerUnit')}
+              type="number"
+              min="0"
+              step="0.001"
+              value={form.costPerUnit}
+              onChange={event => setForm({ ...form, costPerUnit: event.target.value })}
+              required
             />
             <Input
               label={t('lowThreshold')}
               type="number"
+              min="0"
               step="0.001"
               value={form.lowStockThreshold}
-              onChange={(e) => setForm({ ...form, lowStockThreshold: e.target.value })}
+              onChange={event => setForm({ ...form, lowStockThreshold: event.target.value })}
             />
           </>
         )}
