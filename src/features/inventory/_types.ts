@@ -1,7 +1,7 @@
 import { ingredients, units, productCategories, products, productIngredients, stockMovements } from '@/lib/schema'
 import { InferSelectModel } from 'drizzle-orm'
 
-export type Product = InferSelectModel<typeof products>
+export type Product = InferSelectModel<typeof products> & { costPerUnit?: string | null }
 export type ProductCategory = InferSelectModel<typeof productCategories>
 export type Ingredient = InferSelectModel<typeof ingredients>
 export type Unit = InferSelectModel<typeof units>

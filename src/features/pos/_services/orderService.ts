@@ -1,10 +1,30 @@
-import { db } from '@/lib/db'
-import { auditLogs, chartOfAccounts, ingredients, journalEntries, journalEntryLines, orders, orderItems, products, transactions, resources, shifts, stockMovements } from '@/lib/schema'
-import { eq, and, inArray, isNull } from 'drizzle-orm'
-import { getProductIngredients } from '@/features/inventory/_services/productService'
-import { toCents, fromCents } from '@/lib/currency'
-import { getPaymentAccountCode } from '@/lib/accounting'
-import { validatePayments, type PaymentLine } from './payment'
+import { db } from '../../../lib/db.ts'
+import {
+  auditLogs,
+  chartOfAccounts,
+  ingredients,
+  journalEntries,
+  journalEntryLines,
+  orders,
+  orderItems,
+  productIngredients,
+  products,
+  resources,
+  shifts,
+  stockMovements,
+  transactions,
+} from '../../../lib/schema.ts'
+import { productInventoryCosts, stockMovementCosts } from '../../../lib/valuationSchema.ts'
+import { and, eq, inArray, isNull } from 'drizzle-orm'
+import {
+  fromCents,
+  multiplyDecimalMoney,
+  multiplyDecimalMoneyMany,
+  toCents,
+} from '../../../lib/currency.ts'
+import { getPaymentAccountCode } from '../../../lib/accounting.ts'
+import { calculateStandardLineCost } from './costing.ts'
+import { validatePayments, type PaymentLine } from './payment.ts'
 
 export async function getOrCreateDraftOrder(shiftId: string, userId: string) {
   return db.transaction(async tx => {
@@ -44,20 +64,41 @@ export async function getActiveShift(userId: string) {
 export async function addItemToOrder(orderId: string, productId: string, quantity: number, userId: string) {
   return db.transaction(async tx => {
     const [order] = await tx.select().from(orders).where(eq(orders.id, orderId)).for('update')
-    if (!order || order.cashierId !== userId || !['draft', 'open'].includes(order.status)) throw new Error('ORDER_NOT_OPEN')
-    const [product] = await tx.select().from(products).where(and(eq(products.id, productId), eq(products.isActive, true))).limit(1)
+    if (!order || order.cashierId !== userId || !['draft', 'open'].includes(order.status)) {
+      throw new Error('ORDER_NOT_OPEN')
+    }
+    const [product] = await tx.select().from(products)
+      .where(and(eq(products.id, productId), eq(products.isActive, true))).limit(1)
     if (!product) throw new Error('PRODUCT_NOT_FOUND')
 
-    const [existing] = await tx.select().from(orderItems).where(and(eq(orderItems.orderId, orderId), eq(orderItems.productId, productId), isNull(orderItems.voidedAt))).limit(1)
+    const [existing] = await tx.select().from(orderItems).where(and(
+      eq(orderItems.orderId, orderId),
+      eq(orderItems.productId, productId),
+      isNull(orderItems.voidedAt),
+    )).limit(1)
     const nextQuantity = Number(existing?.quantity ?? 0) + quantity
     const totalPrice = fromCents(toCents(product.price) * nextQuantity)
     const [item] = existing
-      ? await tx.update(orderItems).set({ quantity: String(nextQuantity), unitPrice: product.price, totalPrice }).where(eq(orderItems.id, existing.id)).returning()
-      : await tx.insert(orderItems).values({ orderId, productId, quantity: String(quantity), unitPrice: product.price, totalPrice }).returning()
+      ? await tx.update(orderItems).set({
+          quantity: String(nextQuantity),
+          unitPrice: product.price,
+          totalPrice,
+        }).where(eq(orderItems.id, existing.id)).returning()
+      : await tx.insert(orderItems).values({
+          orderId,
+          productId,
+          quantity: String(quantity),
+          unitPrice: product.price,
+          totalPrice,
+        }).returning()
 
-    const items = await tx.select().from(orderItems).where(and(eq(orderItems.orderId, orderId), isNull(orderItems.voidedAt)))
+    const items = await tx.select().from(orderItems)
+      .where(and(eq(orderItems.orderId, orderId), isNull(orderItems.voidedAt)))
     const subtotal = items.reduce((sum, row) => sum + toCents(row.totalPrice), 0)
-    await tx.update(orders).set({ subtotal: fromCents(subtotal), totalAmount: fromCents(subtotal + toCents(order.timerChargeAmount ?? '0')) }).where(eq(orders.id, orderId))
+    await tx.update(orders).set({
+      subtotal: fromCents(subtotal),
+      totalAmount: fromCents(subtotal + toCents(order.timerChargeAmount ?? '0')),
+    }).where(eq(orders.id, orderId))
     return item
   })
 }
@@ -71,12 +112,24 @@ export async function updateItemQuantity(itemId: string, quantity: number, userI
     const [item] = await tx.select().from(orderItems).where(eq(orderItems.id, itemId)).for('update')
     if (!item) throw new Error('ITEM_NOT_FOUND')
     const [order] = await tx.select().from(orders).where(eq(orders.id, item.orderId)).for('update')
-    if (!order || order.cashierId !== userId || !['draft', 'open'].includes(order.status)) throw new Error('ORDER_NOT_OPEN')
-    if (quantity <= 0) await tx.update(orderItems).set({ voidedAt: new Date() }).where(eq(orderItems.id, itemId))
-    else await tx.update(orderItems).set({ quantity: String(quantity), totalPrice: fromCents(toCents(item.unitPrice) * quantity) }).where(eq(orderItems.id, itemId))
-    const items = await tx.select().from(orderItems).where(and(eq(orderItems.orderId, order.id), isNull(orderItems.voidedAt)))
+    if (!order || order.cashierId !== userId || !['draft', 'open'].includes(order.status)) {
+      throw new Error('ORDER_NOT_OPEN')
+    }
+    if (quantity <= 0) {
+      await tx.update(orderItems).set({ voidedAt: new Date() }).where(eq(orderItems.id, itemId))
+    } else {
+      await tx.update(orderItems).set({
+        quantity: String(quantity),
+        totalPrice: fromCents(toCents(item.unitPrice) * quantity),
+      }).where(eq(orderItems.id, itemId))
+    }
+    const items = await tx.select().from(orderItems)
+      .where(and(eq(orderItems.orderId, order.id), isNull(orderItems.voidedAt)))
     const subtotal = items.reduce((sum, row) => sum + toCents(row.totalPrice), 0)
-    await tx.update(orders).set({ subtotal: fromCents(subtotal), totalAmount: fromCents(subtotal + toCents(order.timerChargeAmount ?? '0')) }).where(eq(orders.id, order.id))
+    await tx.update(orders).set({
+      subtotal: fromCents(subtotal),
+      totalAmount: fromCents(subtotal + toCents(order.timerChargeAmount ?? '0')),
+    }).where(eq(orders.id, order.id))
   })
 }
 
@@ -89,59 +142,89 @@ export async function checkoutOrder(orderId: string, paymentLines: PaymentLine[]
     if (order.timerStartedAt && !order.timerEndedAt) throw new Error('TIMER_RUNNING')
     const payments = validatePayments(paymentLines, order.totalAmount)
 
-    await tx.update(orders)
-      .set({ status: 'closed', closedAt: new Date() })
-      .where(eq(orders.id, orderId))
-
-    await tx.insert(transactions).values(payments.map(payment => ({
-      orderId,
-      shiftId: order.shiftId,
-      paymentMethod: payment.method,
-      amount: payment.amount,
-      reference: payment.reference,
-    })))
-
-    if (order.resourceId) {
-      await tx.update(resources)
-        .set({ status: 'available' })
-        .where(eq(resources.id, order.resourceId))
-    }
-
-    // Deduct recipe ingredients and tracked standard-product stock atomically.
     const items = await tx.query.orderItems.findMany({
       where: and(eq(orderItems.orderId, orderId), isNull(orderItems.voidedAt)),
       with: { product: true },
     })
 
+    let costOfGoods = 0
     for (const item of items) {
-      if (item.product && item.product.type === 'recipe') {
-        const recipeIngredients = await getProductIngredients(item.productId)
-        for (const ri of recipeIngredients) {
-          const deduction = Number(ri.quantityUsed) * Number(item.quantity)
+      if (item.product?.type === 'recipe') {
+        const recipeRows = await tx.select().from(productIngredients)
+          .where(eq(productIngredients.productId, item.productId))
+
+        for (const recipeRow of recipeRows) {
           const [ingredient] = await tx.select().from(ingredients)
-            .where(eq(ingredients.id, ri.ingredientId)).for('update')
-          if (!ingredient || Number(ingredient.stockQty) < deduction) throw new Error('INSUFFICIENT_STOCK')
-          await tx.update(ingredients)
-            .set({ stockQty: String(Number(ingredient.stockQty) - deduction) })
-            .where(eq(ingredients.id, ri.ingredientId))
-          await tx.insert(stockMovements).values({
+            .where(eq(ingredients.id, recipeRow.ingredientId))
+            .for('update')
+          if (!ingredient) throw new Error('INGREDIENT_NOT_FOUND')
+
+          const deductionQuantity = multiplyDecimalMoney(recipeRow.quantityUsed, item.quantity)
+          const deduction = toCents(deductionQuantity)
+          const currentStock = toCents(ingredient.stockQty)
+          const unitCost = ingredient.costPerUnit ?? '0'
+          if (currentStock < deduction) throw new Error('INSUFFICIENT_STOCK')
+          if (deduction > 0 && toCents(unitCost) <= 0) {
+            throw new Error('INVENTORY_COST_NOT_CONFIGURED')
+          }
+
+          const movementCost = multiplyDecimalMoneyMany(
+            unitCost,
+            recipeRow.quantityUsed,
+            item.quantity,
+          )
+          await tx.update(ingredients).set({
+            stockQty: fromCents(currentStock - deduction),
+          }).where(eq(ingredients.id, recipeRow.ingredientId))
+          const [movement] = await tx.insert(stockMovements).values({
             type: 'sale_deduction',
-            quantity: String(-deduction),
-            ingredientId: ri.ingredientId,
+            quantity: fromCents(-deduction),
+            ingredientId: recipeRow.ingredientId,
             productId: item.productId,
             orderId,
             createdBy: userId,
+          }).returning({ id: stockMovements.id })
+          await tx.insert(stockMovementCosts).values({
+            movementId: movement.id,
+            unitCost,
+            totalCost: movementCost,
           })
+          costOfGoods += toCents(movementCost)
         }
       } else if (item.product?.type === 'standard' && item.product.trackStock) {
-        const [product] = await tx.select().from(products).where(eq(products.id, item.productId)).for('update')
-        const deduction = Number(item.quantity)
-        if (!product || Number(product.stockQty ?? '0') < deduction) throw new Error('INSUFFICIENT_STOCK')
-        await tx.update(products).set({ stockQty: String(Number(product.stockQty ?? '0') - deduction) }).where(eq(products.id, product.id))
-        await tx.insert(stockMovements).values({
-          type: 'sale_deduction', quantity: String(-deduction), productId: product.id,
-          orderId, createdBy: userId,
+        const [product] = await tx.select().from(products)
+          .where(eq(products.id, item.productId))
+          .for('update')
+        if (!product) throw new Error('PRODUCT_NOT_FOUND')
+        const [valuation] = await tx.select().from(productInventoryCosts)
+          .where(eq(productInventoryCosts.productId, item.productId))
+          .for('update')
+
+        const deduction = toCents(item.quantity)
+        const currentStock = toCents(product.stockQty ?? '0')
+        if (currentStock < deduction) throw new Error('INSUFFICIENT_STOCK')
+        if (deduction > 0 && (!valuation || toCents(valuation.unitCost) <= 0)) {
+          throw new Error('INVENTORY_COST_NOT_CONFIGURED')
+        }
+
+        const unitCost = valuation?.unitCost ?? '0'
+        const movementCost = calculateStandardLineCost(unitCost, item.quantity)
+        await tx.update(products).set({
+          stockQty: fromCents(currentStock - deduction),
+        }).where(eq(products.id, product.id))
+        const [movement] = await tx.insert(stockMovements).values({
+          type: 'sale_deduction',
+          quantity: fromCents(-deduction),
+          productId: product.id,
+          orderId,
+          createdBy: userId,
+        }).returning({ id: stockMovements.id })
+        await tx.insert(stockMovementCosts).values({
+          movementId: movement.id,
+          unitCost,
+          totalCost: movementCost,
         })
+        costOfGoods += toCents(movementCost)
       }
     }
 
@@ -152,10 +235,22 @@ export async function checkoutOrder(orderId: string, paymentLines: PaymentLine[]
     }
 
     const paymentAccountCodes = [...paymentTotals.keys()]
-    const paymentAccounts = await tx.select().from(chartOfAccounts).where(inArray(chartOfAccounts.code, paymentAccountCodes))
+    const paymentAccounts = await tx.select().from(chartOfAccounts)
+      .where(inArray(chartOfAccounts.code, paymentAccountCodes))
     const paymentAccountsByCode = new Map(paymentAccounts.map(account => [account.code, account]))
-    const [salesAccount] = await tx.select().from(chartOfAccounts).where(eq(chartOfAccounts.code, '4001')).limit(1)
-    if (!salesAccount || paymentAccountCodes.some(code => !paymentAccountsByCode.has(code))) {
+    const [salesAccount] = await tx.select().from(chartOfAccounts)
+      .where(eq(chartOfAccounts.code, '4001')).limit(1)
+    const [inventoryAccount] = costOfGoods > 0
+      ? await tx.select().from(chartOfAccounts).where(eq(chartOfAccounts.code, '1201')).limit(1)
+      : [undefined]
+    const [cogsAccount] = costOfGoods > 0
+      ? await tx.select().from(chartOfAccounts).where(eq(chartOfAccounts.code, '5001')).limit(1)
+      : [undefined]
+    if (
+      !salesAccount
+      || paymentAccountCodes.some(code => !paymentAccountsByCode.has(code))
+      || (costOfGoods > 0 && (!inventoryAccount || !cogsAccount))
+    ) {
       throw new Error('ACCOUNTING_NOT_CONFIGURED')
     }
 
@@ -167,15 +262,42 @@ export async function checkoutOrder(orderId: string, paymentLines: PaymentLine[]
       createdBy: userId,
     }).returning()
 
-    await tx.insert(journalEntryLines).values([
+    const journalLines = [
       ...paymentAccountCodes.map(code => ({
         journalEntryId: journal.id,
         accountId: paymentAccountsByCode.get(code)!.id,
         type: 'debit' as const,
         amount: fromCents(paymentTotals.get(code)!),
       })),
-      { journalEntryId: journal.id, accountId: salesAccount.id, type: 'credit' as const, amount: order.totalAmount },
-    ])
+      {
+        journalEntryId: journal.id,
+        accountId: salesAccount.id,
+        type: 'credit' as const,
+        amount: order.totalAmount,
+      },
+    ]
+    if (costOfGoods > 0 && inventoryAccount && cogsAccount) {
+      const cogsAmount = fromCents(costOfGoods)
+      journalLines.push(
+        { journalEntryId: journal.id, accountId: cogsAccount.id, type: 'debit', amount: cogsAmount },
+        { journalEntryId: journal.id, accountId: inventoryAccount.id, type: 'credit', amount: cogsAmount },
+      )
+    }
+    await tx.insert(journalEntryLines).values(journalLines)
+
+    await tx.update(orders).set({ status: 'closed', closedAt: new Date() })
+      .where(eq(orders.id, orderId))
+    await tx.insert(transactions).values(payments.map(payment => ({
+      orderId,
+      shiftId: order.shiftId,
+      paymentMethod: payment.method,
+      amount: payment.amount,
+      reference: payment.reference,
+    })))
+    if (order.resourceId) {
+      await tx.update(resources).set({ status: 'available' })
+        .where(eq(resources.id, order.resourceId))
+    }
 
     await tx.insert(auditLogs).values({
       userId,
@@ -186,7 +308,10 @@ export async function checkoutOrder(orderId: string, paymentLines: PaymentLine[]
       newValue: {
         status: 'closed',
         payments,
-        paymentAccounts: Object.fromEntries(paymentAccountCodes.map(code => [code, fromCents(paymentTotals.get(code)!)])),
+        costOfGoods: fromCents(costOfGoods),
+        paymentAccounts: Object.fromEntries(
+          paymentAccountCodes.map(code => [code, fromCents(paymentTotals.get(code)!)]),
+        ),
       },
     })
   })
@@ -195,9 +320,14 @@ export async function checkoutOrder(orderId: string, paymentLines: PaymentLine[]
 export async function clearOrder(orderId: string, userId: string) {
   await db.transaction(async tx => {
     const [order] = await tx.select().from(orders).where(eq(orders.id, orderId)).for('update')
-    if (!order || order.cashierId !== userId || !['draft', 'open'].includes(order.status)) throw new Error('ORDER_NOT_OPEN')
+    if (!order || order.cashierId !== userId || !['draft', 'open'].includes(order.status)) {
+      throw new Error('ORDER_NOT_OPEN')
+    }
     await tx.update(orderItems).set({ voidedAt: new Date() }).where(eq(orderItems.orderId, orderId))
-    await tx.update(orders).set({ subtotal: '0', totalAmount: order.timerChargeAmount ?? '0' }).where(eq(orders.id, orderId))
+    await tx.update(orders).set({
+      subtotal: '0',
+      totalAmount: order.timerChargeAmount ?? '0',
+    }).where(eq(orders.id, orderId))
   })
 }
 

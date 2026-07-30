@@ -8,7 +8,8 @@ import { getActiveShift } from '../_services/orderService'
 
 const voidErrors = new Set([
   'ITEM_NOT_FOUND', 'ORDER_NOT_OPEN', 'ORDER_NOT_REFUNDABLE', 'ORDER_ALREADY_REFUNDED',
-  'PAYMENT_NOT_FOUND', 'INGREDIENT_NOT_FOUND', 'PRODUCT_NOT_FOUND', 'ACCOUNTING_NOT_CONFIGURED',
+  'PAYMENT_NOT_FOUND', 'INGREDIENT_NOT_FOUND', 'PRODUCT_NOT_FOUND',
+  'COST_HISTORY_MISSING', 'COST_HISTORY_MISMATCH', 'ACCOUNTING_NOT_CONFIGURED',
 ])
 const safeError = (error: unknown, fallback: string) =>
   error instanceof Error && voidErrors.has(error.message) ? error.message : fallback
@@ -20,10 +21,7 @@ export async function voidItem(formData: FormData) {
 
   const itemId = formData.get('itemId') as string
   const reason = formData.get('reason') as string
-
-  if (!itemId || !reason?.trim()) {
-    return { error: 'MISSING_FIELDS' }
-  }
+  if (!itemId || !reason?.trim()) return { error: 'MISSING_FIELDS' }
 
   try {
     await voidOrderItem(itemId, session.user.id, reason.trim())
@@ -41,10 +39,7 @@ export async function voidOrderAction(formData: FormData) {
 
   const orderId = formData.get('orderId') as string
   const reason = formData.get('reason') as string
-
-  if (!orderId || !reason?.trim()) {
-    return { error: 'MISSING_FIELDS' }
-  }
+  if (!orderId || !reason?.trim()) return { error: 'MISSING_FIELDS' }
 
   try {
     await voidOrder(orderId, session.user.id, reason.trim())
