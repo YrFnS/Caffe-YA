@@ -33,7 +33,17 @@ function Modal({
   busy = false,
 }: ModalProps) {
   const dialogRef = React.useRef<HTMLDivElement>(null)
+  const onCloseRef = React.useRef(onClose)
+  const busyRef = React.useRef(busy)
   const titleId = React.useId()
+
+  React.useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
+  React.useEffect(() => {
+    busyRef.current = busy
+  }, [busy])
 
   React.useEffect(() => {
     if (!open) return
@@ -49,9 +59,9 @@ function Modal({
     queueMicrotask(() => (focusable ?? dialog)?.focus())
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !busy) {
+      if (event.key === 'Escape' && !busyRef.current) {
         event.preventDefault()
-        onClose()
+        onCloseRef.current()
         return
       }
       if (event.key !== 'Tab' || !dialog) return
@@ -82,7 +92,7 @@ function Modal({
       document.body.style.overflow = previousOverflow
       previousActive?.focus()
     }
-  }, [busy, onClose, open])
+  }, [open])
 
   if (!open) return null
 
