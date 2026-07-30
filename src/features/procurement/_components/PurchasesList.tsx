@@ -14,6 +14,12 @@ interface PurchasesListProps {
   onViewDetails: (id: string) => void
   onPay: (id: string) => void
   onDelete: (id: string) => void
+  permissions: {
+    canCreate: boolean
+    canReceive: boolean
+    canPay: boolean
+    canDelete: boolean
+  }
   disabled?: boolean
 }
 
@@ -24,6 +30,7 @@ export default function PurchasesList({
   onViewDetails,
   onPay,
   onDelete,
+  permissions,
   disabled = false,
 }: PurchasesListProps) {
   const t = useTranslations('procurement')
@@ -47,7 +54,7 @@ export default function PurchasesList({
 
   const actions = (purchase: PurchaseRow) => (
     <div className="flex flex-wrap gap-2">
-      {!purchase.receivedAt && (
+      {permissions.canReceive && !purchase.receivedAt && (
         <Button variant="secondary" size="sm" onClick={() => onViewReceipt(purchase.id)} disabled={disabled}>
           {t('receiveGoods')}
         </Button>
@@ -55,12 +62,12 @@ export default function PurchasesList({
       <Button variant="ghost" size="sm" onClick={() => onViewDetails(purchase.id)} disabled={disabled}>
         {t('details')}
       </Button>
-      {purchase.receivedAt && !purchase.isPaid && (
+      {permissions.canPay && purchase.receivedAt && !purchase.isPaid && (
         <Button size="sm" onClick={() => onPay(purchase.id)} disabled={disabled}>
           {t('markPaid')}
         </Button>
       )}
-      {!purchase.receivedAt && !purchase.isPaid && (
+      {permissions.canDelete && !purchase.receivedAt && !purchase.isPaid && (
         <Button variant="ghost" size="sm" onClick={() => onDelete(purchase.id)} disabled={disabled} className="text-error">
           {t('delete')}
         </Button>
@@ -98,7 +105,7 @@ export default function PurchasesList({
       {filtered.length === 0 ? (
         <div className="grid min-h-56 place-items-center gap-3 p-8 text-center text-on-surface-variant">
           <p>{t('noPurchases')}</p>
-          <Button onClick={onNewPurchase}>{t('newPurchase')}</Button>
+          {permissions.canCreate && <Button onClick={onNewPurchase}>{t('newPurchase')}</Button>}
         </div>
       ) : (
         <>
