@@ -113,9 +113,9 @@ export async function receivePurchase(purchaseId: string, userId: string, note?:
           .for('update')
         if (!product) throw new Error('PRODUCT_NOT_FOUND')
 
-        const currentCost = await tx.query.productInventoryCosts?.findFirst?.({
-          where: eq(productInventoryCosts.productId, item.productId),
-        })
+        const [currentCost] = await tx.select().from(productInventoryCosts)
+          .where(eq(productInventoryCosts.productId, item.productId))
+          .for('update')
         const nextUnitCost = weightedAverageUnitCost(
           product.stockQty ?? '0',
           currentCost?.unitCost ?? '0',
