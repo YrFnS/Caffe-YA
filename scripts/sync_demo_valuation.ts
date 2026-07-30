@@ -57,7 +57,7 @@ async function ensureMovementCost(
 }
 
 async function syncDemoValuation() {
-  await db.insert(chartOfAccounts).values({
+  const [cogsAccount] = await db.insert(chartOfAccounts).values({
     id: ids.cogsAccount,
     code: '5001',
     name: 'Cost of Goods Sold',
@@ -70,7 +70,7 @@ async function syncDemoValuation() {
       nameAr: 'تكلفة البضاعة المباعة',
       type: 'cogs',
     },
-  })
+  }).returning({ id: chartOfAccounts.id })
 
   await db.insert(productInventoryCosts).values({
     productId: ids.croissant,
@@ -90,13 +90,13 @@ async function syncDemoValuation() {
   if (journal) {
     const [cogsLine] = await db.select().from(journalEntryLines).where(and(
       eq(journalEntryLines.journalEntryId, journal.id),
-      eq(journalEntryLines.accountId, ids.cogsAccount),
+      eq(journalEntryLines.accountId, cogsAccount.id),
       eq(journalEntryLines.type, 'debit'),
     )).limit(1)
     if (!cogsLine) {
       await db.insert(journalEntryLines).values({
         journalEntryId: journal.id,
-        accountId: ids.cogsAccount,
+        accountId: cogsAccount.id,
         type: 'debit',
         amount: '2028',
         note: 'Demo COGS',
