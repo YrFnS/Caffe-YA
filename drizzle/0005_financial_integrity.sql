@@ -97,10 +97,12 @@ BEGIN
       USING HINT = 'Close or consolidate duplicate open shifts, then rerun the migration.';
   END IF;
 
+  -- draft was added after transferred. Comparing against an original enum value avoids
+  -- PostgreSQL's uncommitted-enum restriction during a clean all-migrations transaction.
   IF EXISTS (
     SELECT 1
     FROM "orders"
-    WHERE "status" = 'draft'
+    WHERE "status" > 'transferred'
     GROUP BY "shift_id", "cashier_id"
     HAVING count(*) > 1
   ) THEN
@@ -112,7 +114,7 @@ BEGIN
     SELECT 1
     FROM "orders"
     WHERE "resource_id" IS NOT NULL
-      AND "status" IN ('draft', 'open')
+      AND "status" NOT IN ('closed', 'cancelled', 'transferred')
     GROUP BY "resource_id"
     HAVING count(*) > 1
   ) THEN
@@ -153,12 +155,12 @@ WHERE "status" = 'open';
 --> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS "orders_draft_cashier_shift_uidx"
 ON "orders" ("shift_id", "cashier_id")
-WHERE "status" = 'draft';
+WHERE "status" > 'transferred';
 --> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS "orders_active_resource_uidx"
 ON "orders" ("resource_id")
 WHERE "resource_id" IS NOT NULL
-  AND "status" IN ('draft', 'open');
+  AND "status" NOT IN ('closed', 'cancelled', 'transferred');
 --> statement-breakpoint
 
 DO $$
