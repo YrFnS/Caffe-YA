@@ -15,12 +15,18 @@ export default async function PurchasesPage() {
   if (!session?.user) redirect('/sign-in')
   if (!await hasPermission(session.user.id, 'procurement.view')) redirect('/dashboard')
 
+  const [canCreate, canReceive, canPay, canDelete] = await Promise.all([
+    hasPermission(session.user.id, 'procurement.create_po'),
+    hasPermission(session.user.id, 'procurement.receive_goods'),
+    hasPermission(session.user.id, 'procurement.approve_invoice'),
+    hasPermission(session.user.id, 'procurement.delete_po'),
+  ])
   const [purchases, vendors, ingredients, products, paymentAccounts] = await Promise.all([
     getAllPurchases(),
     getAllVendors(true),
     getAllIngredients(),
     getAllProducts(),
-    getPurchasePaymentAccounts(),
+    canPay ? getPurchasePaymentAccounts() : Promise.resolve([]),
   ])
 
   return (
@@ -30,6 +36,7 @@ export default async function PurchasesPage() {
       ingredients={ingredients.map(item => ({ id: item.id, name: item.name }))}
       products={products.map(item => ({ id: item.id, name: item.name, nameAr: item.nameAr }))}
       paymentAccounts={paymentAccounts}
+      permissions={{ canCreate, canReceive, canPay, canDelete }}
     />
   )
 }
