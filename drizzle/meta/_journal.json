@@ -36,6 +36,13 @@
       "when": 1785326400000,
       "tag": "0004_roastgrid_stabilization",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785412800000,
+      "tag": "0005_financial_integrity",
+      "breakpoints": true
     }
   ]
 }
