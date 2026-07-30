@@ -28,6 +28,7 @@ export default function PurchasesList({
 }: PurchasesListProps) {
   const t = useTranslations('procurement')
   const locale = useLocale()
+  const searchLabel = locale === 'ar' ? 'بحث' : 'Search'
   const [filterPaid, setFilterPaid] = useState<boolean | null>(null)
   const [search, setSearch] = useState('')
 
@@ -71,7 +72,7 @@ export default function PurchasesList({
     <section className="overflow-hidden rounded-2xl bg-surface-container-lowest">
       <div className="grid gap-3 border-b border-outline-variant p-4 sm:grid-cols-[minmax(0,1fr)_12rem]">
         <label className="grid gap-1 text-sm font-medium text-on-surface">
-          {t('search')}
+          {searchLabel}
           <input
             type="search"
             value={search}
