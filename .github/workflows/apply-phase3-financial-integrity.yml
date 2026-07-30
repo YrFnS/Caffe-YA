@@ -1,5 +1,6 @@
 name: Apply Phase 3 financial integrity
 
+# Temporary publisher: removed automatically after the full Phase 3 suite passes.
 on:
   push:
     branches: [agent/phase-3-financial-integrity]
