@@ -12,11 +12,10 @@ test('received resale inventory uses weighted-average unit cost', () => {
     { quantity: '30', unitCost: '4000' },
   ]
   assert.equal(calculateReceivedUnitCost(receipts), '3500.000')
-  assert.equal(calculateStandardLineCost(receipts, '2'), '7000.000')
 })
 
-test('standard products with no received cost history do not invent cost', () => {
-  assert.equal(calculateStandardLineCost([], '2'), '0.000')
+test('standard product COGS uses its current perpetual unit cost', () => {
+  assert.equal(calculateStandardLineCost('3500', '2'), '7000.000')
 })
 
 test('recipe cost includes every ingredient and sold quantity', () => {
