@@ -1,12 +1,12 @@
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
-import { env } from './env'
-import * as schema from './schema'
+import { env } from './env.ts'
+import * as schema from './schema.ts'
 
-const pool = new Pool({
+export const dbPool = new Pool({
   connectionString: env.DATABASE_URL,
 })
 
-export const db = drizzle(pool, { schema })
+export const db = drizzle(dbPool, { schema })
 
 export type Database = typeof db
