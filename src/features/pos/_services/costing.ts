@@ -5,7 +5,7 @@ import {
   multiplyDecimalMoneyMany,
   toCents,
   weightedAverageUnitCost,
-} from '@/lib/currency'
+} from '../../../lib/currency.ts'
 
 export interface ReceivedCostRow {
   quantity: string
@@ -29,12 +29,8 @@ export function calculateReceivedUnitCost(rows: ReceivedCostRow[]): string {
   return unitCost
 }
 
-export function calculateStandardLineCost(
-  receiptRows: ReceivedCostRow[],
-  soldQuantity: string,
-): string {
-  if (!receiptRows.length) return '0.000'
-  return multiplyDecimalMoney(calculateReceivedUnitCost(receiptRows), soldQuantity)
+export function calculateStandardLineCost(unitCost: string, soldQuantity: string): string {
+  return multiplyDecimalMoney(unitCost, soldQuantity)
 }
 
 export function calculateRecipeLineCost(
