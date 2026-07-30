@@ -6,6 +6,7 @@ import {
   deleteProduct,
   getAllProducts,
   setProductRecipe,
+  type RecipeInput,
 } from '../_services/productService'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
@@ -27,6 +28,31 @@ function parseProductType(value: FormDataEntryValue | null): ProductType {
     throw new Error('INVALID_INPUT')
   }
   return value as ProductType
+}
+
+function parseRecipeIngredients(value: FormDataEntryValue | null, type: ProductType): RecipeInput[] {
+  if (type !== 'recipe') return []
+  if (typeof value !== 'string') throw new Error('RECIPE_REQUIRED')
+
+  let rows: RecipeInput[]
+  try {
+    rows = JSON.parse(value) as RecipeInput[]
+  } catch {
+    throw new Error('INVALID_RECIPE')
+  }
+
+  const normalized = rows.map(row => ({
+    ingredientId: row.ingredientId?.trim(),
+    quantityUsed: row.quantityUsed?.trim(),
+  }))
+  if (!normalized.length) throw new Error('RECIPE_REQUIRED')
+  if (new Set(normalized.map(row => row.ingredientId)).size !== normalized.length) {
+    throw new Error('DUPLICATE_RECIPE_INGREDIENT')
+  }
+  if (normalized.some(row => !row.ingredientId || toCents(row.quantityUsed) <= 0)) {
+    throw new Error('INVALID_RECIPE')
+  }
+  return normalized
 }
 
 function revalidateProductViews() {
@@ -65,7 +91,7 @@ export async function createProductAction(formData: FormData) {
       return { error: 'INVENTORY_COST_REQUIRED' }
     }
 
-    await createProduct({
+    const product = await createProduct({
       name,
       nameAr: (formData.get('nameAr') as string | null)?.trim() || undefined,
       categoryId: (formData.get('categoryId') as string | null)?.trim() || undefined,
@@ -76,9 +102,10 @@ export async function createProductAction(formData: FormData) {
       lowStockThreshold,
       costPerUnit,
       localImageName: (formData.get('localImageName') as string | null)?.trim() || undefined,
+      recipeIngredients: parseRecipeIngredients(formData.get('recipeIngredients'), type),
     })
     revalidateProductViews()
-    return { success: true }
+    return { success: true, id: product.id }
   } catch (error) {
     return { error: error instanceof Error ? error.message : 'CREATE_PRODUCT_FAILED' }
   }
@@ -110,7 +137,7 @@ export async function updateProductAction(formData: FormData) {
       return { error: 'INVENTORY_COST_REQUIRED' }
     }
 
-    const data: Parameters<typeof updateProduct>[1] = {
+    await updateProduct(productId, {
       name,
       nameAr: (formData.get('nameAr') as string | null)?.trim() || null,
       categoryId: (formData.get('categoryId') as string | null)?.trim() || null,
@@ -119,12 +146,8 @@ export async function updateProductAction(formData: FormData) {
       trackStock,
       stockQty,
       lowStockThreshold,
-    }
-    if (formData.has('localImageName')) {
-      data.localImageName = (formData.get('localImageName') as string | null)?.trim() || null
-    }
-
-    await updateProduct(productId, data, costPerUnit)
+      localImageName: (formData.get('localImageName') as string | null)?.trim() || null,
+    }, costPerUnit, parseRecipeIngredients(formData.get('recipeIngredients'), type))
     revalidateProductViews()
     return { success: true }
   } catch (error) {
@@ -154,21 +177,10 @@ export async function setRecipeAction(formData: FormData) {
   await requirePermission(session.user.id, 'inventory.manage_products')
 
   const productId = formData.get('productId') as string
-  const ingredientsJson = formData.get('ingredients') as string
-  if (!productId || !ingredientsJson) return { error: 'INVALID_INPUT' }
+  if (!productId) return { error: 'INVALID_INPUT' }
 
   try {
-    const recipeIngredients = JSON.parse(ingredientsJson) as Array<{
-      ingredientId: string
-      quantityUsed: string
-    }>
-    if (
-      new Set(recipeIngredients.map(row => row.ingredientId)).size !== recipeIngredients.length
-      || recipeIngredients.some(row => !row.ingredientId || toCents(row.quantityUsed) <= 0)
-    ) {
-      return { error: 'INVALID_INPUT' }
-    }
-    await setProductRecipe(productId, recipeIngredients)
+    await setProductRecipe(productId, parseRecipeIngredients(formData.get('ingredients'), 'recipe'))
     revalidateProductViews()
     return { success: true }
   } catch (error) {

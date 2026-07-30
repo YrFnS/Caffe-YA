@@ -6,6 +6,17 @@ import type { Product, ProductIngredientRow } from '../_types'
 import { fromCents, multiplyDecimalMoney, toCents } from '@/lib/currency'
 
 type ProductWithCategory = Product & { categoryName: string }
+export type RecipeInput = { ingredientId: string; quantityUsed: string }
+
+function validateRecipe(recipeIngredients: RecipeInput[]) {
+  if (!recipeIngredients.length) throw new Error('RECIPE_REQUIRED')
+  if (new Set(recipeIngredients.map(row => row.ingredientId)).size !== recipeIngredients.length) {
+    throw new Error('DUPLICATE_RECIPE_INGREDIENT')
+  }
+  if (recipeIngredients.some(row => !row.ingredientId || toCents(row.quantityUsed) <= 0)) {
+    throw new Error('INVALID_RECIPE')
+  }
+}
 
 export async function getAllProducts(includeInactive = false): Promise<ProductWithCategory[]> {
   const allProducts = await db.query.products.findMany({
@@ -56,8 +67,11 @@ export async function createProduct(data: {
   lowStockThreshold?: string
   costPerUnit?: string
   localImageName?: string
+  recipeIngredients?: RecipeInput[]
 }): Promise<Product> {
   return db.transaction(async tx => {
+    if (data.type === 'recipe') validateRecipe(data.recipeIngredients ?? [])
+
     const [product] = await tx.insert(products).values({
       name: data.name,
       nameAr: data.nameAr ?? null,
@@ -71,8 +85,9 @@ export async function createProduct(data: {
     }).returning()
     if (!product) throw new Error('CREATE_FAILED')
 
+    let costPerUnit: string | null = null
     if (product.type === 'standard' && product.trackStock) {
-      const costPerUnit = data.costPerUnit ?? '0'
+      costPerUnit = data.costPerUnit ?? '0'
       if (toCents(product.stockQty ?? '0') > 0 && toCents(costPerUnit) <= 0) {
         throw new Error('INVENTORY_COST_REQUIRED')
       }
@@ -80,10 +95,17 @@ export async function createProduct(data: {
         productId: product.id,
         unitCost: costPerUnit,
       })
-      return { ...product, costPerUnit }
     }
 
-    return { ...product, costPerUnit: null }
+    if (product.type === 'recipe') {
+      await tx.insert(productIngredients).values((data.recipeIngredients ?? []).map(ingredient => ({
+        productId: product.id,
+        ingredientId: ingredient.ingredientId,
+        quantityUsed: ingredient.quantityUsed,
+      })))
+    }
+
+    return { ...product, costPerUnit }
   })
 }
 
@@ -102,34 +124,49 @@ export async function updateProduct(
     isActive?: boolean
   },
   costPerUnit?: string | null,
+  recipeIngredients?: RecipeInput[],
 ): Promise<Product> {
   return db.transaction(async tx => {
+    if (data.type === 'recipe' && recipeIngredients !== undefined) validateRecipe(recipeIngredients)
+
     const [product] = await tx.update(products).set(data).where(eq(products.id, id)).returning()
     if (!product) throw new Error('NOT_FOUND')
 
+    let nextCost: string | null = null
     if (product.type !== 'standard' || !product.trackStock) {
       await tx.delete(productInventoryCosts).where(eq(productInventoryCosts.productId, id))
-      return { ...product, costPerUnit: null }
+    } else {
+      const [currentValuation] = await tx.select().from(productInventoryCosts)
+        .where(eq(productInventoryCosts.productId, id))
+        .for('update')
+      nextCost = costPerUnit === undefined
+        ? currentValuation?.unitCost ?? '0'
+        : costPerUnit ?? '0'
+      if (toCents(product.stockQty ?? '0') > 0 && toCents(nextCost) <= 0) {
+        throw new Error('INVENTORY_COST_REQUIRED')
+      }
+
+      await tx.insert(productInventoryCosts).values({
+        productId: id,
+        unitCost: nextCost,
+        updatedAt: new Date(),
+      }).onConflictDoUpdate({
+        target: productInventoryCosts.productId,
+        set: { unitCost: nextCost, updatedAt: new Date() },
+      })
     }
 
-    const [currentValuation] = await tx.select().from(productInventoryCosts)
-      .where(eq(productInventoryCosts.productId, id))
-      .for('update')
-    const nextCost = costPerUnit === undefined
-      ? currentValuation?.unitCost ?? '0'
-      : costPerUnit ?? '0'
-    if (toCents(product.stockQty ?? '0') > 0 && toCents(nextCost) <= 0) {
-      throw new Error('INVENTORY_COST_REQUIRED')
+    if (product.type !== 'recipe') {
+      await tx.delete(productIngredients).where(eq(productIngredients.productId, id))
+    } else if (recipeIngredients !== undefined) {
+      await tx.delete(productIngredients).where(eq(productIngredients.productId, id))
+      await tx.insert(productIngredients).values(recipeIngredients.map(ingredient => ({
+        productId: id,
+        ingredientId: ingredient.ingredientId,
+        quantityUsed: ingredient.quantityUsed,
+      })))
     }
 
-    await tx.insert(productInventoryCosts).values({
-      productId: id,
-      unitCost: nextCost,
-      updatedAt: new Date(),
-    }).onConflictDoUpdate({
-      target: productInventoryCosts.productId,
-      set: { unitCost: nextCost, updatedAt: new Date() },
-    })
     return { ...product, costPerUnit: nextCost }
   })
 }
@@ -157,19 +194,18 @@ export async function getProductIngredients(productId: string): Promise<ProductI
 
 export async function setProductRecipe(
   productId: string,
-  recipeIngredients: Array<{ ingredientId: string; quantityUsed: string }>,
+  recipeIngredients: RecipeInput[],
 ): Promise<void> {
+  validateRecipe(recipeIngredients)
   await db.transaction(async tx => {
     await tx.delete(productIngredients).where(eq(productIngredients.productId, productId))
-    if (recipeIngredients.length > 0) {
-      await tx.insert(productIngredients).values(
-        recipeIngredients.map(ingredient => ({
-          productId,
-          ingredientId: ingredient.ingredientId,
-          quantityUsed: ingredient.quantityUsed,
-        })),
-      )
-    }
+    await tx.insert(productIngredients).values(
+      recipeIngredients.map(ingredient => ({
+        productId,
+        ingredientId: ingredient.ingredientId,
+        quantityUsed: ingredient.quantityUsed,
+      })),
+    )
   })
 }
 

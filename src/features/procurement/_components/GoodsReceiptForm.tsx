@@ -1,42 +1,79 @@
 'use client'
 
 import { useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { receivePurchaseAction } from '../_actions/procurementActions'
 import { formatCurrency } from '@/lib/currency'
 import type { PurchaseRow } from '../_types'
+import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 
-export default function GoodsReceiptForm({ purchase, onClose }: { purchase: PurchaseRow; onClose: () => void }) {
+interface GoodsReceiptFormProps {
+  purchase: PurchaseRow
+  onClose: () => void
+  onSuccess: () => void
+}
+
+export default function GoodsReceiptForm({ purchase, onClose, onSuccess }: GoodsReceiptFormProps) {
   const t = useTranslations('procurement')
+  const locale = useLocale()
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
+  const copy = locale === 'ar'
+    ? { close: 'إغلاق', help: 'سيتم تحديث كميات وتكلفة المخزون وإنشاء قيد المخزون مقابل الحسابات الدائنة.' }
+    : { close: 'Close', help: 'Stock quantity and valuation will update, and Inventory will be posted against Accounts Payable.' }
+
   const receive = async () => {
     setSaving(true)
-    const result = await receivePurchaseAction(purchase.id, note || undefined)
-    setSaving(false)
-    if (result.error) return setError(result.error)
-    window.location.reload()
+    setError('')
+    try {
+      const result = await receivePurchaseAction(purchase.id, note || undefined)
+      if (result.error) {
+        setError(result.error.replaceAll('_', ' '))
+        return
+      }
+      onSuccess()
+    } catch (actionError) {
+      console.error('Receive purchase failed:', actionError)
+      setError(t('operationFailed'))
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-lg rounded-2xl bg-surface-container-high p-6">
-        <h2 className="mb-4 text-headline-sm font-semibold">{t('receiveGoods')}</h2>
-        <p className="mb-4 text-body-sm text-on-surface-variant">
-          {t('vendor')}: {purchase.vendorName ?? '—'} — {formatCurrency(purchase.totalAmount)} IQD
-        </p>
-        <label className="block text-body-sm">
-          {t('note')}
-          <textarea value={note} onChange={event => setNote(event.target.value)} className="mt-1 w-full rounded-lg border border-outline bg-surface p-3" />
-        </label>
-        {error && <p className="mt-3 text-sm text-error">{error}</p>}
-        <div className="flex gap-3 pt-4">
-          <button type="button" onClick={onClose} className="flex-1 rounded-lg border border-outline px-4 py-2">{t('cancel')}</button>
-          <button type="button" onClick={receive} disabled={saving} className="flex-1 rounded-lg bg-primary px-4 py-2 text-on-primary disabled:opacity-50">{t('receiveGoods')}</button>
+    <Modal
+      open
+      onClose={onClose}
+      title={t('receiveGoods')}
+      closeLabel={copy.close}
+      busy={saving}
+      footer={(
+        <>
+          <Button variant="outline" onClick={onClose} disabled={saving}>{t('cancel')}</Button>
+          <Button onClick={receive} disabled={saving}>{saving ? t('saving') : t('receiveGoods')}</Button>
+        </>
+      )}
+    >
+      <div className="space-y-4">
+        {error && <div role="alert" className="rounded-xl bg-error/10 p-3 text-sm text-error">{error}</div>}
+        <div className="rounded-2xl bg-surface-container-low p-4">
+          <p className="text-sm text-on-surface-variant">{purchase.vendorName ?? '—'}</p>
+          <p className="mt-1 font-mono text-xl font-bold">{formatCurrency(purchase.totalAmount)} IQD</p>
         </div>
+        <p className="text-sm text-on-surface-variant">{copy.help}</p>
+        <label className="grid gap-1 text-sm font-medium text-on-surface">
+          {t('note')}
+          <textarea
+            value={note}
+            onChange={event => setNote(event.target.value)}
+            rows={3}
+            className="rounded-xl border border-outline-variant bg-surface p-3 text-on-surface"
+          />
+        </label>
       </div>
-    </div>
+    </Modal>
   )
 }
