@@ -20,6 +20,12 @@ interface PurchasesClientViewProps {
   ingredients: Array<{ id: string; name: string }>
   products: Array<{ id: string; name: string; nameAr: string | null }>
   paymentAccounts: PurchasePaymentAccount[]
+  permissions: {
+    canCreate: boolean
+    canReceive: boolean
+    canPay: boolean
+    canDelete: boolean
+  }
 }
 
 export default function PurchasesClientView({
@@ -28,6 +34,7 @@ export default function PurchasesClientView({
   ingredients,
   products,
   paymentAccounts,
+  permissions,
 }: PurchasesClientViewProps) {
   const t = useTranslations('procurement')
   const locale = useLocale()
@@ -46,7 +53,7 @@ export default function PurchasesClientView({
   }
 
   async function deletePurchase(id: string) {
-    if (!window.confirm(t('confirmDelete'))) return
+    if (!permissions.canDelete || !window.confirm(t('confirmDelete'))) return
     setBusy(true)
     setError('')
     try {
@@ -68,7 +75,9 @@ export default function PurchasesClientView({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-headline-lg font-semibold text-on-surface">{t('purchases')}</h1>
-        <Button onClick={() => setShowForm(true)} disabled={busy}>{t('newPurchase')}</Button>
+        {permissions.canCreate && (
+          <Button onClick={() => setShowForm(true)} disabled={busy}>{t('newPurchase')}</Button>
+        )}
       </div>
 
       {error && (
@@ -79,15 +88,16 @@ export default function PurchasesClientView({
 
       <PurchasesList
         purchases={purchases}
-        onNewPurchase={() => setShowForm(true)}
-        onViewReceipt={id => setReceivingPurchase(purchases.find(purchase => purchase.id === id) ?? null)}
+        onNewPurchase={() => permissions.canCreate && setShowForm(true)}
+        onViewReceipt={id => permissions.canReceive && setReceivingPurchase(purchases.find(purchase => purchase.id === id) ?? null)}
         onViewDetails={id => setDetailPurchase(purchases.find(purchase => purchase.id === id) ?? null)}
-        onPay={id => setPaymentPurchase(purchases.find(purchase => purchase.id === id) ?? null)}
+        onPay={id => permissions.canPay && setPaymentPurchase(purchases.find(purchase => purchase.id === id) ?? null)}
         onDelete={deletePurchase}
+        permissions={permissions}
         disabled={busy}
       />
 
-      {showForm && (
+      {permissions.canCreate && showForm && (
         <PurchaseForm
           vendors={vendors}
           ingredients={ingredients}
@@ -100,7 +110,7 @@ export default function PurchasesClientView({
         />
       )}
 
-      {receivingPurchase && (
+      {permissions.canReceive && receivingPurchase && (
         <GoodsReceiptForm
           purchase={receivingPurchase}
           onClose={() => setReceivingPurchase(null)}
@@ -111,7 +121,7 @@ export default function PurchasesClientView({
         />
       )}
 
-      {paymentPurchase && (
+      {permissions.canPay && paymentPurchase && (
         <PurchasePaymentModal
           purchase={paymentPurchase}
           accounts={paymentAccounts}
