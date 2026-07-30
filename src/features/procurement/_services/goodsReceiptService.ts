@@ -1,8 +1,26 @@
-import { db } from '@/lib/db'
-import { auditLogs, chartOfAccounts, goodsReceiptItems, goodsReceipts, ingredients, journalEntries, journalEntryLines, products, purchases, purchaseItems, stockMovements } from '@/lib/schema'
+import { db } from '../../../lib/db.ts'
+import {
+  auditLogs,
+  chartOfAccounts,
+  goodsReceiptItems,
+  goodsReceipts,
+  ingredients,
+  journalEntries,
+  journalEntryLines,
+  products,
+  purchases,
+  purchaseItems,
+  stockMovements,
+} from '../../../lib/schema.ts'
+import { productInventoryCosts, stockMovementCosts } from '../../../lib/valuationSchema.ts'
 import { eq } from 'drizzle-orm'
-import { addMoney, weightedAverageUnitCost } from '@/lib/currency'
-import type { GoodsReceiptRow } from '../_types'
+import {
+  addMoney,
+  multiplyDecimalMoney,
+  toCents,
+  weightedAverageUnitCost,
+} from '../../../lib/currency.ts'
+import type { GoodsReceiptRow } from '../_types.ts'
 
 export async function getAllGoodsReceipts(): Promise<GoodsReceiptRow[]> {
   const rows = await db.query.goodsReceipts.findMany({
@@ -32,12 +50,39 @@ export async function receivePurchase(purchaseId: string, userId: string, note?:
   return db.transaction(async tx => {
     const [purchase] = await tx.select().from(purchases).where(eq(purchases.id, purchaseId)).for('update')
     if (!purchase) throw new Error('PURCHASE_NOT_FOUND')
-    const existing = await tx.query.goodsReceipts.findFirst({ where: eq(goodsReceipts.purchaseId, purchaseId) })
+
+    const existing = await tx.query.goodsReceipts.findFirst({
+      where: eq(goodsReceipts.purchaseId, purchaseId),
+    })
     if (existing) throw new Error('PURCHASE_ALREADY_RECEIVED')
 
     const items = await tx.select().from(purchaseItems).where(eq(purchaseItems.purchaseId, purchaseId))
     if (!items.length) throw new Error('PURCHASE_HAS_NO_ITEMS')
-    const [receipt] = await tx.insert(goodsReceipts).values({ purchaseId, receivedBy: userId, note }).returning()
+
+    let validatedTotal = 0
+    for (const item of items) {
+      if (Boolean(item.ingredientId) === Boolean(item.productId)) {
+        throw new Error('PURCHASE_ITEM_TARGET_INVALID')
+      }
+      if (toCents(item.quantity) <= 0 || toCents(item.unitCost) < 0 || toCents(item.totalCost) < 0) {
+        throw new Error('PURCHASE_ITEM_INVALID')
+      }
+      const expectedTotal = multiplyDecimalMoney(item.unitCost, item.quantity)
+      if (toCents(expectedTotal) !== toCents(item.totalCost)) {
+        throw new Error('PURCHASE_ITEM_TOTAL_MISMATCH')
+      }
+      validatedTotal += toCents(expectedTotal)
+    }
+    if (validatedTotal !== toCents(purchase.totalAmount)) {
+      throw new Error('PURCHASE_TOTAL_MISMATCH')
+    }
+
+    const [receipt] = await tx.insert(goodsReceipts).values({
+      purchaseId,
+      receivedBy: userId,
+      note,
+    }).returning()
+
     await tx.insert(goodsReceiptItems).values(items.map(item => ({
       goodsReceiptId: receipt.id,
       ingredientId: item.ingredientId,
@@ -48,39 +93,69 @@ export async function receivePurchase(purchaseId: string, userId: string, note?:
 
     for (const item of items) {
       if (item.ingredientId) {
-        const [ingredient] = await tx.select().from(ingredients).where(eq(ingredients.id, item.ingredientId)).for('update')
+        const [ingredient] = await tx.select().from(ingredients)
+          .where(eq(ingredients.id, item.ingredientId))
+          .for('update')
         if (!ingredient) throw new Error('INGREDIENT_NOT_FOUND')
-        const nextStockQty = addMoney(ingredient.stockQty, item.quantity)
+
+        await tx.update(ingredients).set({
+          stockQty: addMoney(ingredient.stockQty, item.quantity),
+          costPerUnit: weightedAverageUnitCost(
+            ingredient.stockQty,
+            ingredient.costPerUnit ?? '0',
+            item.quantity,
+            item.unitCost,
+          ),
+        }).where(eq(ingredients.id, item.ingredientId))
+      } else if (item.productId) {
+        const [product] = await tx.select().from(products)
+          .where(eq(products.id, item.productId))
+          .for('update')
+        if (!product) throw new Error('PRODUCT_NOT_FOUND')
+
+        const currentCost = await tx.query.productInventoryCosts?.findFirst?.({
+          where: eq(productInventoryCosts.productId, item.productId),
+        })
         const nextUnitCost = weightedAverageUnitCost(
-          ingredient.stockQty,
-          ingredient.costPerUnit ?? '0',
+          product.stockQty ?? '0',
+          currentCost?.unitCost ?? '0',
           item.quantity,
           item.unitCost,
         )
-        await tx.update(ingredients).set({
-          stockQty: nextStockQty,
-          costPerUnit: nextUnitCost,
-        }).where(eq(ingredients.id, item.ingredientId))
-      } else if (item.productId) {
-        const [product] = await tx.select().from(products).where(eq(products.id, item.productId)).for('update')
-        if (!product) throw new Error('PRODUCT_NOT_FOUND')
         await tx.update(products).set({
           stockQty: addMoney(product.stockQty ?? '0', item.quantity),
         }).where(eq(products.id, item.productId))
+        await tx.insert(productInventoryCosts).values({
+          productId: item.productId,
+          unitCost: nextUnitCost,
+          updatedAt: new Date(),
+        }).onConflictDoUpdate({
+          target: productInventoryCosts.productId,
+          set: { unitCost: nextUnitCost, updatedAt: new Date() },
+        })
       }
-      await tx.insert(stockMovements).values({
+
+      const [movement] = await tx.insert(stockMovements).values({
         ingredientId: item.ingredientId,
         productId: item.productId,
         type: 'purchase',
         quantity: item.quantity,
         purchaseId,
         createdBy: userId,
+      }).returning({ id: stockMovements.id })
+      await tx.insert(stockMovementCosts).values({
+        movementId: movement.id,
+        unitCost: item.unitCost,
+        totalCost: item.totalCost,
       })
     }
 
-    const [inventoryAccount] = await tx.select().from(chartOfAccounts).where(eq(chartOfAccounts.code, '1201')).limit(1)
-    const [creditAccount] = await tx.select().from(chartOfAccounts).where(eq(chartOfAccounts.code, purchase.isPaid ? '1001' : '2001')).limit(1)
+    const [inventoryAccount] = await tx.select().from(chartOfAccounts)
+      .where(eq(chartOfAccounts.code, '1201')).limit(1)
+    const [creditAccount] = await tx.select().from(chartOfAccounts)
+      .where(eq(chartOfAccounts.code, purchase.isPaid ? '1001' : '2001')).limit(1)
     if (!inventoryAccount || !creditAccount) throw new Error('ACCOUNTING_NOT_CONFIGURED')
+
     const [journal] = await tx.insert(journalEntries).values({
       reference: `RECEIPT-${receipt.id.slice(0, 8)}`,
       description: 'Purchase goods receipt',
@@ -97,10 +172,7 @@ export async function receivePurchase(purchaseId: string, userId: string, note?:
       action: 'RECEIVE_PURCHASE',
       targetTable: 'purchases',
       targetId: purchaseId,
-      newValue: {
-        goodsReceiptId: receipt.id,
-        inventoryValue: purchase.totalAmount,
-      },
+      newValue: { goodsReceiptId: receipt.id, inventoryValue: purchase.totalAmount },
     })
     return receipt
   })
