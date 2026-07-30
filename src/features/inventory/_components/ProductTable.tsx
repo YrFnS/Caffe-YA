@@ -21,6 +21,7 @@ export default function ProductTable({ products, categories = [] }: ProductTable
   const locale = useLocale()
   const router = useRouter()
   const [search, setSearch] = useState('')
+  const inactiveLabel = locale === 'ar' ? 'غير نشط' : 'Inactive'
 
   const categoryMap = useMemo(() => new Map(categories.map(category => [category.id, category])), [categories])
   const filtered = useMemo(() => {
@@ -55,7 +56,7 @@ export default function ProductTable({ products, categories = [] }: ProductTable
             <div className="min-w-0">
               <p className="truncate font-medium text-on-surface">{displayName}</p>
               {secondaryName && <p className="truncate text-xs text-on-surface-variant">{secondaryName}</p>}
-              {!row.isActive && <span className="mt-1 inline-flex rounded-full bg-error/10 px-2 py-0.5 text-xs font-semibold text-error">{t('inactive')}</span>}
+              {!row.isActive && <span className="mt-1 inline-flex rounded-full bg-error/10 px-2 py-0.5 text-xs font-semibold text-error">{inactiveLabel}</span>}
             </div>
           </div>
         )
