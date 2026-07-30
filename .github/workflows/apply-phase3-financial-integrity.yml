@@ -5,6 +5,11 @@ on:
     branches: [agent/phase-3-financial-integrity]
     paths:
       - '.github/workflows/apply-phase3-financial-integrity.yml'
+  pull_request:
+    branches: [agent/phase-2-operations-ui]
+    paths:
+      - '.github/workflows/apply-phase3-financial-integrity.yml'
+      - 'scripts/apply_phase3_financial_integrity.py'
 
 permissions:
   contents: write
