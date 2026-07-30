@@ -10,6 +10,7 @@ import {
   getOperationalReport,
   type OperationalReportFilters,
 } from '@/features/reports/_services/operationalReportService'
+import { getReportCopy } from '@/features/reports/reportCopy'
 
 interface ReportsPageProps {
   searchParams: Promise<OperationalReportFilters>
@@ -26,21 +27,22 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
     getTranslations('reports'),
     getLocale(),
   ])
+  const copy = getReportCopy(locale)
 
   const paymentLabel = (method: string) => {
-    if (method === 'cash') return t('cash')
-    if (method === 'card') return t('card')
-    if (method === 'mobile_wallet') return t('mobileWallet')
+    if (method === 'cash') return copy.cash
+    if (method === 'card') return copy.card
+    if (method === 'mobile_wallet') return copy.mobileWallet
     return method.replaceAll('_', ' ')
   }
 
   const summaryCards = [
     { label: t('netSales'), value: report.summary.netSales },
-    { label: t('costOfGoods'), value: report.summary.costOfGoods },
-    { label: t('grossProfit'), value: report.summary.grossProfit },
+    { label: copy.costOfGoods, value: report.summary.costOfGoods },
+    { label: copy.grossProfit, value: report.summary.grossProfit },
     { label: t('expenses'), value: report.summary.expenses },
     { label: t('net'), value: report.summary.netResult },
-    { label: t('averageOrder'), value: report.summary.averageOrder },
+    { label: copy.averageOrder, value: report.summary.averageOrder },
   ]
 
   return (
@@ -49,7 +51,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
         <div>
           <h1 className="text-headline-lg font-semibold text-on-surface">{t('title')}</h1>
           <p className="mt-1 text-sm text-on-surface-variant">
-            {t('baghdadRange', { from: report.range.fromInput, to: report.range.toInput })}
+            {copy.range(report.range.fromInput, report.range.toInput)}
           </p>
         </div>
 
@@ -134,11 +136,11 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
                       {locale === 'ar' ? product.nameAr || product.name : product.name}
                     </p>
                     <p className="text-xs text-on-surface-variant">
-                      {t('productRevenue')}: {formatCurrency(product.revenue)} IQD
+                      {copy.productRevenue}: {formatCurrency(product.revenue)} IQD
                     </p>
                   </div>
                   <span className="font-mono font-semibold text-on-surface">
-                    {t('unitsSold', { count: product.quantity })}
+                    {copy.unitsSold(product.quantity)}
                   </span>
                 </div>
               ))}
@@ -167,7 +169,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
                     <tr key={order.id} className="border-b border-outline-variant/70 last:border-0">
                       <td className="p-3 font-mono">{order.id.slice(0, 8)}</td>
                       <td className="p-3">{order.cashierName}</td>
-                      <td className="p-3"><span className="rounded-full bg-secondary/10 px-2 py-1 text-xs font-semibold text-secondary">{t('closed')}</span></td>
+                      <td className="p-3"><span className="rounded-full bg-secondary/10 px-2 py-1 text-xs font-semibold text-secondary">{copy.closed}</span></td>
                       <td className="p-3 font-mono">{formatCurrency(order.totalAmount)} IQD</td>
                       <td className="p-3 text-on-surface-variant">{formatDateTime(order.closedAt, locale)}</td>
                     </tr>
@@ -183,7 +185,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
                       <p className="font-mono text-sm font-semibold">#{order.id.slice(0, 8)}</p>
                       <p className="mt-1 text-sm text-on-surface-variant">{order.cashierName}</p>
                     </div>
-                    <span className="rounded-full bg-secondary/10 px-2 py-1 text-xs font-semibold text-secondary">{t('closed')}</span>
+                    <span className="rounded-full bg-secondary/10 px-2 py-1 text-xs font-semibold text-secondary">{copy.closed}</span>
                   </div>
                   <div className="mt-4 flex items-end justify-between gap-3">
                     <p className="text-xs text-on-surface-variant">{formatDateTime(order.closedAt, locale)}</p>
