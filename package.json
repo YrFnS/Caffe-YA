@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "seed": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types seed.ts",
+    "seed": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types seed.ts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/sync_demo_valuation.ts",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/unit/*.test.ts",
     "test:db": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/integration/*.test.ts",
     "test:e2e": "playwright test",
