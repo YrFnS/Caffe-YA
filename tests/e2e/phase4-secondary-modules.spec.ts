@@ -88,6 +88,6 @@ test('Arabic reports and product catalog use document-level RTL and localized co
   await expectNoHorizontalOverflow(page)
 
   await page.goto('/ar/inventory/products')
-  await expect(page.getByText('إسبريسو مزدوج')).toBeVisible()
+  await expect(page.locator('article').getByText('إسبريسو مزدوج', { exact: true })).toBeVisible()
   await expectNoHorizontalOverflow(page)
 })
