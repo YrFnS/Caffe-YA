@@ -11,6 +11,29 @@ import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { requirePermission } from '@/features/admin/_actions/adminActions'
+import { toCents } from '@/lib/currency'
+
+const productTypes = ['standard', 'recipe', 'service'] as const
+type ProductType = (typeof productTypes)[number]
+
+function parseNonnegativeMoney(value: FormDataEntryValue | null, fallback = '0'): string {
+  const normalized = typeof value === 'string' && value.trim() ? value.trim() : fallback
+  if (toCents(normalized) < 0) throw new Error('INVALID_INPUT')
+  return normalized
+}
+
+function parseProductType(value: FormDataEntryValue | null): ProductType {
+  if (typeof value !== 'string' || !productTypes.includes(value as ProductType)) {
+    throw new Error('INVALID_INPUT')
+  }
+  return value as ProductType
+}
+
+function revalidateProductViews() {
+  revalidatePath('/inventory')
+  revalidatePath('/inventory/products')
+  revalidatePath('/pos')
+}
 
 export async function getProductsAction() {
   const session = await getSession()
@@ -24,34 +47,40 @@ export async function createProductAction(formData: FormData) {
   if (!session?.user) redirect('/sign-in')
   await requirePermission(session.user.id, 'inventory.manage_products')
 
-  const name = formData.get('name') as string
-  const nameAr = formData.get('nameAr') as string | null
-  const categoryId = formData.get('categoryId') as string | null
-  const type = formData.get('type') as string
-  const price = formData.get('price') as string
-  const trackStock = formData.get('trackStock') as string | null
-  const stockQty = formData.get('stockQty') as string | null
-  const lowStockThreshold = formData.get('lowStockThreshold') as string | null
-  const localImageName = formData.get('localImageName') as string | null
-  if (!name || !type || !price) return { error: 'INVALID_INPUT' }
-
   try {
+    const name = (formData.get('name') as string | null)?.trim()
+    const type = parseProductType(formData.get('type'))
+    const price = parseNonnegativeMoney(formData.get('price'))
+    if (!name || toCents(price) <= 0) return { error: 'INVALID_INPUT' }
+
+    const trackStock = type === 'standard' && formData.get('trackStock') === 'true'
+    const stockQty = trackStock ? parseNonnegativeMoney(formData.get('stockQty')) : '0'
+    const lowStockThreshold = trackStock
+      ? parseNonnegativeMoney(formData.get('lowStockThreshold'))
+      : '0'
+    const costPerUnit = trackStock
+      ? parseNonnegativeMoney(formData.get('costPerUnit'))
+      : undefined
+    if (trackStock && toCents(stockQty) > 0 && toCents(costPerUnit ?? '0') <= 0) {
+      return { error: 'INVENTORY_COST_REQUIRED' }
+    }
+
     await createProduct({
       name,
-      nameAr: nameAr ?? undefined,
-      categoryId: categoryId ?? undefined,
-      type: type as 'standard' | 'recipe' | 'service',
+      nameAr: (formData.get('nameAr') as string | null)?.trim() || undefined,
+      categoryId: (formData.get('categoryId') as string | null)?.trim() || undefined,
+      type,
       price,
-      trackStock: trackStock === 'true',
-      stockQty: stockQty ?? undefined,
-      lowStockThreshold: lowStockThreshold ?? undefined,
-      localImageName: localImageName ?? undefined,
+      trackStock,
+      stockQty,
+      lowStockThreshold,
+      costPerUnit,
+      localImageName: (formData.get('localImageName') as string | null)?.trim() || undefined,
     })
-    revalidatePath('/inventory')
+    revalidateProductViews()
     return { success: true }
-  } catch (e) {
-    if (e instanceof Error) return { error: e.message }
-    return { error: 'CREATE_PRODUCT_FAILED' }
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'CREATE_PRODUCT_FAILED' }
   }
 }
 
@@ -63,34 +92,43 @@ export async function updateProductAction(formData: FormData) {
   const productId = formData.get('productId') as string
   if (!productId) return { error: 'INVALID_INPUT' }
 
-  const data: Parameters<typeof updateProduct>[1] = {}
-  const name = formData.get('name') as string | null
-  const nameAr = formData.get('nameAr') as string | null
-  const categoryId = formData.get('categoryId') as string | null
-  const type = formData.get('type') as string | null
-  const price = formData.get('price') as string | null
-  const trackStock = formData.get('trackStock') as string | null
-  const stockQty = formData.get('stockQty') as string | null
-  const lowStockThreshold = formData.get('lowStockThreshold') as string | null
-  const localImageName = formData.get('localImageName') as string | null
-
-  if (name) data.name = name
-  if (nameAr) data.nameAr = nameAr
-  if (categoryId) data.categoryId = categoryId
-  if (type) data.type = type as 'standard' | 'recipe' | 'service'
-  if (price) data.price = price
-  if (trackStock) data.trackStock = trackStock === 'true'
-  if (stockQty) data.stockQty = stockQty
-  if (lowStockThreshold) data.lowStockThreshold = lowStockThreshold
-  if (localImageName) data.localImageName = localImageName
-
   try {
-    await updateProduct(productId, data)
-    revalidatePath('/inventory')
+    const name = (formData.get('name') as string | null)?.trim()
+    const type = parseProductType(formData.get('type'))
+    const price = parseNonnegativeMoney(formData.get('price'))
+    if (!name || toCents(price) <= 0) return { error: 'INVALID_INPUT' }
+
+    const trackStock = type === 'standard' && formData.get('trackStock') === 'true'
+    const stockQty = trackStock ? parseNonnegativeMoney(formData.get('stockQty')) : '0'
+    const lowStockThreshold = trackStock
+      ? parseNonnegativeMoney(formData.get('lowStockThreshold'))
+      : '0'
+    const costPerUnit = trackStock
+      ? parseNonnegativeMoney(formData.get('costPerUnit'))
+      : null
+    if (trackStock && toCents(stockQty) > 0 && toCents(costPerUnit ?? '0') <= 0) {
+      return { error: 'INVENTORY_COST_REQUIRED' }
+    }
+
+    const data: Parameters<typeof updateProduct>[1] = {
+      name,
+      nameAr: (formData.get('nameAr') as string | null)?.trim() || null,
+      categoryId: (formData.get('categoryId') as string | null)?.trim() || null,
+      type,
+      price,
+      trackStock,
+      stockQty,
+      lowStockThreshold,
+    }
+    if (formData.has('localImageName')) {
+      data.localImageName = (formData.get('localImageName') as string | null)?.trim() || null
+    }
+
+    await updateProduct(productId, data, costPerUnit)
+    revalidateProductViews()
     return { success: true }
-  } catch (e) {
-    if (e instanceof Error) return { error: e.message }
-    return { error: 'UPDATE_PRODUCT_FAILED' }
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'UPDATE_PRODUCT_FAILED' }
   }
 }
 
@@ -103,11 +141,10 @@ export async function deleteProductAction(productId: string) {
 
   try {
     await deleteProduct(productId)
-    revalidatePath('/inventory')
+    revalidateProductViews()
     return { success: true }
-  } catch (e) {
-    if (e instanceof Error) return { error: e.message }
-    return { error: 'DELETE_PRODUCT_FAILED' }
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'DELETE_PRODUCT_FAILED' }
   }
 }
 
@@ -121,15 +158,20 @@ export async function setRecipeAction(formData: FormData) {
   if (!productId || !ingredientsJson) return { error: 'INVALID_INPUT' }
 
   try {
-    const ingredients = JSON.parse(ingredientsJson) as Array<{
+    const recipeIngredients = JSON.parse(ingredientsJson) as Array<{
       ingredientId: string
       quantityUsed: string
     }>
-    await setProductRecipe(productId, ingredients)
-    revalidatePath('/inventory')
+    if (
+      new Set(recipeIngredients.map(row => row.ingredientId)).size !== recipeIngredients.length
+      || recipeIngredients.some(row => !row.ingredientId || toCents(row.quantityUsed) <= 0)
+    ) {
+      return { error: 'INVALID_INPUT' }
+    }
+    await setProductRecipe(productId, recipeIngredients)
+    revalidateProductViews()
     return { success: true }
-  } catch (e) {
-    if (e instanceof Error) return { error: e.message }
-    return { error: 'SET_RECIPE_FAILED' }
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'SET_RECIPE_FAILED' }
   }
 }
