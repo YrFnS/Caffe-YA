@@ -1,5 +1,5 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import * as React from 'react'
+import { cn } from '@/lib/utils'
 
 export interface SelectOption {
   value: string
@@ -13,35 +13,29 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
 }
 
 const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, options, label, placeholder, ...props }, ref) => {
+  ({ className, options, label, placeholder, id, ...props }, ref) => {
+    const generatedId = React.useId()
+    const selectId = id ?? generatedId
+
     return (
       <div className="flex flex-col gap-1">
-        {label && (
-          <label className="text-sm font-medium text-on-surface">{label}</label>
-        )}
+        {label && <label htmlFor={selectId} className="text-sm font-medium text-on-surface">{label}</label>}
         <select
+          id={selectId}
           className={cn(
-            "h-12 w-full rounded-lg border-b-2 border-outline bg-surface-container-highest px-4 text-body-lg text-on-surface outline-none focus:border-outline focus:outline-none focus:ring-2 focus:ring-outline disabled:cursor-not-allowed disabled:opacity-50",
-            className
+            'min-h-12 w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-4 text-base text-on-surface outline-none focus:border-secondary focus:ring-4 focus:ring-secondary/10 disabled:cursor-not-allowed disabled:opacity-50',
+            className,
           )}
           ref={ref}
           {...props}
         >
-          {placeholder && (
-            <option value="" disabled>
-              {placeholder}
-            </option>
-          )}
-          {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
+          {placeholder && <option value="" disabled>{placeholder}</option>}
+          {options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
       </div>
     )
-  }
+  },
 )
-Select.displayName = "Select"
+Select.displayName = 'Select'
 
 export { Select }

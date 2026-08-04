@@ -1,7 +1,40 @@
 import { db } from '@/lib/db'
-import { eq, inArray } from 'drizzle-orm'
-import { auditLogs, chartOfAccounts, goodsReceipts, journalEntries, journalEntryLines, purchases, purchaseItems, ingredients, products } from '@/lib/schema'
+import { and, desc, eq, inArray } from 'drizzle-orm'
+import {
+  auditLogs,
+  chartOfAccounts,
+  goodsReceipts,
+  journalEntries,
+  journalEntryLines,
+  purchases,
+  purchaseItems,
+  ingredients,
+  products,
+  users,
+} from '@/lib/schema'
 import type { PurchaseRow, PurchaseItemRow } from '../_types'
+
+const PURCHASE_PAYMENT_CODES = ['1001', '1010', '1020'] as const
+
+export interface PurchasePaymentAccount {
+  code: string
+  name: string
+  nameAr: string | null
+}
+
+export async function getPurchasePaymentAccounts(): Promise<PurchasePaymentAccount[]> {
+  return db.select({
+    code: chartOfAccounts.code,
+    name: chartOfAccounts.name,
+    nameAr: chartOfAccounts.nameAr,
+  })
+    .from(chartOfAccounts)
+    .where(and(
+      inArray(chartOfAccounts.code, [...PURCHASE_PAYMENT_CODES]),
+      eq(chartOfAccounts.isActive, true),
+    ))
+    .orderBy(chartOfAccounts.code)
+}
 
 export async function getAllPurchases(filters?: {
   vendorId?: string
@@ -11,23 +44,16 @@ export async function getAllPurchases(filters?: {
 }): Promise<PurchaseRow[]> {
   const rows = await db.query.purchases.findMany({
     with: { vendor: { columns: { name: true } } },
+    orderBy: [desc(purchases.createdAt)],
   })
   const receipts = await db.select().from(goodsReceipts)
   const receiptMap = new Map(receipts.map(receipt => [receipt.purchaseId, receipt]))
 
   let filtered = rows
-  if (filters?.vendorId) {
-    filtered = filtered.filter(r => r.vendorId === filters.vendorId)
-  }
-  if (filters?.isPaid !== undefined) {
-    filtered = filtered.filter(r => r.isPaid === filters.isPaid)
-  }
-  if (filters?.fromDate) {
-    filtered = filtered.filter(r => r.createdAt >= filters.fromDate!)
-  }
-  if (filters?.toDate) {
-    filtered = filtered.filter(r => r.createdAt <= filters.toDate!)
-  }
+  if (filters?.vendorId) filtered = filtered.filter(row => row.vendorId === filters.vendorId)
+  if (filters?.isPaid !== undefined) filtered = filtered.filter(row => row.isPaid === filters.isPaid)
+  if (filters?.fromDate) filtered = filtered.filter(row => row.createdAt >= filters.fromDate!)
+  if (filters?.toDate) filtered = filtered.filter(row => row.createdAt <= filters.toDate!)
 
   const purchaseIds = filtered.map(purchase => purchase.id)
   const allItems = purchaseIds.length
@@ -35,33 +61,40 @@ export async function getAllPurchases(filters?: {
     : []
   const ingredientIds = allItems.map(item => item.ingredientId).filter(Boolean) as string[]
   const productIds = allItems.map(item => item.productId).filter(Boolean) as string[]
-  const [ingredientRows, productRows] = await Promise.all([
+  const creatorIds = filtered.map(item => item.createdBy).filter(Boolean) as string[]
+  const [ingredientRows, productRows, creatorRows] = await Promise.all([
     ingredientIds.length ? db.select().from(ingredients).where(inArray(ingredients.id, ingredientIds)) : [],
     productIds.length ? db.select().from(products).where(inArray(products.id, productIds)) : [],
+    creatorIds.length
+      ? db.select({ id: users.id, name: users.name }).from(users).where(inArray(users.id, creatorIds))
+      : [],
   ])
   const ingredientNames = new Map(ingredientRows.map(item => [item.id, item.name]))
-  const productNames = new Map(productRows.map(item => [item.id, item.name]))
+  const productNames = new Map(productRows.map(item => [item.id, { name: item.name, nameAr: item.nameAr }]))
+  const creatorNames = new Map(creatorRows.map(item => [item.id, item.name]))
   const itemsByPurchase = new Map<string, PurchaseItemRow[]>()
   for (const item of allItems) {
-    const rows = itemsByPurchase.get(item.purchaseId) ?? []
-    rows.push({
+    const itemRows = itemsByPurchase.get(item.purchaseId) ?? []
+    const product = item.productId ? productNames.get(item.productId) : undefined
+    itemRows.push({
       ...item,
       ingredientName: item.ingredientId ? ingredientNames.get(item.ingredientId) ?? null : null,
-      productName: item.productId ? productNames.get(item.productId) ?? null : null,
+      productName: product?.name ?? null,
+      productNameAr: product?.nameAr ?? null,
     })
-    itemsByPurchase.set(item.purchaseId, rows)
+    itemsByPurchase.set(item.purchaseId, itemRows)
   }
 
-  return filtered.map(r => {
-    const receipt = receiptMap.get(r.id)
+  return filtered.map(row => {
+    const receipt = receiptMap.get(row.id)
     return {
-      ...r,
-      vendorName: r.vendor?.name ?? null,
-      creatorName: null,
+      ...row,
+      vendorName: row.vendor?.name ?? null,
+      creatorName: row.createdBy ? creatorNames.get(row.createdBy) ?? null : null,
       receivedAt: receipt?.receivedAt ?? null,
       receiptId: receipt?.id ?? null,
       receiptNote: receipt?.note ?? null,
-      items: itemsByPurchase.get(r.id) ?? [],
+      items: itemsByPurchase.get(row.id) ?? [],
     }
   })
 }
@@ -72,39 +105,39 @@ export async function getPurchaseById(id: string): Promise<PurchaseRow | null> {
     with: { vendor: { columns: { name: true } } },
   })
   if (!row) return null
-  return { ...row, vendorName: row.vendor?.name ?? null, creatorName: null }
+  const creator = row.createdBy
+    ? await db.query.users.findFirst({ where: eq(users.id, row.createdBy), columns: { name: true } })
+    : null
+  return { ...row, vendorName: row.vendor?.name ?? null, creatorName: creator?.name ?? null }
 }
 
 export async function getPurchaseItems(purchaseId: string): Promise<PurchaseItemRow[]> {
   const items = await db.query.purchaseItems.findMany({
     where: eq(purchaseItems.purchaseId, purchaseId),
   })
+  const ingredientIds = items.map(item => item.ingredientId).filter(Boolean) as string[]
+  const productIds = items.map(item => item.productId).filter(Boolean) as string[]
+  const [ingredientRows, productRows] = await Promise.all([
+    ingredientIds.length ? db.query.ingredients.findMany({ where: inArray(ingredients.id, ingredientIds) }) : [],
+    productIds.length ? db.query.products.findMany({ where: inArray(products.id, productIds) }) : [],
+  ])
+  const ingredientMap = new Map(ingredientRows.map(item => [item.id, item.name]))
+  const productMap = new Map(productRows.map(item => [item.id, { name: item.name, nameAr: item.nameAr }]))
 
-  // Fetch ingredient and product names separately
-  const ingredientIds = items.map(i => i.ingredientId).filter(Boolean) as string[]
-  const productIds = items.map(i => i.productId).filter(Boolean) as string[]
-
-  const ingredientRows = ingredientIds.length
-    ? await db.query.ingredients.findMany({ where: inArray(ingredients.id, ingredientIds) })
-    : []
-  const productRows = productIds.length
-    ? await db.query.products.findMany({ where: inArray(products.id, productIds) })
-    : []
-
-  const ingredientMap = new Map(ingredientRows.map(i => [i.id, i.name]))
-  const productMap = new Map(productRows.map(p => [p.id, p.name]))
-
-  return items.map(item => ({
-    ...item,
-    ingredientName: item.ingredientId ? (ingredientMap.get(item.ingredientId) ?? null) : null,
-    productName: item.productId ? (productMap.get(item.productId) ?? null) : null,
-  }))
+  return items.map(item => {
+    const product = item.productId ? productMap.get(item.productId) : undefined
+    return {
+      ...item,
+      ingredientName: item.ingredientId ? ingredientMap.get(item.ingredientId) ?? null : null,
+      productName: product?.name ?? null,
+      productNameAr: product?.nameAr ?? null,
+    }
+  })
 }
 
 export async function createPurchase(data: {
   vendorId?: string | null
   totalAmount: string
-  isPaid?: boolean
   note?: string | null
   receiptImageName?: string | null
   createdBy?: string
@@ -116,53 +149,78 @@ export async function createPurchase(data: {
     totalCost: string
   }>
 }): Promise<{ id: string }> {
-  return db.transaction(async (tx) => {
+  return db.transaction(async tx => {
     const [purchase] = await tx.insert(purchases).values({
       vendorId: data.vendorId ?? null,
       totalAmount: data.totalAmount,
-      isPaid: data.isPaid ?? false,
+      isPaid: false,
       note: data.note ?? null,
       receiptImageName: data.receiptImageName ?? null,
       createdBy: data.createdBy ?? null,
     }).returning()
 
-    for (const item of data.items) {
-      await tx.insert(purchaseItems).values({
-        purchaseId: purchase.id,
-        ingredientId: item.ingredientId ?? null,
-        productId: item.productId ?? null,
-        quantity: item.quantity,
-        unitCost: item.unitCost,
-        totalCost: item.totalCost,
-      })
-    }
+    await tx.insert(purchaseItems).values(data.items.map(item => ({
+      purchaseId: purchase.id,
+      ingredientId: item.ingredientId ?? null,
+      productId: item.productId ?? null,
+      quantity: item.quantity,
+      unitCost: item.unitCost,
+      totalCost: item.totalCost,
+    })))
 
+    await tx.insert(auditLogs).values({
+      userId: data.createdBy ?? null,
+      action: 'CREATE_PURCHASE',
+      targetTable: 'purchases',
+      targetId: purchase.id,
+      newValue: { totalAmount: data.totalAmount, itemCount: data.items.length },
+    })
     return { id: purchase.id }
   })
 }
 
-export async function markPurchasePaid(id: string, userId: string): Promise<void> {
+export async function markPurchasePaid(
+  id: string,
+  userId: string,
+  paymentAccountCode: string,
+): Promise<void> {
+  if (!PURCHASE_PAYMENT_CODES.includes(paymentAccountCode as typeof PURCHASE_PAYMENT_CODES[number])) {
+    throw new Error('INVALID_PAYMENT_ACCOUNT')
+  }
+
   await db.transaction(async tx => {
     const [purchase] = await tx.select().from(purchases).where(eq(purchases.id, id)).for('update')
     if (!purchase) throw new Error('PURCHASE_NOT_FOUND')
-    if (purchase.isPaid) return
+    if (purchase.isPaid) throw new Error('PURCHASE_ALREADY_PAID')
     const receipt = await tx.query.goodsReceipts.findFirst({ where: eq(goodsReceipts.purchaseId, id) })
     if (!receipt) throw new Error('RECEIVE_BEFORE_PAYMENT')
+
     const [payable] = await tx.select().from(chartOfAccounts).where(eq(chartOfAccounts.code, '2001')).limit(1)
-    const [cash] = await tx.select().from(chartOfAccounts).where(eq(chartOfAccounts.code, '1001')).limit(1)
-    if (!payable || !cash) throw new Error('ACCOUNTING_NOT_CONFIGURED')
+    const [paymentAccount] = await tx.select().from(chartOfAccounts).where(and(
+      eq(chartOfAccounts.code, paymentAccountCode),
+      eq(chartOfAccounts.isActive, true),
+    )).limit(1)
+    if (!payable || !paymentAccount) throw new Error('ACCOUNTING_NOT_CONFIGURED')
+
     const [journal] = await tx.insert(journalEntries).values({
-      reference: `PAYMENT-${purchase.id.slice(0, 8)}`, description: 'Purchase payment',
-      sourceType: 'purchase_payment', sourceId: purchase.id, createdBy: userId,
+      reference: `PAYMENT-${purchase.id.slice(0, 8)}`,
+      description: 'Purchase payment',
+      sourceType: 'purchase_payment',
+      sourceId: purchase.id,
+      createdBy: userId,
     }).returning()
     await tx.insert(journalEntryLines).values([
       { journalEntryId: journal.id, accountId: payable.id, type: 'debit', amount: purchase.totalAmount },
-      { journalEntryId: journal.id, accountId: cash.id, type: 'credit', amount: purchase.totalAmount },
+      { journalEntryId: journal.id, accountId: paymentAccount.id, type: 'credit', amount: purchase.totalAmount },
     ])
     await tx.update(purchases).set({ isPaid: true, paidAt: new Date() }).where(eq(purchases.id, id))
     await tx.insert(auditLogs).values({
-      userId, action: 'PAY_PURCHASE', targetTable: 'purchases', targetId: id,
-      oldValue: { isPaid: false }, newValue: { isPaid: true },
+      userId,
+      action: 'PAY_PURCHASE',
+      targetTable: 'purchases',
+      targetId: id,
+      oldValue: { isPaid: false },
+      newValue: { isPaid: true, paymentAccountCode },
     })
   })
 }
@@ -183,6 +241,7 @@ export async function getUnpaidPurchases(): Promise<PurchaseRow[]> {
   const rows = await db.query.purchases.findMany({
     where: eq(purchases.isPaid, false),
     with: { vendor: { columns: { name: true } } },
+    orderBy: [desc(purchases.createdAt)],
   })
-  return rows.map(r => ({ ...r, vendorName: r.vendor?.name ?? null, creatorName: null }))
+  return rows.map(row => ({ ...row, vendorName: row.vendor?.name ?? null, creatorName: null }))
 }

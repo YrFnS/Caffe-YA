@@ -1,80 +1,221 @@
 import { redirect } from 'next/navigation'
-import { getSession } from '@/lib/auth'
-import { getTranslations } from 'next-intl/server'
-import { hasPermission } from '@/features/admin/_actions/adminActions'
-import { db } from '@/lib/db'
-import { auditLogs, expenses, orderItems, orders, products, transactions, users } from '@/lib/schema'
-import { and, desc, eq, gte, inArray, lte, sql } from 'drizzle-orm'
-import { formatCurrency, fromCents, toCents } from '@/lib/currency'
-import { EmptyState } from '@/components/ui/EmptyState'
 import { FileText } from 'lucide-react'
+import { getLocale, getTranslations } from 'next-intl/server'
+import { getSession } from '@/lib/auth'
+import { hasPermission } from '@/features/admin/_actions/adminActions'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { formatCurrency } from '@/lib/currency'
+import { formatDateTime } from '@/lib/format'
+import {
+  getOperationalReport,
+  type OperationalReportFilters,
+} from '@/features/reports/_services/operationalReportService'
+import { getReportCopy } from '@/features/reports/reportCopy'
 
-export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ from?: string; to?: string; action?: string }> }) {
+interface ReportsPageProps {
+  searchParams: Promise<OperationalReportFilters>
+}
+
+export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   const session = await getSession()
   if (!session?.user) redirect('/sign-in')
   if (!await hasPermission(session.user.id, 'reports.view')) redirect('/dashboard')
 
   const params = await searchParams
-  const now = new Date()
-  const from = params.from ? new Date(`${params.from}T00:00:00`) : new Date(now.getFullYear(), now.getMonth(), 1)
-  const to = params.to ? new Date(`${params.to}T23:59:59.999`) : now
-  const t = await getTranslations('reports')
-  const dateConditions = [gte(orders.createdAt, from), lte(orders.createdAt, to)]
-
-  const [periodOrders, periodTransactions, periodExpenses, auditRows, topProducts] = await Promise.all([
-    db.query.orders.findMany({ where: and(...dateConditions), orderBy: [desc(orders.createdAt)], limit: 50 }),
-    db.query.transactions.findMany({ where: and(gte(transactions.createdAt, from), lte(transactions.createdAt, to)) }),
-    db.query.expenses.findMany({ where: and(gte(expenses.createdAt, from), lte(expenses.createdAt, to)) }),
-    db.query.auditLogs.findMany({
-      where: and(gte(auditLogs.createdAt, from), lte(auditLogs.createdAt, to), params.action ? eq(auditLogs.action, params.action) : undefined),
-      orderBy: [desc(auditLogs.createdAt)],
-      limit: 50,
-    }),
-    db.select({ name: products.name, quantity: sql<string>`SUM(${orderItems.quantity}::numeric)` })
-      .from(orderItems)
-      .innerJoin(products, eq(orderItems.productId, products.id))
-      .innerJoin(orders, eq(orderItems.orderId, orders.id))
-      .where(and(eq(orders.status, 'closed'), gte(orders.closedAt, from), lte(orders.closedAt, to)))
-      .groupBy(products.id, products.name)
-      .orderBy(desc(sql`SUM(${orderItems.quantity}::numeric)`))
-      .limit(5),
+  const [report, t, locale] = await Promise.all([
+    getOperationalReport(params),
+    getTranslations('reports'),
+    getLocale(),
   ])
+  const copy = getReportCopy(locale)
 
-  const userIds = [...new Set([...periodOrders.map(order => order.cashierId), ...auditRows.map(log => log.userId).filter(Boolean) as string[]])]
-  const userRows = userIds.length ? await db.select({ id: users.id, name: users.name }).from(users).where(inArray(users.id, userIds)) : []
-  const userNames = new Map(userRows.map(user => [user.id, user.name]))
-  const netSales = periodTransactions.reduce((sum, transaction) => sum + (transaction.isRefund ? -toCents(transaction.amount) : toCents(transaction.amount)), 0)
-  const expenseTotal = periodExpenses.reduce((sum, expense) => sum + toCents(expense.amount), 0)
-  const paymentTotals = periodTransactions.reduce<Record<string, number>>((totals, transaction) => {
-    totals[transaction.paymentMethod] = (totals[transaction.paymentMethod] ?? 0) + (transaction.isRefund ? -toCents(transaction.amount) : toCents(transaction.amount))
-    return totals
-  }, {})
-  const actions = [...new Set(auditRows.map(log => log.action))].sort()
+  const paymentLabel = (method: string) => {
+    if (method === 'cash') return copy.cash
+    if (method === 'card') return copy.card
+    if (method === 'mobile_wallet') return copy.mobileWallet
+    return method.replaceAll('_', ' ')
+  }
+
+  const summaryCards = [
+    { label: t('netSales'), value: report.summary.netSales },
+    { label: copy.costOfGoods, value: report.summary.costOfGoods },
+    { label: copy.grossProfit, value: report.summary.grossProfit },
+    { label: t('expenses'), value: report.summary.expenses },
+    { label: t('net'), value: report.summary.netResult },
+    { label: copy.averageOrder, value: report.summary.averageOrder },
+  ]
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 className="text-headline-lg font-semibold text-on-surface">{t('title')}</h1>
-        <form className="flex flex-wrap items-end gap-3">
-          <label className="text-sm">{t('from')}<input name="from" type="date" defaultValue={params.from} className="ms-2 rounded-lg border border-outline bg-surface p-2" /></label>
-          <label className="text-sm">{t('to')}<input name="to" type="date" defaultValue={params.to} className="ms-2 rounded-lg border border-outline bg-surface p-2" /></label>
-          <label className="text-sm">{t('action')}<select name="action" defaultValue={params.action ?? ''} className="ms-2 rounded-lg border border-outline bg-surface p-2"><option value="">{t('all')}</option>{actions.map(action => <option key={action}>{action}</option>)}</select></label>
-          <button className="rounded-lg bg-primary px-4 py-2 text-on-primary">{t('apply')}</button>
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div>
+          <h1 className="text-headline-lg font-semibold text-on-surface">{t('title')}</h1>
+          <p className="mt-1 text-sm text-on-surface-variant">
+            {copy.range(report.range.fromInput, report.range.toInput)}
+          </p>
+        </div>
+
+        <form className="grid gap-3 rounded-2xl bg-surface-container-low p-4 sm:grid-cols-2 xl:grid-cols-[repeat(3,minmax(10rem,1fr))_auto]">
+          <label className="grid gap-1 text-sm font-medium text-on-surface">
+            {t('from')}
+            <input
+              name="from"
+              type="date"
+              defaultValue={report.range.fromInput}
+              className="min-h-12 rounded-xl border border-outline-variant bg-surface-container-lowest px-3 text-on-surface"
+            />
+          </label>
+          <label className="grid gap-1 text-sm font-medium text-on-surface">
+            {t('to')}
+            <input
+              name="to"
+              type="date"
+              defaultValue={report.range.toInput}
+              className="min-h-12 rounded-xl border border-outline-variant bg-surface-container-lowest px-3 text-on-surface"
+            />
+          </label>
+          <label className="grid gap-1 text-sm font-medium text-on-surface">
+            {t('action')}
+            <select
+              name="action"
+              defaultValue={params.action ?? ''}
+              className="min-h-12 rounded-xl border border-outline-variant bg-surface-container-lowest px-3 text-on-surface"
+            >
+              <option value="">{t('all')}</option>
+              {report.actions.map(action => <option key={action} value={action}>{action}</option>)}
+            </select>
+          </label>
+          <button className="min-h-12 self-end rounded-xl bg-primary px-5 font-semibold text-on-primary">
+            {t('apply')}
+          </button>
         </form>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
-        {[[t('netSales'), formatCurrency(fromCents(netSales))], [t('expenses'), formatCurrency(fromCents(expenseTotal))], [t('net'), formatCurrency(fromCents(netSales - expenseTotal))], [t('orders'), String(periodOrders.length)]].map(([label, value]) => <div key={label} className="rounded-xl bg-surface-container-low p-4"><p className="text-sm text-on-surface-variant">{label}</p><p className="text-2xl font-bold">{value}</p></div>)}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {summaryCards.map(card => (
+          <section key={card.label} className="rounded-2xl bg-surface-container-low p-5">
+            <p className="text-sm text-on-surface-variant">{card.label}</p>
+            <p className="mt-2 font-mono text-2xl font-bold text-on-surface">
+              {formatCurrency(card.value)} <span className="text-sm font-medium">IQD</span>
+            </p>
+          </section>
+        ))}
+        <section className="rounded-2xl bg-surface-container-low p-5 sm:col-span-2 xl:col-span-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-on-surface-variant">{t('orders')}</p>
+            <p className="font-mono text-2xl font-bold text-on-surface">{report.summary.closedOrders}</p>
+          </div>
+        </section>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-xl bg-surface-container-low p-4"><h2 className="mb-3 text-title-md font-medium">{t('paymentBreakdown')}</h2>{Object.keys(paymentTotals).length ? Object.entries(paymentTotals).map(([method, amount]) => <div key={method} className="flex justify-between py-2"><span>{method}</span><span>{formatCurrency(fromCents(amount))} IQD</span></div>) : <EmptyState icon={FileText} title={t('noData')} />}</section>
-        <section className="rounded-xl bg-surface-container-low p-4"><h2 className="mb-3 text-title-md font-medium">{t('topProducts')}</h2>{topProducts.length ? topProducts.map(product => <div key={product.name} className="flex justify-between py-2"><span>{product.name}</span><span>{product.quantity}</span></div>) : <EmptyState icon={FileText} title={t('noData')} />}</section>
+      <div className="grid gap-6 xl:grid-cols-2">
+        <section className="rounded-2xl bg-surface-container-low p-5">
+          <h2 className="mb-4 text-title-md font-semibold text-on-surface">{t('paymentBreakdown')}</h2>
+          {report.paymentTotals.length ? (
+            <div className="space-y-2">
+              {report.paymentTotals.map(payment => (
+                <div key={payment.method} className="flex min-h-12 items-center justify-between gap-4 rounded-xl bg-surface-container-lowest px-4">
+                  <span className="font-medium text-on-surface">{paymentLabel(payment.method)}</span>
+                  <span className="font-mono font-semibold text-on-surface">
+                    {formatCurrency(payment.amount)} IQD
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : <EmptyState icon={FileText} title={t('noData')} />}
+        </section>
+
+        <section className="rounded-2xl bg-surface-container-low p-5">
+          <h2 className="mb-4 text-title-md font-semibold text-on-surface">{t('topProducts')}</h2>
+          {report.topProducts.length ? (
+            <div className="space-y-2">
+              {report.topProducts.map(product => (
+                <div key={product.id} className="grid min-h-14 grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl bg-surface-container-lowest px-4 py-2">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-on-surface">
+                      {locale === 'ar' ? product.nameAr || product.name : product.name}
+                    </p>
+                    <p className="text-xs text-on-surface-variant">
+                      {copy.productRevenue}: {formatCurrency(product.revenue)} IQD
+                    </p>
+                  </div>
+                  <span className="font-mono font-semibold text-on-surface">
+                    {copy.unitsSold(product.quantity)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : <EmptyState icon={FileText} title={t('noData')} />}
+        </section>
       </div>
 
-      <section className="overflow-x-auto rounded-xl bg-surface-container-low"><h2 className="p-4 text-title-md font-medium">{t('recentOrders')}</h2>{periodOrders.length ? <table className="w-full"><thead><tr><th className="p-3 text-start">{t('id')}</th><th className="p-3 text-start">{t('cashier')}</th><th className="p-3 text-start">{t('status')}</th><th className="p-3 text-start">{t('total')}</th><th className="p-3 text-start">{t('date')}</th></tr></thead><tbody>{periodOrders.map(order => <tr key={order.id} className="border-t border-outline-variant"><td className="p-3 font-mono">{order.id.slice(0, 8)}</td><td className="p-3">{userNames.get(order.cashierId) ?? '—'}</td><td className="p-3">{order.status}</td><td className="p-3">{formatCurrency(order.totalAmount)}</td><td className="p-3">{order.createdAt.toLocaleString()}</td></tr>)}</tbody></table> : <EmptyState icon={FileText} title={t('noData')} />}</section>
+      <section className="rounded-2xl bg-surface-container-low p-4 sm:p-5">
+        <h2 className="mb-4 text-title-md font-semibold text-on-surface">{t('recentOrders')}</h2>
+        {report.recentOrders.length ? (
+          <>
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-outline-variant text-sm text-on-surface-variant">
+                    <th className="p-3 text-start">{t('id')}</th>
+                    <th className="p-3 text-start">{t('cashier')}</th>
+                    <th className="p-3 text-start">{t('status')}</th>
+                    <th className="p-3 text-start">{t('total')}</th>
+                    <th className="p-3 text-start">{t('date')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.recentOrders.map(order => (
+                    <tr key={order.id} className="border-b border-outline-variant/70 last:border-0">
+                      <td className="p-3 font-mono">{order.id.slice(0, 8)}</td>
+                      <td className="p-3">{order.cashierName}</td>
+                      <td className="p-3"><span className="rounded-full bg-secondary/10 px-2 py-1 text-xs font-semibold text-secondary">{copy.closed}</span></td>
+                      <td className="p-3 font-mono">{formatCurrency(order.totalAmount)} IQD</td>
+                      <td className="p-3 text-on-surface-variant">{formatDateTime(order.closedAt, locale)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="grid gap-3 md:hidden">
+              {report.recentOrders.map(order => (
+                <article key={order.id} className="rounded-xl bg-surface-container-lowest p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-mono text-sm font-semibold">#{order.id.slice(0, 8)}</p>
+                      <p className="mt-1 text-sm text-on-surface-variant">{order.cashierName}</p>
+                    </div>
+                    <span className="rounded-full bg-secondary/10 px-2 py-1 text-xs font-semibold text-secondary">{copy.closed}</span>
+                  </div>
+                  <div className="mt-4 flex items-end justify-between gap-3">
+                    <p className="text-xs text-on-surface-variant">{formatDateTime(order.closedAt, locale)}</p>
+                    <p className="font-mono font-bold">{formatCurrency(order.totalAmount)} IQD</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </>
+        ) : <EmptyState icon={FileText} title={t('noData')} />}
+      </section>
 
-      <section className="overflow-x-auto rounded-xl bg-surface-container-low"><h2 className="p-4 text-title-md font-medium">{t('auditLog')}</h2>{auditRows.length ? <table className="w-full"><thead><tr><th className="p-3 text-start">{t('date')}</th><th className="p-3 text-start">{t('user')}</th><th className="p-3 text-start">{t('action')}</th><th className="p-3 text-start">{t('target')}</th></tr></thead><tbody>{auditRows.map(log => <tr key={log.id} className="border-t border-outline-variant"><td className="p-3">{log.createdAt.toLocaleString()}</td><td className="p-3">{log.userId ? userNames.get(log.userId) ?? '—' : '—'}</td><td className="p-3 font-mono text-sm">{log.action}</td><td className="p-3">{log.targetTable ?? '—'} {log.targetId?.slice(0, 8) ?? ''}</td></tr>)}</tbody></table> : <EmptyState icon={FileText} title={t('noAudit')} />}</section>
+      <section className="rounded-2xl bg-surface-container-low p-4 sm:p-5">
+        <h2 className="mb-4 text-title-md font-semibold text-on-surface">{t('auditLog')}</h2>
+        {report.auditRows.length ? (
+          <div className="grid gap-3">
+            {report.auditRows.map(log => (
+              <article key={log.id} className="grid gap-2 rounded-xl bg-surface-container-lowest p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                <div className="min-w-0">
+                  <p className="break-words font-mono text-sm font-semibold text-on-surface">{log.action}</p>
+                  <p className="mt-1 text-sm text-on-surface-variant">
+                    {log.userName ?? '—'} · {log.targetTable ?? '—'} {log.targetId?.slice(0, 8) ?? ''}
+                  </p>
+                </div>
+                <time className="text-xs text-on-surface-variant">{formatDateTime(log.createdAt, locale)}</time>
+              </article>
+            ))}
+          </div>
+        ) : <EmptyState icon={FileText} title={t('noAudit')} />}
+      </section>
     </div>
   )
 }

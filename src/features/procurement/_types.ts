@@ -31,6 +31,7 @@ export interface PurchaseItemRow {
   ingredientName: string | null
   productId: string | null
   productName: string | null
+  productNameAr?: string | null
   quantity: string
   unitCost: string
   totalCost: string
@@ -53,6 +54,7 @@ export interface GoodsReceiptItemRow {
   ingredientName: string | null
   productId: string | null
   productName: string | null
+  productNameAr?: string | null
   quantity: string
   unitCost: string
 }
