@@ -1,35 +1,35 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
-import { useParams } from 'next/navigation'
+import { usePathname, useRouter } from '@/lib/navigation'
 import { Button } from '@/components/ui/button'
 
-// _locale is used only in the href construction below
 export default function LanguageSwitcher() {
   const router = useRouter()
+  const pathname = usePathname()
   const currentLocale = useLocale()
-  const params = useParams()
 
-  const handleLocaleChange = (newLocale: string) => {
-    const pathWithoutLocale = params.locale 
-      ? window.location.pathname.replace(`/${params.locale}`, '')
-      : window.location.pathname
-    router.push(`/${newLocale}${pathWithoutLocale || '/sign-in'}`)
+  const handleLocaleChange = (newLocale: 'en' | 'ar') => {
+    if (newLocale === currentLocale) return
+    router.replace(pathname, { locale: newLocale })
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1 rounded-xl bg-surface-container-low p-1" aria-label="Language">
       <Button
+        type="button"
         variant={currentLocale === 'en' ? 'secondary' : 'ghost'}
         size="sm"
+        aria-pressed={currentLocale === 'en'}
         onClick={() => handleLocaleChange('en')}
       >
         EN
       </Button>
       <Button
+        type="button"
         variant={currentLocale === 'ar' ? 'secondary' : 'ghost'}
         size="sm"
+        aria-pressed={currentLocale === 'ar'}
         onClick={() => handleLocaleChange('ar')}
       >
         العربية
