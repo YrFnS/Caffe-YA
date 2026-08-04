@@ -20,7 +20,7 @@ const ids = {
   orderClosed: '80000000-0000-4000-8000-000000000001', orderOpen: '80000000-0000-4000-8000-000000000002', vendor: '80000000-0000-4000-8000-000000000003', purchase: '80000000-0000-4000-8000-000000000004',
   expenseCategory: '90000000-0000-4000-8000-000000000001', expense: '90000000-0000-4000-8000-000000000002', employeeCashier: '90000000-0000-4000-8000-000000000003', employeeManager: '90000000-0000-4000-8000-000000000004',
   goodsReceipt: '90000000-0000-4000-8000-000000000005',
-  cashAccount: 'a0000000-0000-4000-8000-000000000001', inventoryAccount: 'a0000000-0000-4000-8000-000000000002', salesAccount: 'a0000000-0000-4000-8000-000000000003', expenseAccount: 'a0000000-0000-4000-8000-000000000004', journal: 'a0000000-0000-4000-8000-000000000005', payableAccount: 'a0000000-0000-4000-8000-000000000006', payrollExpenseAccount: 'a0000000-0000-4000-8000-000000000007',
+  cashAccount: 'a0000000-0000-4000-8000-000000000001', inventoryAccount: 'a0000000-0000-4000-8000-000000000002', salesAccount: 'a0000000-0000-4000-8000-000000000003', expenseAccount: 'a0000000-0000-4000-8000-000000000004', journal: 'a0000000-0000-4000-8000-000000000005', payableAccount: 'a0000000-0000-4000-8000-000000000006', payrollExpenseAccount: 'a0000000-0000-4000-8000-000000000007', cardAccount: 'a0000000-0000-4000-8000-000000000008', walletAccount: 'a0000000-0000-4000-8000-000000000009',
 }
 
 const productImages = {
@@ -33,7 +33,7 @@ const productImages = {
 const permissionRows = [
   ['admin.view', 'admin'], ['admin.manage_users', 'admin'], ['admin.manage_roles', 'admin'], ['admin.manage_permissions', 'admin'], ['admin.manage_settings', 'admin'], ['admin.manage_modules', 'admin'],
   ['pos.view', 'pos'], ['pos.checkout', 'pos'], ['pos.void_item', 'pos'], ['pos.void_order', 'pos'], ['pos.refund', 'pos'], ['pos.open_shift', 'pos'], ['pos.close_shift', 'pos'],
-  ['shifts.view', 'shifts'], ['shifts.open', 'shifts'], ['shifts.close', 'shifts'], ['shifts.approve', 'shifts'],
+  ['shifts.view', 'shifts'], ['shifts.open', 'shifts'], ['shifts.close', 'shifts'], ['shifts.close_others', 'shifts'], ['shifts.approve', 'shifts'],
   ['inventory.view', 'inventory'], ['inventory.manage_products', 'inventory'], ['inventory.manage_ingredients', 'inventory'], ['inventory.manage_categories', 'inventory'], ['inventory.stock_movement', 'inventory'],
   ['resources.view', 'resources'], ['resources.manage', 'resources'],
   ['procurement.view', 'procurement'], ['procurement.create_po', 'procurement'], ['procurement.delete_po', 'procurement'], ['procurement.receive_goods', 'procurement'], ['procurement.approve_invoice', 'procurement'],
@@ -65,10 +65,23 @@ async function syncBrandIdentity() {
 }
 
 async function syncPermissionMatrix() {
-  const payable = await db.select().from(schema.chartOfAccounts).where(eq(schema.chartOfAccounts.code, '2001')).limit(1)
-  if (!payable.length) await db.insert(schema.chartOfAccounts).values({ id: ids.payableAccount, code: '2001', name: 'Accounts Payable', nameAr: 'الحسابات الدائنة', type: 'liability' })
-  const payrollExpense = await db.select().from(schema.chartOfAccounts).where(eq(schema.chartOfAccounts.code, '6201')).limit(1)
-  if (!payrollExpense.length) await db.insert(schema.chartOfAccounts).values({ id: ids.payrollExpenseAccount, code: '6201', name: 'Payroll Expense', nameAr: 'مصروف الرواتب', type: 'expense' })
+  const accountRows = [
+    { id: ids.payableAccount, code: '2001', name: 'Accounts Payable', nameAr: 'الحسابات الدائنة', type: 'liability' as const },
+    { id: ids.payrollExpenseAccount, code: '6201', name: 'Payroll Expense', nameAr: 'مصروف الرواتب', type: 'expense' as const },
+    { id: ids.cardAccount, code: '1010', name: 'Card Clearing', nameAr: 'تسوية البطاقات', type: 'asset' as const },
+    { id: ids.walletAccount, code: '1020', name: 'Mobile Wallet Clearing', nameAr: 'تسوية المحافظ الإلكترونية', type: 'asset' as const },
+  ]
+  for (const account of accountRows) {
+    const existing = await db.select().from(schema.chartOfAccounts).where(eq(schema.chartOfAccounts.code, account.code)).limit(1)
+    if (!existing.length) await db.insert(schema.chartOfAccounts).values(account)
+  }
+  await db.update(schema.chartOfAccounts).set({ name: 'Cash', nameAr: 'النقد' }).where(eq(schema.chartOfAccounts.code, '1001'))
+
+  await db.insert(schema.systemSettings).values({ key: 'shift_variance_approval_threshold', value: '5000', updatedBy: ids.admin })
+    .onConflictDoNothing()
+  await db.insert(schema.systemModules).values({ module: 'admin', isActive: true, updatedBy: ids.admin })
+    .onConflictDoUpdate({ target: schema.systemModules.module, set: { isActive: true, updatedBy: ids.admin, updatedAt: new Date() } })
+
   const receipt = await db.select().from(schema.goodsReceipts).where(eq(schema.goodsReceipts.purchaseId, ids.purchase)).limit(1)
   if (!receipt.length) {
     await db.transaction(async tx => {
@@ -83,11 +96,11 @@ async function syncPermissionMatrix() {
   if (!verification.length) await db.insert(schema.verifications).values({ id: 'demo-expired-verification', identifier: 'demo@roastgrid.app', value: 'expired-demo-record', expiresAt: new Date(0) })
   let currentPermissions = await db.select().from(schema.permissions)
   for (const permission of permissionRows) {
-    const matches = currentPermissions.filter((current) => current.key === permission.key)
+    const matches = currentPermissions.filter(current => current.key === permission.key)
     if (matches.length === 0) {
       await db.insert(schema.permissions).values({ key: permission.key, module: permission.module, description: permission.description })
     } else if (matches.length > 1) {
-      const duplicateIds = matches.slice(1).map((match) => match.id)
+      const duplicateIds = matches.slice(1).map(match => match.id)
       await db.delete(schema.rolePermissions).where(inArray(schema.rolePermissions.permissionId, duplicateIds))
       await db.delete(schema.permissions).where(inArray(schema.permissions.id, duplicateIds))
     }
@@ -96,11 +109,11 @@ async function syncPermissionMatrix() {
   const demoRoleIds = [ids.superAdmin, ids.managerRole, ids.cashierRole, ids.accountantRole]
   await db.delete(schema.rolePermissions).where(inArray(schema.rolePermissions.roleId, demoRoleIds))
   currentPermissions = await db.select().from(schema.permissions)
-  const managedPermissions = currentPermissions.filter((permission) => permissionRows.some((row) => row.key === permission.key))
-  await db.insert(schema.rolePermissions).values(managedPermissions.map((permission) => ({ roleId: ids.superAdmin, permissionId: permission.id })))
-  await db.insert(schema.rolePermissions).values(managedPermissions.filter((p) => p.module !== 'admin').map((permission) => ({ roleId: ids.managerRole, permissionId: permission.id })))
-  await db.insert(schema.rolePermissions).values(managedPermissions.filter((p) => cashierPermissionKeys.has(p.key)).map((p) => ({ roleId: ids.cashierRole, permissionId: p.id })))
-  await db.insert(schema.rolePermissions).values(managedPermissions.filter((p) => accountantModules.has(p.module)).map((p) => ({ roleId: ids.accountantRole, permissionId: p.id })))
+  const managedPermissions = currentPermissions.filter(permission => permissionRows.some(row => row.key === permission.key))
+  await db.insert(schema.rolePermissions).values(managedPermissions.map(permission => ({ roleId: ids.superAdmin, permissionId: permission.id })))
+  await db.insert(schema.rolePermissions).values(managedPermissions.filter(p => p.module !== 'admin').map(permission => ({ roleId: ids.managerRole, permissionId: permission.id })))
+  await db.insert(schema.rolePermissions).values(managedPermissions.filter(p => cashierPermissionKeys.has(p.key)).map(p => ({ roleId: ids.cashierRole, permissionId: p.id })))
+  await db.insert(schema.rolePermissions).values(managedPermissions.filter(p => accountantModules.has(p.module)).map(p => ({ roleId: ids.accountantRole, permissionId: p.id })))
 }
 
 async function seed() {
@@ -117,15 +130,15 @@ async function seed() {
   const yesterday = new Date(now.getTime() - 86_400_000)
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
-  await db.transaction(async (tx) => {
+  await db.transaction(async tx => {
     const demoUsers = [
       { id: ids.admin, name: 'Yara Hassan', email: 'admin@roastgrid.app' },
       { id: ids.manager, name: 'Omar Kareem', email: 'manager@roastgrid.app' },
       { id: ids.cashier, name: 'Sara Ali', email: 'cashier@roastgrid.app' },
       { id: ids.accountant, name: 'Noor Ahmed', email: 'accountant@roastgrid.app' },
     ]
-    await tx.insert(schema.users).values(demoUsers.map((user) => ({ ...user, passwordHash: password, emailVerified: true })))
-    await tx.insert(schema.accounts).values(demoUsers.map((user) => ({ id: `account-${user.id}`, userId: user.id, accountId: user.email, providerId: 'credential', password })))
+    await tx.insert(schema.users).values(demoUsers.map(user => ({ ...user, passwordHash: password, emailVerified: true })))
+    await tx.insert(schema.accounts).values(demoUsers.map(user => ({ id: `account-${user.id}`, userId: user.id, accountId: user.email, providerId: 'credential', password })))
     await tx.insert(schema.verifications).values({ id: 'demo-expired-verification', identifier: 'demo@roastgrid.app', value: 'expired-demo-record', expiresAt: new Date(0) })
 
     const roleRows = [
@@ -136,10 +149,10 @@ async function seed() {
     ]
     await tx.insert(schema.roles).values(roleRows)
     await tx.insert(schema.permissions).values(permissionRows)
-    await tx.insert(schema.rolePermissions).values(permissionRows.map((permission) => ({ roleId: ids.superAdmin, permissionId: permission.id })))
-    await tx.insert(schema.rolePermissions).values(permissionRows.filter((p) => p.module !== 'admin').map((permission) => ({ roleId: ids.managerRole, permissionId: permission.id })))
-    await tx.insert(schema.rolePermissions).values(permissionRows.filter((p) => cashierPermissionKeys.has(p.key)).map((p) => ({ roleId: ids.cashierRole, permissionId: p.id })))
-    await tx.insert(schema.rolePermissions).values(permissionRows.filter((p) => accountantModules.has(p.module)).map((p) => ({ roleId: ids.accountantRole, permissionId: p.id })))
+    await tx.insert(schema.rolePermissions).values(permissionRows.map(permission => ({ roleId: ids.superAdmin, permissionId: permission.id })))
+    await tx.insert(schema.rolePermissions).values(permissionRows.filter(p => p.module !== 'admin').map(permission => ({ roleId: ids.managerRole, permissionId: permission.id })))
+    await tx.insert(schema.rolePermissions).values(permissionRows.filter(p => cashierPermissionKeys.has(p.key)).map(p => ({ roleId: ids.cashierRole, permissionId: p.id })))
+    await tx.insert(schema.rolePermissions).values(permissionRows.filter(p => accountantModules.has(p.module)).map(p => ({ roleId: ids.accountantRole, permissionId: p.id })))
     await tx.insert(schema.userRoles).values([
       { userId: ids.admin, roleId: ids.superAdmin }, { userId: ids.manager, roleId: ids.managerRole },
       { userId: ids.cashier, roleId: ids.cashierRole }, { userId: ids.accountant, roleId: ids.accountantRole },
@@ -201,7 +214,9 @@ async function seed() {
     ])
 
     await tx.insert(schema.chartOfAccounts).values([
-      { id: ids.cashAccount, code: '1001', name: 'Cash and Card Clearing', nameAr: 'النقد وتسوية البطاقات', type: 'asset' },
+      { id: ids.cashAccount, code: '1001', name: 'Cash', nameAr: 'النقد', type: 'asset' },
+      { id: ids.cardAccount, code: '1010', name: 'Card Clearing', nameAr: 'تسوية البطاقات', type: 'asset' },
+      { id: ids.walletAccount, code: '1020', name: 'Mobile Wallet Clearing', nameAr: 'تسوية المحافظ الإلكترونية', type: 'asset' },
       { id: ids.inventoryAccount, code: '1201', name: 'Inventory', nameAr: 'المخزون', type: 'asset' },
       { id: ids.salesAccount, code: '4001', name: 'Cafe Sales', nameAr: 'مبيعات المقهى', type: 'revenue' },
       { id: ids.expenseAccount, code: '6101', name: 'Utilities Expense', nameAr: 'مصروف الخدمات', type: 'expense' },
@@ -231,15 +246,16 @@ async function seed() {
     ])
     await tx.insert(schema.journalEntries).values({ id: ids.journal, reference: 'ORDER-DEMO-1042', description: 'Demo card sale', sourceType: 'order', sourceId: ids.orderClosed, createdBy: ids.accountant })
     await tx.insert(schema.journalEntryLines).values([
-      { journalEntryId: ids.journal, accountId: ids.cashAccount, type: 'debit', amount: '16000', note: 'Card clearing' },
+      { journalEntryId: ids.journal, accountId: ids.cardAccount, type: 'debit', amount: '16000', note: 'Card clearing' },
       { journalEntryId: ids.journal, accountId: ids.salesAccount, type: 'credit', amount: '16000', note: 'Cafe revenue' },
     ])
     await tx.insert(schema.systemSettings).values([
       { key: 'shop_name', value: 'RoastGrid Baghdad', updatedBy: ids.admin },
       { key: 'currency', value: 'IQD', updatedBy: ids.admin },
       { key: 'receipt_footer', value: 'Thank you — شكراً لزيارتكم', updatedBy: ids.admin },
+      { key: 'shift_variance_approval_threshold', value: '5000', updatedBy: ids.admin },
     ])
-    await tx.insert(schema.systemModules).values(['pos', 'inventory', 'resources', 'procurement', 'expenses', 'employees', 'payroll', 'accounting', 'partners', 'reports'].map((module) => ({ module, isActive: true, updatedBy: ids.admin })))
+    await tx.insert(schema.systemModules).values(['admin', 'pos', 'inventory', 'resources', 'procurement', 'expenses', 'employees', 'payroll', 'accounting', 'partners', 'reports'].map(module => ({ module, isActive: true, updatedBy: ids.admin })))
     await tx.insert(schema.auditLogs).values({ userId: ids.admin, action: 'DEMO_SEED_CREATED', targetTable: 'orders', targetId: ids.orderClosed, newValue: { environment: 'client-demo', tables: 33 } })
   })
 
@@ -247,7 +263,7 @@ async function seed() {
   console.log('Demo password for all users: RoastGridDemo2026!')
 }
 
-seed().catch((error) => {
+seed().catch(error => {
   console.error(error)
   process.exitCode = 1
 }).finally(() => pool.end())

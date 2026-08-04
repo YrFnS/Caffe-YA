@@ -1,40 +1,44 @@
 import { db } from '@/lib/db'
 import { auditLogs, chartOfAccounts, ingredients, journalEntries, journalEntryLines, orders, orderItems, products, transactions, resources, shifts, stockMovements } from '@/lib/schema'
-import { eq, and, isNull } from 'drizzle-orm'
+import { eq, and, inArray, isNull } from 'drizzle-orm'
 import { getProductIngredients } from '@/features/inventory/_services/productService'
 import { toCents, fromCents } from '@/lib/currency'
+import { getPaymentAccountCode } from '@/lib/accounting'
 import { validatePayments, type PaymentLine } from './payment'
 
 export async function getOrCreateDraftOrder(shiftId: string, userId: string) {
-  const existing = await db.query.orders.findFirst({
-    where: and(
+  return db.transaction(async tx => {
+    const [shift] = await tx.select().from(shifts).where(eq(shifts.id, shiftId)).for('update')
+    if (!shift || shift.cashierId !== userId || shift.status !== 'open') {
+      throw new Error('SHIFT_NOT_OPEN')
+    }
+
+    const [existing] = await tx.select().from(orders).where(and(
       eq(orders.shiftId, shiftId),
       eq(orders.cashierId, userId),
-      eq(orders.status, 'draft')
-    )
+      eq(orders.status, 'draft'),
+    )).limit(1)
+    if (existing) return existing
+
+    const [newOrder] = await tx.insert(orders).values({
+      shiftId,
+      cashierId: userId,
+      status: 'draft',
+      subtotal: '0',
+      totalAmount: '0',
+    }).returning()
+
+    return newOrder
   })
-
-  if (existing) return existing
-
-  const [newOrder] = await db.insert(orders).values({
-    shiftId,
-    cashierId: userId,
-    status: 'draft',
-    subtotal: '0',
-    totalAmount: '0',
-  }).returning()
-
-  return newOrder
 }
 
 export async function getActiveShift(userId: string) {
-  const openShift = await db.query.shifts.findFirst({
+  return db.query.shifts.findFirst({
     where: and(
       eq(shifts.cashierId, userId),
-      eq(shifts.status, 'open')
-    )
+      eq(shifts.status, 'open'),
+    ),
   })
-  return openShift
 }
 
 export async function addItemToOrder(orderId: string, productId: string, quantity: number, userId: string) {
@@ -77,7 +81,7 @@ export async function updateItemQuantity(itemId: string, quantity: number, userI
 }
 
 export async function checkoutOrder(orderId: string, paymentLines: PaymentLine[], userId: string) {
-  return db.transaction(async (tx) => {
+  return db.transaction(async tx => {
     const [order] = await tx.select().from(orders).where(eq(orders.id, orderId)).for('update')
     if (!order) throw new Error('ORDER_NOT_FOUND')
     if (order.cashierId !== userId) throw new Error('ORDER_NOT_OWNED')
@@ -103,7 +107,7 @@ export async function checkoutOrder(orderId: string, paymentLines: PaymentLine[]
         .where(eq(resources.id, order.resourceId))
     }
 
-    // Deduct recipe ingredients
+    // Deduct recipe ingredients and tracked standard-product stock atomically.
     const items = await tx.query.orderItems.findMany({
       where: and(eq(orderItems.orderId, orderId), isNull(orderItems.voidedAt)),
       with: { product: true },
@@ -141,9 +145,20 @@ export async function checkoutOrder(orderId: string, paymentLines: PaymentLine[]
       }
     }
 
-    const [clearingAccount] = await tx.select().from(chartOfAccounts).where(eq(chartOfAccounts.code, '1001')).limit(1)
+    const paymentTotals = new Map<string, number>()
+    for (const payment of payments) {
+      const accountCode = getPaymentAccountCode(payment.method)
+      paymentTotals.set(accountCode, (paymentTotals.get(accountCode) ?? 0) + toCents(payment.amount))
+    }
+
+    const paymentAccountCodes = [...paymentTotals.keys()]
+    const paymentAccounts = await tx.select().from(chartOfAccounts).where(inArray(chartOfAccounts.code, paymentAccountCodes))
+    const paymentAccountsByCode = new Map(paymentAccounts.map(account => [account.code, account]))
     const [salesAccount] = await tx.select().from(chartOfAccounts).where(eq(chartOfAccounts.code, '4001')).limit(1)
-    if (!clearingAccount || !salesAccount) throw new Error('ACCOUNTING_NOT_CONFIGURED')
+    if (!salesAccount || paymentAccountCodes.some(code => !paymentAccountsByCode.has(code))) {
+      throw new Error('ACCOUNTING_NOT_CONFIGURED')
+    }
+
     const [journal] = await tx.insert(journalEntries).values({
       reference: `ORDER-${order.id.slice(0, 8)}`,
       description: 'POS checkout',
@@ -151,17 +166,28 @@ export async function checkoutOrder(orderId: string, paymentLines: PaymentLine[]
       sourceId: order.id,
       createdBy: userId,
     }).returning()
+
     await tx.insert(journalEntryLines).values([
-      { journalEntryId: journal.id, accountId: clearingAccount.id, type: 'debit', amount: order.totalAmount },
-      { journalEntryId: journal.id, accountId: salesAccount.id, type: 'credit', amount: order.totalAmount },
+      ...paymentAccountCodes.map(code => ({
+        journalEntryId: journal.id,
+        accountId: paymentAccountsByCode.get(code)!.id,
+        type: 'debit' as const,
+        amount: fromCents(paymentTotals.get(code)!),
+      })),
+      { journalEntryId: journal.id, accountId: salesAccount.id, type: 'credit' as const, amount: order.totalAmount },
     ])
+
     await tx.insert(auditLogs).values({
       userId,
       action: 'CHECKOUT_ORDER',
       targetTable: 'orders',
       targetId: order.id,
       oldValue: { status: order.status },
-      newValue: { status: 'closed', payments },
+      newValue: {
+        status: 'closed',
+        payments,
+        paymentAccounts: Object.fromEntries(paymentAccountCodes.map(code => [code, fromCents(paymentTotals.get(code)!)])),
+      },
     })
   })
 }
@@ -181,15 +207,15 @@ export async function getOrderWithItems(orderId: string) {
     with: {
       items: {
         where: isNull(orderItems.voidedAt),
-        with: { product: true }
-      }
-    }
+        with: { product: true },
+      },
+    },
   })
 }
 
 export async function getDraftOrderItems(orderId: string) {
   return db.query.orderItems.findMany({
     where: and(eq(orderItems.orderId, orderId), isNull(orderItems.voidedAt)),
-    with: { product: true }
+    with: { product: true },
   })
 }

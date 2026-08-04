@@ -33,10 +33,11 @@ export async function getGroupedPermissions(): Promise<PermissionGroup[]> {
 }
 
 export async function setRolePermissions(roleId: string, permissionIds: string[]): Promise<void> {
+  const uniquePermissionIds = [...new Set(permissionIds)]
   await db.transaction(async tx => {
     await tx.delete(rolePermissions).where(eq(rolePermissions.roleId, roleId))
-    if (permissionIds.length) {
-      await tx.insert(rolePermissions).values(permissionIds.map(permissionId => ({ roleId, permissionId })))
+    if (uniquePermissionIds.length) {
+      await tx.insert(rolePermissions).values(uniquePermissionIds.map(permissionId => ({ roleId, permissionId })))
     }
   })
 }
@@ -80,7 +81,8 @@ export async function seedDefaultPermissions(): Promise<void> {
     // Shifts permissions
     { key: 'shifts.view', module: 'shifts', description: 'View shifts' },
     { key: 'shifts.open', module: 'shifts', description: 'Open shift' },
-    { key: 'shifts.close', module: 'shifts', description: 'Close shift' },
+    { key: 'shifts.close', module: 'shifts', description: 'Close own shift' },
+    { key: 'shifts.close_others', module: 'shifts', description: 'Close another cashier shift' },
     { key: 'shifts.approve', module: 'shifts', description: 'Approve shift variance' },
 
     // Admin permissions
@@ -98,7 +100,7 @@ export async function seedDefaultPermissions(): Promise<void> {
     { key: 'procurement.approve_invoice', module: 'procurement', description: 'Approve invoice' },
     { key: 'procurement.view', module: 'procurement', description: 'View procurement' },
 
-    // Expense permissions
+    // Expense and finance permissions
     { key: 'expenses.create', module: 'expenses', description: 'Create expense' },
     { key: 'expenses.update', module: 'expenses', description: 'Update expense' },
     { key: 'expenses.delete', module: 'expenses', description: 'Delete expense' },

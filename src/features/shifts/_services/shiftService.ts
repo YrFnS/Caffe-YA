@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
 import { and, desc, eq, inArray, isNotNull, isNull } from 'drizzle-orm'
-import { auditLogs, expenses, orders, shifts, transactions } from '@/lib/schema'
+import { auditLogs, expenses, orders, shifts, transactions, users } from '@/lib/schema'
 import type { ShiftSummary } from '../_types'
 import { toCents, fromCents } from '@/lib/currency'
 
@@ -44,31 +44,54 @@ export async function getShiftHistory(limit = 30): Promise<ShiftSummary[]> {
   })) as ShiftSummary[]
 }
 
-// Open a new shift
+// Open a new shift. Locking the user row serializes concurrent open attempts.
 export async function openShift(userId: string, openingFloat: string): Promise<{ id: string }> {
-  // Check no existing open shift for this user
-  const existing = await getActiveShiftForUser(userId)
-  if (existing) throw new Error('SHIFT_ALREADY_OPEN')
-
   return db.transaction(async tx => {
-    const [shift] = await tx.insert(shifts).values({ cashierId: userId, openingFloat, status: 'open' }).returning()
-    await tx.insert(auditLogs).values({ userId, action: 'OPEN_SHIFT', targetTable: 'shifts', targetId: shift.id, newValue: { openingFloat } })
+    const [user] = await tx.select({ id: users.id }).from(users).where(eq(users.id, userId)).for('update')
+    if (!user) throw new Error('USER_NOT_FOUND')
+
+    const existing = await tx.select({ id: shifts.id }).from(shifts).where(and(
+      eq(shifts.cashierId, userId),
+      eq(shifts.status, 'open'),
+    )).limit(1)
+    if (existing.length) throw new Error('SHIFT_ALREADY_OPEN')
+
+    const [shift] = await tx.insert(shifts).values({
+      cashierId: userId,
+      openingFloat,
+      status: 'open',
+    }).returning()
+
+    await tx.insert(auditLogs).values({
+      userId,
+      action: 'OPEN_SHIFT',
+      targetTable: 'shifts',
+      targetId: shift.id,
+      newValue: { openingFloat },
+    })
     return { id: shift.id }
   })
+}
+
+interface CloseShiftOptions {
+  approvedBy?: string
+  notes?: string
+  canCloseOthers?: boolean
+  approvalThreshold?: string
 }
 
 // Close a shift with blind count
 export async function closeShift(
   shiftId: string,
-  _userId: string,
+  userId: string,
   countedCash: string,
-  approvedBy?: string,
-  notes?: string,
+  options: CloseShiftOptions = {},
 ): Promise<void> {
-  await db.transaction(async (tx) => {
+  await db.transaction(async tx => {
     const [shift] = await tx.select().from(shifts).where(eq(shifts.id, shiftId)).for('update')
     if (!shift) throw new Error('SHIFT_NOT_FOUND')
     if (shift.status !== 'open') throw new Error('SHIFT_ALREADY_CLOSED')
+    if (shift.cashierId !== userId && !options.canCloseOthers) throw new Error('SHIFT_NOT_OWNED')
 
     const active = await tx.select({ id: orders.id }).from(orders).where(and(
       eq(orders.shiftId, shiftId),
@@ -90,7 +113,11 @@ export async function closeShift(
     const expenseTotal = shiftExpenses.reduce((sum, expense) => sum + toCents(expense.amount), 0)
     const expected = toCents(shift.openingFloat) + sales - expenseTotal
     const variance = toCents(countedCash) - expected
-    if (variance !== 0 && !approvedBy) throw new Error('APPROVAL_REQUIRED')
+    const approvalThreshold = Math.max(0, toCents(options.approvalThreshold ?? '0'))
+
+    if (Math.abs(variance) > approvalThreshold && !options.approvedBy) {
+      throw new Error('APPROVAL_REQUIRED')
+    }
 
     await tx.update(shifts).set({
       status: 'closed',
@@ -98,15 +125,24 @@ export async function closeShift(
       closingCountedCash: countedCash,
       closingExpectedCash: fromCents(expected),
       cashVariance: fromCents(variance),
-      approvedBy: approvedBy ?? null,
-      notes: notes ?? null,
+      approvedBy: options.approvedBy ?? null,
+      notes: options.notes ?? null,
     }).where(and(eq(shifts.id, shiftId), eq(shifts.status, 'open')))
+
     await tx.insert(auditLogs).values({
-      userId: _userId,
+      userId,
       action: 'CLOSE_SHIFT',
       targetTable: 'shifts',
       targetId: shiftId,
-      newValue: { countedCash, expected: fromCents(expected), variance: fromCents(variance), approvedBy: approvedBy ?? null },
+      oldValue: { status: shift.status, cashierId: shift.cashierId },
+      newValue: {
+        status: 'closed',
+        countedCash,
+        expected: fromCents(expected),
+        variance: fromCents(variance),
+        approvedBy: options.approvedBy ?? null,
+        closedBy: userId,
+      },
     })
   })
 }

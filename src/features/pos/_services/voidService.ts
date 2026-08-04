@@ -1,12 +1,13 @@
 import { db } from '@/lib/db'
 import { orderItems, transactions, auditLogs, orders, resources, ingredients, products, stockMovements, chartOfAccounts, journalEntries, journalEntryLines } from '@/lib/schema'
-import { and, desc, eq, isNull } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNull } from 'drizzle-orm'
 import { fromCents, toCents } from '@/lib/currency'
+import { getPaymentAccountCode } from '@/lib/accounting'
 import type { RefundableOrder } from '../_types'
 import { isRefundableOrder } from './payment'
 
 export async function voidOrderItem(itemId: string, userId: string, reason: string) {
-  return db.transaction(async (tx) => {
+  return db.transaction(async tx => {
     const [item] = await tx.select().from(orderItems).where(eq(orderItems.id, itemId)).for('update')
 
     if (!item || item.voidedAt) throw new Error('ITEM_NOT_FOUND')
@@ -26,7 +27,7 @@ export async function voidOrderItem(itemId: string, userId: string, reason: stri
       .where(eq(orderItems.orderId, item.orderId))
 
     const activeItems = remainingItems.filter(i => !i.voidedAt)
-    const newSubtotal = activeItems.reduce((sum, item) => sum + toCents(item.totalPrice), 0)
+    const newSubtotal = activeItems.reduce((sum, row) => sum + toCents(row.totalPrice), 0)
     await tx.update(orders)
       .set({
         subtotal: fromCents(newSubtotal),
@@ -46,7 +47,7 @@ export async function voidOrderItem(itemId: string, userId: string, reason: stri
 }
 
 export async function voidOrder(orderId: string, userId: string, reason: string) {
-  return db.transaction(async (tx) => {
+  return db.transaction(async tx => {
     const [order] = await tx.select().from(orders).where(eq(orders.id, orderId)).for('update')
     if (!order || order.cashierId !== userId || !['draft', 'open'].includes(order.status)) throw new Error('ORDER_NOT_OPEN')
     await tx.update(orderItems).set({ voidedAt: new Date(), voidedBy: userId, voidReason: reason })
@@ -97,22 +98,48 @@ export async function refundOrder(orderId: string, userId: string, reason: strin
         continue
       }
       await tx.insert(stockMovements).values({
-        ingredientId: movement.ingredientId, productId: movement.productId, orderId,
-        type: 'adjustment', quantity: String(quantity), note: `Refund: ${reason}`, createdBy: userId,
+        ingredientId: movement.ingredientId,
+        productId: movement.productId,
+        orderId,
+        type: 'adjustment',
+        quantity: String(quantity),
+        note: `Refund: ${reason}`,
+        createdBy: userId,
       })
     }
 
-    const [cash] = await tx.select().from(chartOfAccounts).where(eq(chartOfAccounts.code, '1001')).limit(1)
-    const [sales] = await tx.select().from(chartOfAccounts).where(eq(chartOfAccounts.code, '4001')).limit(1)
-    if (!cash || !sales) throw new Error('ACCOUNTING_NOT_CONFIGURED')
+    const paymentTotals = new Map<string, number>()
+    for (const payment of payments) {
+      const accountCode = getPaymentAccountCode(payment.paymentMethod)
+      paymentTotals.set(accountCode, (paymentTotals.get(accountCode) ?? 0) + toCents(payment.amount))
+    }
+
+    const paymentAccountCodes = [...paymentTotals.keys()]
+    const paymentAccounts = await tx.select().from(chartOfAccounts).where(inArray(chartOfAccounts.code, paymentAccountCodes))
+    const paymentAccountsByCode = new Map(paymentAccounts.map(account => [account.code, account]))
+    const [salesAccount] = await tx.select().from(chartOfAccounts).where(eq(chartOfAccounts.code, '4001')).limit(1)
+    if (!salesAccount || paymentAccountCodes.some(code => !paymentAccountsByCode.has(code))) {
+      throw new Error('ACCOUNTING_NOT_CONFIGURED')
+    }
+
     const [journal] = await tx.insert(journalEntries).values({
-      reference: `REFUND-${order.id.slice(0, 8)}`, description: `POS refund: ${reason}`,
-      sourceType: 'refund', sourceId: order.id, createdBy: userId,
+      reference: `REFUND-${order.id.slice(0, 8)}`,
+      description: `POS refund: ${reason}`,
+      sourceType: 'refund',
+      sourceId: order.id,
+      createdBy: userId,
     }).returning()
+
     await tx.insert(journalEntryLines).values([
-      { journalEntryId: journal.id, accountId: sales.id, type: 'debit', amount: order.totalAmount },
-      { journalEntryId: journal.id, accountId: cash.id, type: 'credit', amount: order.totalAmount },
+      { journalEntryId: journal.id, accountId: salesAccount.id, type: 'debit' as const, amount: order.totalAmount },
+      ...paymentAccountCodes.map(code => ({
+        journalEntryId: journal.id,
+        accountId: paymentAccountsByCode.get(code)!.id,
+        type: 'credit' as const,
+        amount: fromCents(paymentTotals.get(code)!),
+      })),
     ])
+
     await tx.update(orders).set({ status: 'cancelled' }).where(eq(orders.id, orderId))
 
     await tx.insert(auditLogs).values({
@@ -121,7 +148,11 @@ export async function refundOrder(orderId: string, userId: string, reason: strin
       targetTable: 'orders',
       targetId: orderId,
       oldValue: { status: 'closed' },
-      newValue: { status: 'cancelled', reason },
+      newValue: {
+        status: 'cancelled',
+        reason,
+        paymentAccounts: Object.fromEntries(paymentAccountCodes.map(code => [code, fromCents(paymentTotals.get(code)!)])),
+      },
     })
   })
 }

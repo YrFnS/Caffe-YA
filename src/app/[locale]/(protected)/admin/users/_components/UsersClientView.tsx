@@ -21,6 +21,8 @@ export default function UsersClientView({ users, roles, currentUserId }: UsersCl
   const [userList, setUserList] = useState(users)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [selectedRoles, setSelectedRoles] = useState<Record<string, string[]>>({})
+  const [pendingUserId, setPendingUserId] = useState<string | null>(null)
+  const [error, setError] = useState('')
 
   const toggleRole = (userId: string, roleId: string) => {
     setSelectedRoles(prev => {
@@ -34,19 +36,38 @@ export default function UsersClientView({ users, roles, currentUserId }: UsersCl
 
   const saveRoles = async (userId: string) => {
     const roleIds = selectedRoles[userId] ?? []
-    await setUserRolesAction(userId, roleIds)
-    setEditingId(null)
-    setUserList(prev => prev.map(u => {
-      if (u.id === userId) {
-        return { ...u, roles: roles.filter(r => roleIds.includes(r.id)) }
+    setPendingUserId(userId)
+    setError('')
+    try {
+      const result = await setUserRolesAction(userId, roleIds)
+      if (result.error) {
+        setError(result.error)
+        return
       }
-      return u
-    }))
+      setEditingId(null)
+      setUserList(prev => prev.map(user => (
+        user.id === userId
+          ? { ...user, roles: roles.filter(role => roleIds.includes(role.id)) }
+          : user
+      )))
+    } finally {
+      setPendingUserId(null)
+    }
   }
 
   const toggleDisabled = async (userId: string, isDisabled: boolean) => {
-    await updateUserAction(userId, { isDisabled })
-    setUserList(prev => prev.map(u => u.id === userId ? { ...u, isDisabled } : u))
+    setPendingUserId(userId)
+    setError('')
+    try {
+      const result = await updateUserAction(userId, { isDisabled })
+      if (result.error) {
+        setError(result.error)
+        return
+      }
+      setUserList(prev => prev.map(user => user.id === userId ? { ...user, isDisabled } : user))
+    } finally {
+      setPendingUserId(null)
+    }
   }
 
   const columns = [
@@ -58,10 +79,10 @@ export default function UsersClientView({ users, roles, currentUserId }: UsersCl
       render: (row: UserWithRoles) => (
         <div className="flex flex-wrap gap-1">
           {row.roles.length === 0 ? (
-            <span className="text-on-surface-variant text-sm">{t('noRoles')}</span>
+            <span className="text-sm text-on-surface-variant">{t('noRoles')}</span>
           ) : (
-            row.roles.map(r => (
-              <Badge key={r.id} variant="neutral">{r.name}</Badge>
+            row.roles.map(role => (
+              <Badge key={role.id} variant="neutral">{role.name}</Badge>
             ))
           )}
         </div>
@@ -82,35 +103,36 @@ export default function UsersClientView({ users, roles, currentUserId }: UsersCl
       key: 'actions',
       label: t('actions'),
       render: (row: UserWithRoles) => (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {editingId === row.id ? (
             <>
-              <Button size="sm" onClick={() => saveRoles(row.id)}>{t('save')}</Button>
-              <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>{t('cancel')}</Button>
+              <Button size="sm" disabled={pendingUserId === row.id} onClick={() => saveRoles(row.id)}>{t('save')}</Button>
+              <Button size="sm" variant="ghost" disabled={pendingUserId === row.id} onClick={() => setEditingId(null)}>{t('cancel')}</Button>
             </>
-          ) : (
+          ) : row.id !== currentUserId ? (
             <>
               <Button
                 size="sm"
                 variant="outline"
+                disabled={pendingUserId === row.id}
                 onClick={() => {
+                  setError('')
                   setEditingId(row.id)
-                  setSelectedRoles(prev => ({ ...prev, [row.id]: row.roles.map(r => r.id) }))
+                  setSelectedRoles(prev => ({ ...prev, [row.id]: row.roles.map(role => role.id) }))
                 }}
               >
                 {t('editRoles')}
               </Button>
-              {row.id !== currentUserId && (
-                <Button
-                  size="sm"
-                  variant={row.isDisabled ? 'success' : 'destructive'}
-                  onClick={() => toggleDisabled(row.id, !row.isDisabled)}
-                >
-                  {row.isDisabled ? t('enable') : t('disable')}
-                </Button>
-              )}
+              <Button
+                size="sm"
+                variant={row.isDisabled ? 'success' : 'destructive'}
+                disabled={pendingUserId === row.id}
+                onClick={() => toggleDisabled(row.id, !row.isDisabled)}
+              >
+                {row.isDisabled ? t('enable') : t('disable')}
+              </Button>
             </>
-          )}
+          ) : null}
         </div>
       ),
     },
@@ -118,27 +140,33 @@ export default function UsersClientView({ users, roles, currentUserId }: UsersCl
 
   return (
     <div className="space-y-4">
+      {error && (
+        <div role="alert" className="rounded-xl bg-error/10 px-4 py-3 text-sm text-error">
+          {error}
+        </div>
+      )}
       <div className="flex justify-end">
         <Button size="sm" onClick={() => router.push('?modal=add')}>
           {t('addUser')}
         </Button>
       </div>
       {editingId && (
-        <div className="bg-surface-container-lowest border border-outline rounded-lg p-4">
-          <h3 className="text-sm font-medium text-on-surface mb-3">
-            {t('assignRoles')} - {userList.find(u => u.id === editingId)?.name}
+        <div className="rounded-lg border border-outline-variant/60 bg-surface-container-lowest p-4">
+          <h3 className="mb-3 text-sm font-medium text-on-surface">
+            {t('assignRoles')} - {userList.find(user => user.id === editingId)?.name}
           </h3>
           <div className="flex flex-wrap gap-2">
             {roles.map(role => {
               const isSelected = selectedRoles[editingId]?.includes(role.id) ?? false
               return (
                 <button
+                  type="button"
                   key={role.id}
                   onClick={() => toggleRole(editingId, role.id)}
-                  className={`px-3 py-1.5 rounded-full text-sm border ${
+                  className={`min-h-10 rounded-full border px-3 py-1.5 text-sm ${
                     isSelected
-                      ? 'bg-primary text-on-primary border-primary'
-                      : 'bg-surface-container text-on-surface border-outline'
+                      ? 'border-primary bg-primary text-on-primary'
+                      : 'border-outline-variant bg-surface-container-low text-on-surface'
                   }`}
                 >
                   {role.name}

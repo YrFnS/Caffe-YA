@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { eq } from 'drizzle-orm'
 import { db } from './db'
 import * as schema from './schema'
 import { env } from './env'
@@ -14,7 +15,7 @@ export const auth = betterAuth({
       account: schema.accounts,
       verification: schema.verifications,
     },
-    debugLogs: true,
+    debugLogs: process.env.NODE_ENV !== 'production',
   }),
   emailAndPassword: {
     enabled: true,
@@ -30,5 +31,17 @@ export const auth = betterAuth({
 
 export async function getSession() {
   const { headers } = await import('next/headers')
-  return auth.api.getSession({ headers: await headers() })
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session?.user) return null
+
+  const user = await db.query.users.findFirst({
+    where: eq(schema.users.id, session.user.id),
+  })
+
+  if (!user || user.isDisabled || !user.isActive) {
+    await db.delete(schema.sessions).where(eq(schema.sessions.userId, session.user.id))
+    return null
+  }
+
+  return session
 }
