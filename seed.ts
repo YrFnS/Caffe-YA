@@ -9,18 +9,19 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL })
 const db = drizzle(pool, { schema })
 
 const ids = {
-  admin: 'demo-admin', manager: 'demo-manager', cashier: 'demo-cashier', accountant: 'demo-accountant',
+  admin: 'demo-admin', manager: 'demo-manager', cashier: 'demo-cashier', accountant: 'demo-accountant', disabled: 'demo-disabled',
   superAdmin: '10000000-0000-4000-8000-000000000001', managerRole: '10000000-0000-4000-8000-000000000002', cashierRole: '10000000-0000-4000-8000-000000000003', accountantRole: '10000000-0000-4000-8000-000000000004',
   partnerAdmin: '20000000-0000-4000-8000-000000000001', partnerManager: '20000000-0000-4000-8000-000000000002',
-  resourceCategory: '30000000-0000-4000-8000-000000000001', ps5: '30000000-0000-4000-8000-000000000002', pc: '30000000-0000-4000-8000-000000000003', vip: '30000000-0000-4000-8000-000000000004',
-  shift: '40000000-0000-4000-8000-000000000001', gram: '40000000-0000-4000-8000-000000000002', ml: '40000000-0000-4000-8000-000000000003', piece: '40000000-0000-4000-8000-000000000004',
+  resourceCategory: '30000000-0000-4000-8000-000000000001', ps5: '30000000-0000-4000-8000-000000000002', pc: '30000000-0000-4000-8000-000000000003', vip: '30000000-0000-4000-8000-000000000004', maintenanceResource: '30000000-0000-4000-8000-000000000005',
+  shift: '40000000-0000-4000-8000-000000000001', closedShift: '40000000-0000-4000-8000-000000000005', gram: '40000000-0000-4000-8000-000000000002', ml: '40000000-0000-4000-8000-000000000003', piece: '40000000-0000-4000-8000-000000000004',
   beans: '50000000-0000-4000-8000-000000000001', milk: '50000000-0000-4000-8000-000000000002', sugar: '50000000-0000-4000-8000-000000000003', cups: '50000000-0000-4000-8000-000000000004',
   hot: '60000000-0000-4000-8000-000000000001', cold: '60000000-0000-4000-8000-000000000002', food: '60000000-0000-4000-8000-000000000003',
-  espresso: '70000000-0000-4000-8000-000000000001', cappuccino: '70000000-0000-4000-8000-000000000002', latte: '70000000-0000-4000-8000-000000000003', croissant: '70000000-0000-4000-8000-000000000004',
-  orderClosed: '80000000-0000-4000-8000-000000000001', orderOpen: '80000000-0000-4000-8000-000000000002', vendor: '80000000-0000-4000-8000-000000000003', purchase: '80000000-0000-4000-8000-000000000004',
-  expenseCategory: '90000000-0000-4000-8000-000000000001', expense: '90000000-0000-4000-8000-000000000002', employeeCashier: '90000000-0000-4000-8000-000000000003', employeeManager: '90000000-0000-4000-8000-000000000004',
+  espresso: '70000000-0000-4000-8000-000000000001', cappuccino: '70000000-0000-4000-8000-000000000002', latte: '70000000-0000-4000-8000-000000000003', croissant: '70000000-0000-4000-8000-000000000004', dayPass: '70000000-0000-4000-8000-000000000005', soldOutSnack: '70000000-0000-4000-8000-000000000006',
+  orderClosed: '80000000-0000-4000-8000-000000000001', orderOpen: '80000000-0000-4000-8000-000000000002', orderCancelled: '80000000-0000-4000-8000-000000000101', orderTransferred: '80000000-0000-4000-8000-000000000102', orderDraft: '80000000-0000-4000-8000-000000000103', orderCash: '80000000-0000-4000-8000-000000000104', orderWallet: '80000000-0000-4000-8000-000000000105', orderSplit: '80000000-0000-4000-8000-000000000106', vendor: '80000000-0000-4000-8000-000000000003', purchase: '80000000-0000-4000-8000-000000000004', purchaseUnpaid: '80000000-0000-4000-8000-000000000107',
+  movementOpening: '81000000-0000-4000-8000-000000000001', movementSale: '81000000-0000-4000-8000-000000000002', movementPurchase: '81000000-0000-4000-8000-000000000003', movementWastage: '81000000-0000-4000-8000-000000000004', movementAdjustment: '81000000-0000-4000-8000-000000000005',
+  expenseCategory: '90000000-0000-4000-8000-000000000001', expense: '90000000-0000-4000-8000-000000000002', employeeCashier: '90000000-0000-4000-8000-000000000003', employeeManager: '90000000-0000-4000-8000-000000000004', employeeFormer: '90000000-0000-4000-8000-000000000006',
   goodsReceipt: '90000000-0000-4000-8000-000000000005',
-  cashAccount: 'a0000000-0000-4000-8000-000000000001', inventoryAccount: 'a0000000-0000-4000-8000-000000000002', salesAccount: 'a0000000-0000-4000-8000-000000000003', expenseAccount: 'a0000000-0000-4000-8000-000000000004', journal: 'a0000000-0000-4000-8000-000000000005', payableAccount: 'a0000000-0000-4000-8000-000000000006', payrollExpenseAccount: 'a0000000-0000-4000-8000-000000000007', cardAccount: 'a0000000-0000-4000-8000-000000000008', walletAccount: 'a0000000-0000-4000-8000-000000000009',
+  cashAccount: 'a0000000-0000-4000-8000-000000000001', inventoryAccount: 'a0000000-0000-4000-8000-000000000002', salesAccount: 'a0000000-0000-4000-8000-000000000003', expenseAccount: 'a0000000-0000-4000-8000-000000000004', journal: 'a0000000-0000-4000-8000-000000000005', payableAccount: 'a0000000-0000-4000-8000-000000000006', payrollExpenseAccount: 'a0000000-0000-4000-8000-000000000007', cardAccount: 'a0000000-0000-4000-8000-000000000008', walletAccount: 'a0000000-0000-4000-8000-000000000009', equityAccount: 'a0000000-0000-4000-8000-000000000011',
 }
 
 const productImages = {
@@ -49,15 +50,16 @@ const accountantModules = new Set(['accounting', 'expenses', 'employees', 'payro
 async function syncBrandIdentity() {
   const password = await hashPassword('RoastGridDemo2026!')
   const demoUsers = [
-    { id: ids.admin, email: 'admin@roastgrid.app' },
-    { id: ids.manager, email: 'manager@roastgrid.app' },
-    { id: ids.cashier, email: 'cashier@roastgrid.app' },
-    { id: ids.accountant, email: 'accountant@roastgrid.app' },
+    { id: ids.admin, email: 'admin@roastgrid.app', isActive: true, isDisabled: false },
+    { id: ids.manager, email: 'manager@roastgrid.app', isActive: true, isDisabled: false },
+    { id: ids.cashier, email: 'cashier@roastgrid.app', isActive: true, isDisabled: false },
+    { id: ids.accountant, email: 'accountant@roastgrid.app', isActive: true, isDisabled: false },
+    { id: ids.disabled, email: 'disabled@roastgrid.app', isActive: false, isDisabled: true },
   ]
 
   await db.transaction(async tx => {
     for (const user of demoUsers) {
-      await tx.update(schema.users).set({ email: user.email, passwordHash: password, updatedAt: new Date() }).where(eq(schema.users.id, user.id))
+      await tx.update(schema.users).set({ email: user.email, passwordHash: password, isActive: user.isActive, isDisabled: user.isDisabled, updatedAt: new Date() }).where(eq(schema.users.id, user.id))
       await tx.update(schema.accounts).set({ accountId: user.email, password, updatedAt: new Date() }).where(eq(schema.accounts.userId, user.id))
     }
     await tx.update(schema.verifications).set({ identifier: 'demo@roastgrid.app' }).where(eq(schema.verifications.id, 'demo-expired-verification'))
@@ -133,13 +135,15 @@ async function seed() {
 
   await db.transaction(async tx => {
     const demoUsers = [
-      { id: ids.admin, name: 'Yara Hassan', email: 'admin@roastgrid.app' },
-      { id: ids.manager, name: 'Omar Kareem', email: 'manager@roastgrid.app' },
-      { id: ids.cashier, name: 'Sara Ali', email: 'cashier@roastgrid.app' },
-      { id: ids.accountant, name: 'Noor Ahmed', email: 'accountant@roastgrid.app' },
+      { id: ids.admin, name: 'Yara Hassan', email: 'admin@roastgrid.app', isActive: true, isDisabled: false },
+      { id: ids.manager, name: 'Omar Kareem', email: 'manager@roastgrid.app', isActive: true, isDisabled: false },
+      { id: ids.cashier, name: 'Sara Ali', email: 'cashier@roastgrid.app', isActive: true, isDisabled: false },
+      { id: ids.accountant, name: 'Noor Ahmed', email: 'accountant@roastgrid.app', isActive: true, isDisabled: false },
+      { id: ids.disabled, name: 'Disabled Demo User', email: 'disabled@roastgrid.app', isActive: false, isDisabled: true },
     ]
     await tx.insert(schema.users).values(demoUsers.map(user => ({ ...user, passwordHash: password, emailVerified: true })))
     await tx.insert(schema.accounts).values(demoUsers.map(user => ({ id: `account-${user.id}`, userId: user.id, accountId: user.email, providerId: 'credential', password })))
+    await tx.insert(schema.sessions).values({ id: 'demo-expired-session', userId: ids.disabled, expiresAt: yesterday, token: 'demo-expired-session-token' })
     await tx.insert(schema.verifications).values({ id: 'demo-expired-verification', identifier: 'demo@roastgrid.app', value: 'expired-demo-record', expiresAt: new Date(0) })
 
     const roleRows = [
@@ -160,6 +164,7 @@ async function seed() {
     await tx.insert(schema.userRoles).values([
       { userId: ids.admin, roleId: ids.superAdmin }, { userId: ids.manager, roleId: ids.managerRole },
       { userId: ids.cashier, roleId: ids.cashierRole }, { userId: ids.accountant, roleId: ids.accountantRole },
+      { userId: ids.disabled, roleId: ids.cashierRole },
     ])
 
     await tx.insert(schema.partners).values([
@@ -169,6 +174,9 @@ async function seed() {
     await tx.insert(schema.partnerEquityEntries).values([
       { partnerId: ids.partnerAdmin, type: 'capital_injection', amount: '15000000', note: 'Opening capital', createdBy: ids.admin },
       { partnerId: ids.partnerManager, type: 'capital_injection', amount: '10000000', note: 'Opening capital', createdBy: ids.admin },
+      { partnerId: ids.partnerAdmin, type: 'draw', amount: '250000', note: 'Owner draw example', createdBy: ids.admin },
+      { partnerId: ids.partnerManager, type: 'profit_share', amount: '175000', note: 'Profit distribution example', createdBy: ids.admin },
+      { partnerId: ids.partnerManager, type: 'loss_share', amount: '50000', note: 'Loss allocation example', createdBy: ids.admin },
     ])
 
     await tx.insert(schema.resourceCategories).values({ id: ids.resourceCategory, name: 'Gaming Stations', isTimed: true, hourlyRate: '5000', minimumMinutes: 30, graceMinutes: 5 })
@@ -176,8 +184,12 @@ async function seed() {
       { id: ids.ps5, categoryId: ids.resourceCategory, name: 'PS5 Lounge 01', status: 'occupied', localImageName: 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?auto=format&fit=crop&w=1000&q=80' },
       { id: ids.pc, categoryId: ids.resourceCategory, name: 'Gaming PC 01', status: 'available', localImageName: 'https://images.unsplash.com/photo-1598550476439-6847785fcea6?auto=format&fit=crop&w=1000&q=80' },
       { id: ids.vip, categoryId: ids.resourceCategory, name: 'VIP Booth', status: 'available', localImageName: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1000&q=80' },
+      { id: ids.maintenanceResource, categoryId: ids.resourceCategory, name: 'Gaming PC 02', status: 'maintenance', isActive: false },
     ])
-    await tx.insert(schema.shifts).values({ id: ids.shift, cashierId: ids.cashier, status: 'open', openingFloat: '250000', openedAt: new Date(now.getTime() - 4 * 3_600_000), notes: 'Client demo shift' })
+    await tx.insert(schema.shifts).values([
+      { id: ids.shift, cashierId: ids.cashier, status: 'open', openingFloat: '250000', openedAt: new Date(now.getTime() - 4 * 3_600_000), notes: 'Client demo shift' },
+      { id: ids.closedShift, cashierId: ids.cashier, status: 'closed', openingFloat: '200000', openedAt: yesterday, closedAt: new Date(yesterday.getTime() + 8 * 3_600_000), closingCountedCash: '315000', closingExpectedCash: '310000', cashVariance: '5000', approvedBy: ids.manager, notes: 'Closed shift with approved overage' },
+    ])
 
     await tx.insert(schema.units).values([
       { id: ids.gram, name: 'gram', abbreviation: 'g' }, { id: ids.ml, name: 'milliliter', abbreviation: 'ml' }, { id: ids.piece, name: 'piece', abbreviation: 'pc' },
@@ -196,6 +208,8 @@ async function seed() {
       { id: ids.cappuccino, categoryId: ids.hot, name: 'Cappuccino', nameAr: 'كابتشينو', type: 'recipe', price: '6500', localImageName: productImages.cappuccino },
       { id: ids.latte, categoryId: ids.cold, name: 'Iced Spanish Latte', nameAr: 'سبانش لاتيه مثلج', type: 'recipe', price: '8000', localImageName: productImages.latte },
       { id: ids.croissant, categoryId: ids.food, name: 'Butter Croissant', nameAr: 'كرواسون بالزبدة', type: 'standard', price: '5000', trackStock: true, stockQty: '24', lowStockThreshold: '6', localImageName: productImages.croissant },
+      { id: ids.dayPass, categoryId: ids.food, name: 'Gaming Day Pass', nameAr: 'تذكرة ألعاب يومية', type: 'service', price: '12000' },
+      { id: ids.soldOutSnack, categoryId: ids.food, name: 'Sold-out Demo Snack', nameAr: 'وجبة تجريبية نفدت', type: 'standard', price: '3000', trackStock: true, stockQty: '0', lowStockThreshold: '4', isActive: false },
     ])
     await tx.insert(schema.productIngredients).values([
       { productId: ids.espresso, ingredientId: ids.beans, quantityUsed: '18' },
@@ -206,15 +220,35 @@ async function seed() {
     await tx.insert(schema.orders).values([
       { id: ids.orderClosed, shiftId: ids.shift, cashierId: ids.cashier, status: 'closed', subtotal: '16000', totalAmount: '16000', closedAt: new Date(now.getTime() - 45 * 60_000), note: 'Counter order' },
       { id: ids.orderOpen, shiftId: ids.shift, resourceId: ids.ps5, cashierId: ids.cashier, status: 'open', timerStartedAt: new Date(now.getTime() - 38 * 60_000), subtotal: '6500', totalAmount: '6500', note: 'Gaming lounge order' },
+      { id: ids.orderCancelled, shiftId: ids.closedShift, cashierId: ids.cashier, status: 'cancelled', subtotal: '4500', totalAmount: '4500', note: 'Cancelled before payment' },
+      { id: ids.orderTransferred, shiftId: ids.closedShift, cashierId: ids.cashier, status: 'transferred', subtotal: '6500', totalAmount: '6500', note: 'Transferred legacy order' },
+      { id: ids.orderDraft, shiftId: ids.shift, cashierId: ids.cashier, status: 'draft', subtotal: '0', totalAmount: '0', note: 'Empty draft edge case' },
+      { id: ids.orderCash, shiftId: ids.closedShift, cashierId: ids.cashier, status: 'closed', subtotal: '5000', totalAmount: '5000', closedAt: yesterday, note: 'Cash payment example' },
+      { id: ids.orderWallet, shiftId: ids.closedShift, cashierId: ids.cashier, status: 'closed', subtotal: '4500', totalAmount: '4500', closedAt: yesterday, note: 'Refunded wallet payment example' },
+      { id: ids.orderSplit, shiftId: ids.closedShift, cashierId: ids.cashier, status: 'closed', subtotal: '6500', totalAmount: '6500', closedAt: yesterday, note: 'Split payment example' },
     ])
     await tx.insert(schema.orderItems).values([
       { orderId: ids.orderClosed, productId: ids.latte, quantity: '2', unitPrice: '8000', totalPrice: '16000' },
       { orderId: ids.orderOpen, productId: ids.cappuccino, quantity: '1', unitPrice: '6500', totalPrice: '6500' },
+      { orderId: ids.orderCancelled, productId: ids.espresso, quantity: '1', unitPrice: '4500', totalPrice: '4500', voidedAt: yesterday, voidedBy: ids.manager, voidReason: 'Customer changed mind' },
+      { orderId: ids.orderTransferred, productId: ids.cappuccino, quantity: '1', unitPrice: '6500', totalPrice: '6500' },
+      { orderId: ids.orderCash, productId: ids.croissant, quantity: '1', unitPrice: '5000', totalPrice: '5000' },
+      { orderId: ids.orderWallet, productId: ids.espresso, quantity: '1', unitPrice: '4500', totalPrice: '4500' },
+      { orderId: ids.orderSplit, productId: ids.cappuccino, quantity: '1', unitPrice: '6500', totalPrice: '6500' },
     ])
-    await tx.insert(schema.transactions).values({ orderId: ids.orderClosed, shiftId: ids.shift, paymentMethod: 'card', amount: '16000', reference: 'DEMO-POS-1042' })
+    await tx.insert(schema.transactions).values([
+      { orderId: ids.orderClosed, shiftId: ids.shift, paymentMethod: 'card', amount: '16000', reference: 'DEMO-POS-1042' },
+      { orderId: ids.orderCash, shiftId: ids.closedShift, paymentMethod: 'cash', amount: '5000', reference: 'DEMO-CASH-1043' },
+      { orderId: ids.orderWallet, shiftId: ids.closedShift, paymentMethod: 'mobile_wallet', amount: '4500', reference: 'DEMO-WALLET-1044' },
+      { orderId: ids.orderWallet, shiftId: ids.closedShift, paymentMethod: 'mobile_wallet', amount: '4500', reference: 'REFUND:DEMO-WALLET-1044', isRefund: true, refundReason: 'Duplicate charge example', refundedBy: ids.manager },
+      { orderId: ids.orderSplit, shiftId: ids.closedShift, paymentMethod: 'split', amount: '6500', reference: 'DEMO-SPLIT-1045' },
+    ])
     await tx.insert(schema.stockMovements).values([
-      { ingredientId: ids.beans, type: 'opening_balance', quantity: '8500', note: 'Demo opening stock', createdBy: ids.manager },
-      { ingredientId: ids.beans, type: 'sale_deduction', quantity: '-36', note: 'Demo sales usage', orderId: ids.orderClosed, createdBy: ids.cashier },
+      { id: ids.movementOpening, ingredientId: ids.beans, type: 'opening_balance', quantity: '8500', note: 'Demo opening stock', createdBy: ids.manager },
+      { id: ids.movementSale, ingredientId: ids.beans, type: 'sale_deduction', quantity: '-36', note: 'Demo sales usage', orderId: ids.orderClosed, createdBy: ids.cashier },
+      { id: ids.movementPurchase, ingredientId: ids.beans, type: 'purchase', quantity: '5000', note: 'Demo purchase receipt', purchaseId: ids.purchase, createdBy: ids.manager },
+      { id: ids.movementWastage, ingredientId: ids.milk, type: 'wastage', quantity: '-250', note: 'Spillage edge case', createdBy: ids.manager },
+      { id: ids.movementAdjustment, ingredientId: ids.sugar, type: 'adjustment', quantity: '100', note: 'Cycle count correction', createdBy: ids.manager },
     ])
 
     await tx.insert(schema.chartOfAccounts).values([
@@ -226,14 +260,19 @@ async function seed() {
       { id: ids.expenseAccount, code: '6101', name: 'Utilities Expense', nameAr: 'مصروف الخدمات', type: 'expense' },
       { id: ids.payrollExpenseAccount, code: '6201', name: 'Payroll Expense', nameAr: 'مصروف الرواتب', type: 'expense' },
       { id: ids.payableAccount, code: '2001', name: 'Accounts Payable', nameAr: 'الحسابات الدائنة', type: 'liability' },
+      { id: ids.equityAccount, code: '3001', name: 'Owner Equity', nameAr: 'حقوق الملكية', type: 'equity' },
     ])
     await tx.insert(schema.expenseCategories).values({ id: ids.expenseCategory, name: 'Utilities', accountId: ids.expenseAccount })
     await tx.insert(schema.expenses).values({ id: ids.expense, shiftId: ids.shift, categoryId: ids.expenseCategory, amount: '85000', description: 'Internet and gaming network', paidBy: ids.manager })
     await tx.insert(schema.vendors).values({ id: ids.vendor, name: 'Baghdad Coffee Supply', phone: '+964 770 555 0142', address: 'Karrada, Baghdad' })
-    await tx.insert(schema.purchases).values({ id: ids.purchase, vendorId: ids.vendor, totalAmount: '480000', isPaid: true, paidAt: yesterday, note: 'Weekly coffee and dairy delivery', createdBy: ids.manager })
+    await tx.insert(schema.purchases).values([
+      { id: ids.purchase, vendorId: ids.vendor, totalAmount: '480000', isPaid: true, paidAt: yesterday, note: 'Weekly coffee and dairy delivery', createdBy: ids.manager },
+      { id: ids.purchaseUnpaid, vendorId: ids.vendor, totalAmount: '25000', isPaid: false, note: 'Pending packaged snack delivery', createdBy: ids.manager },
+    ])
     await tx.insert(schema.purchaseItems).values([
       { purchaseId: ids.purchase, ingredientId: ids.beans, quantity: '5000', unitCost: '72', totalCost: '360000' },
       { purchaseId: ids.purchase, ingredientId: ids.milk, quantity: '40000', unitCost: '3', totalCost: '120000' },
+      { purchaseId: ids.purchaseUnpaid, productId: ids.croissant, quantity: '10', unitCost: '2500', totalCost: '25000' },
     ])
     await tx.insert(schema.goodsReceipts).values({ id: ids.goodsReceipt, purchaseId: ids.purchase, receivedBy: ids.manager, receivedAt: yesterday, note: 'Demo delivery received in full' })
     await tx.insert(schema.goodsReceiptItems).values([
@@ -243,10 +282,12 @@ async function seed() {
     await tx.insert(schema.employees).values([
       { id: ids.employeeCashier, userId: ids.cashier, name: 'Sara Ali', phone: '+964 750 200 1001', salaryType: 'fixed', salaryAmount: '850000', hiredAt: new Date('2025-09-15') },
       { id: ids.employeeManager, userId: ids.manager, name: 'Omar Kareem', phone: '+964 750 200 1002', salaryType: 'fixed', salaryAmount: '1400000', hiredAt: new Date('2025-06-01') },
+      { id: ids.employeeFormer, name: 'Former Demo Employee', salaryType: 'hourly', salaryAmount: '5000', hiredAt: new Date('2024-01-01'), isActive: false },
     ])
     await tx.insert(schema.payrollEntries).values([
       { employeeId: ids.employeeCashier, periodStart: monthStart, periodEnd: now, baseSalary: '850000', bonuses: '50000', deductions: '0', netAmount: '900000', isPaid: false, note: 'Current month', createdBy: ids.accountant },
       { employeeId: ids.employeeManager, periodStart: monthStart, periodEnd: now, baseSalary: '1400000', bonuses: '100000', deductions: '25000', netAmount: '1475000', isPaid: false, note: 'Current month', createdBy: ids.accountant },
+      { employeeId: ids.employeeCashier, periodStart: new Date(now.getFullYear(), now.getMonth() - 1, 1), periodEnd: new Date(now.getFullYear(), now.getMonth(), 0), baseSalary: '850000', bonuses: '0', deductions: '25000', netAmount: '825000', isPaid: true, paidAt: monthStart, note: 'Prior month paid', createdBy: ids.accountant },
     ])
     await tx.insert(schema.journalEntries).values({ id: ids.journal, reference: 'ORDER-DEMO-1042', description: 'Demo card sale', sourceType: 'order', sourceId: ids.orderClosed, createdBy: ids.accountant })
     await tx.insert(schema.journalEntryLines).values([
@@ -259,12 +300,14 @@ async function seed() {
       { key: 'receipt_footer', value: 'Thank you — شكراً لزيارتكم', updatedBy: ids.admin },
       { key: 'shift_variance_approval_threshold', value: '5000', updatedBy: ids.admin },
     ])
-    await tx.insert(schema.systemModules).values(['admin', 'pos', 'inventory', 'resources', 'procurement', 'expenses', 'employees', 'payroll', 'accounting', 'partners', 'reports'].map(module => ({ module, isActive: true, updatedBy: ids.admin })))
+    await tx.insert(schema.systemModules).values([
+      ...['admin', 'pos', 'inventory', 'resources', 'procurement', 'expenses', 'employees', 'payroll', 'accounting', 'partners', 'reports'].map(module => ({ module, isActive: true, updatedBy: ids.admin })),
+      { module: 'loyalty', isActive: false, updatedBy: ids.admin },
+    ])
     await tx.insert(schema.auditLogs).values({ userId: ids.admin, action: 'DEMO_SEED_CREATED', targetTable: 'orders', targetId: ids.orderClosed, newValue: { environment: 'client-demo', tables: 33 } })
   })
 
-  console.log('Seed complete: all 33 demo-domain tables populated.')
-  console.log('Demo password for all users: RoastGridDemo2026!')
+  console.log('Seed complete: every application table populated with demo data.')
 }
 
 seed().catch(error => {

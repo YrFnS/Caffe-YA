@@ -19,6 +19,10 @@ const ids = {
   inventoryAccount: 'a0000000-0000-4000-8000-000000000002',
   journal: 'a0000000-0000-4000-8000-000000000005',
   cogsAccount: 'a0000000-0000-4000-8000-000000000010',
+  movementOpening: '81000000-0000-4000-8000-000000000001',
+  movementPurchase: '81000000-0000-4000-8000-000000000003',
+  movementWastage: '81000000-0000-4000-8000-000000000004',
+  movementAdjustment: '81000000-0000-4000-8000-000000000005',
   cashier: 'demo-cashier',
 }
 
@@ -84,6 +88,12 @@ async function syncDemoValuation() {
   await ensureMovementCost(ids.beans, '-36', '18', '648')
   await ensureMovementCost(ids.milk, '-440', '3', '1320')
   await ensureMovementCost(ids.sugar, '-30', '2', '60')
+  await db.insert(stockMovementCosts).values([
+    { movementId: ids.movementOpening, unitCost: '18', totalCost: '153000' },
+    { movementId: ids.movementPurchase, unitCost: '72', totalCost: '360000' },
+    { movementId: ids.movementWastage, unitCost: '3', totalCost: '750' },
+    { movementId: ids.movementAdjustment, unitCost: '2', totalCost: '200' },
+  ]).onConflictDoNothing()
 
   const [journal] = await db.select().from(journalEntries)
     .where(eq(journalEntries.id, ids.journal))
