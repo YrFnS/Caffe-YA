@@ -95,6 +95,8 @@ async function syncPermissionMatrix() {
       ])
     })
   }
+  const session = await db.select().from(schema.sessions).limit(1)
+  if (!session.length) await db.insert(schema.sessions).values({ id: 'demo-expired-session', userId: ids.disabled, expiresAt: new Date(0), token: 'demo-expired-session-token' })
   const verification = await db.select().from(schema.verifications).limit(1)
   if (!verification.length) await db.insert(schema.verifications).values({ id: 'demo-expired-verification', identifier: 'demo@roastgrid.app', value: 'expired-demo-record', expiresAt: new Date(0) })
   let currentPermissions = await db.select().from(schema.permissions)
