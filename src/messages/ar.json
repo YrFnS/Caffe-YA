@@ -158,7 +158,8 @@
     "activeResourcesWarning": "تم اكتشاف مؤقتات نشطة",
     "activeResourcesDesc": "الموارد التالية لديها مؤقتات تعمل. أوقف أو انقل قبل إغلاق الوردية.",
     "stopTimer": "إيقاف المؤقت",
-    "float": "الرصيد"
+    "float": "الرصيد",
+    "backToProducts": "العودة إلى عدّ النقد"
   },
   "inventory": {
     "title": "المخزون",
@@ -337,6 +338,8 @@
     "reference": "المرجع",
     "description": "الوصف",
     "source": "المصدر",
+    "date": "التاريخ",
+    "note": "ملاحظة",
     "lines": "البنود",
     "addLine": "إضافة بند",
     "debit": "مدين",

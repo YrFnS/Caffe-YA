@@ -158,7 +158,8 @@
     "activeResourcesWarning": "Active Timers Detected",
     "activeResourcesDesc": "The following resources have running timers. Stop or transfer them before closing the shift.",
     "stopTimer": "Stop Timer",
-    "float": "Float"
+    "float": "Float",
+    "backToProducts": "Back to cash count"
   },
   "inventory": {
     "title": "Inventory",
@@ -337,6 +338,8 @@
     "reference": "Reference",
     "description": "Description",
     "source": "Source",
+    "date": "Date",
+    "note": "Note",
     "lines": "Lines",
     "addLine": "Add Line",
     "debit": "Debit",
