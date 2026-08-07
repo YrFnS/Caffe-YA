@@ -10,12 +10,12 @@
   --color-primary: #182230;
   --color-primary-dim: #0f1722;
   --color-on-primary: #ffffff;
-  --color-secondary: #0f9f72;
+  --color-secondary: #086b4b;
   --color-secondary-container: #c8f7e7;
-  --color-tertiary: #e25822;
+  --color-tertiary: #a83212;
   --color-tertiary-fixed-dim: #f17b4c;
   --color-error: #c23b38;
-  --color-warning: #b96b05;
+  --color-warning: #8f4f00;
   --color-outline: #637083;
   --color-outline-variant: #c9d0d9;
 
@@ -47,12 +47,12 @@
   --primary: #182230;
   --primary-dim: #0f1722;
   --on-primary: #ffffff;
-  --secondary: #0f9f72;
+  --secondary: #086b4b;
   --secondary-container: #c8f7e7;
-  --tertiary: #e25822;
+  --tertiary: #a83212;
   --tertiary-fixed-dim: #f17b4c;
   --error: #c23b38;
-  --warning: #b96b05;
+  --warning: #8f4f00;
   --outline: #637083;
   --outline-variant: #c9d0d9;
 
