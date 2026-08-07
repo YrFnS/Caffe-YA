@@ -82,8 +82,10 @@ async function syncPermissionMatrix() {
 
   await db.insert(schema.systemSettings).values({ key: 'shift_variance_approval_threshold', value: '5000', updatedBy: ids.admin })
     .onConflictDoNothing()
-  await db.insert(schema.systemModules).values({ module: 'admin', isActive: true, updatedBy: ids.admin })
-    .onConflictDoUpdate({ target: schema.systemModules.module, set: { isActive: true, updatedBy: ids.admin, updatedAt: new Date() } })
+  await db.insert(schema.systemModules).values([
+    { module: 'admin', isActive: true, updatedBy: ids.admin },
+    { module: 'shifts', isActive: true, updatedBy: ids.admin },
+  ]).onConflictDoUpdate({ target: schema.systemModules.module, set: { isActive: true, updatedBy: ids.admin, updatedAt: new Date() } })
 
   const receipt = await db.select().from(schema.goodsReceipts).where(eq(schema.goodsReceipts.purchaseId, ids.purchase)).limit(1)
   if (!receipt.length) {
@@ -303,7 +305,7 @@ async function seed() {
       { key: 'shift_variance_approval_threshold', value: '5000', updatedBy: ids.admin },
     ])
     await tx.insert(schema.systemModules).values([
-      ...['admin', 'pos', 'inventory', 'resources', 'procurement', 'expenses', 'employees', 'payroll', 'accounting', 'partners', 'reports'].map(module => ({ module, isActive: true, updatedBy: ids.admin })),
+      ...['admin', 'pos', 'shifts', 'inventory', 'resources', 'procurement', 'expenses', 'employees', 'payroll', 'accounting', 'partners', 'reports'].map(module => ({ module, isActive: true, updatedBy: ids.admin })),
       { module: 'loyalty', isActive: false, updatedBy: ids.admin },
     ])
     await tx.insert(schema.auditLogs).values({ userId: ids.admin, action: 'DEMO_SEED_CREATED', targetTable: 'orders', targetId: ids.orderClosed, newValue: { environment: 'client-demo', tables: 33 } })
