@@ -202,7 +202,7 @@ export const resources = pgTable('resources', {
   categoryId:     uuid('category_id').notNull().references(() => resourceCategories.id),
   name:           text('name').notNull(),
   status:         resourceStatusEnum('status').notNull().default('available'),
-  localImageName: text('local_image_name'), // filename only — file lives on Railway disk
+  localImageName: text('local_image_name'), // stable HTTPS image URL preferred; legacy upload paths remain supported
   isActive:       boolean('is_active').notNull().default(true),
   createdAt:      timestamp('created_at').notNull().defaultNow(),
 })
@@ -275,7 +275,7 @@ export const products = pgTable('products', {
   stockQty:          numeric('stock_qty',           { precision: 12, scale: 3 }).default('0'),
   lowStockThreshold: numeric('low_stock_threshold', { precision: 12, scale: 3 }).default('0'),
 
-  localImageName:    text('local_image_name'),
+  localImageName:    text('local_image_name'), // stable HTTPS image URL preferred; legacy upload paths remain supported
   isActive:          boolean('is_active').notNull().default(true),
   createdAt:         timestamp('created_at').notNull().defaultNow(),
 })

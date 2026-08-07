@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import type { ProductCategory, Product } from '@/features/inventory/_types'
 import { createProductAction, updateProductAction } from '@/features/inventory/_actions/productActions'
 import { formatCurrency, multiplyDecimalMoney, toCents } from '@/lib/currency'
+import { resolveImageSource } from '@/lib/image'
 
 interface IngredientOption {
   id: string
@@ -61,7 +62,7 @@ export default function ProductModal({
   const copy = locale === 'ar'
     ? {
         image: 'رابط أو مسار صورة المنتج',
-        imageHint: 'استخدم رابط HTTPS أو اسم ملف موجود في مجلد صور المنتجات.',
+        imageHint: 'استخدم رابط HTTPS ثابتاً من Unsplash أو Pexels أو اسم ملف موجود في مجلد صور المنتجات.',
         preview: 'معاينة الصورة',
         recipeTitle: 'مكونات الوصفة',
         recipeRequired: 'أضف مكوناً واحداً على الأقل مع كمية صحيحة.',
@@ -71,7 +72,7 @@ export default function ProductModal({
       }
     : {
         image: 'Product image URL or path',
-        imageHint: 'Use an HTTPS URL or a filename stored in the product uploads folder.',
+        imageHint: 'Use a stable HTTPS URL from Unsplash or Pexels, or a filename stored in the product uploads folder.',
         preview: 'Image preview',
         recipeTitle: 'Recipe ingredients',
         recipeRequired: 'Add at least one ingredient with a valid quantity.',
@@ -82,11 +83,7 @@ export default function ProductModal({
 
   const handleClose = () => router.push('/inventory/products')
   const tracksInventory = form.type === 'standard' && form.trackStock
-  const imageSrc = form.localImageName
-    ? form.localImageName.startsWith('http')
-      ? form.localImageName
-      : `/uploads/products/${form.localImageName}`
-    : ''
+  const imageSrc = resolveImageSource(form.localImageName, 'products')
 
   const recipeCost = useMemo(() => {
     let total = 0
@@ -245,7 +242,7 @@ export default function ProductModal({
           <div className="flex min-h-32 items-center justify-center overflow-hidden rounded-xl bg-surface-container-lowest">
             {imageSrc ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={imageSrc} alt={copy.preview} className="max-h-56 w-full object-cover" />
+              <img src={imageSrc} alt={form.name || copy.preview} width={900} height={600} decoding="async" className="max-h-56 w-full object-cover" />
             ) : (
               <div className="grid place-items-center gap-2 p-6 text-center text-on-surface-variant">
                 <ImageIcon className="h-8 w-8" />

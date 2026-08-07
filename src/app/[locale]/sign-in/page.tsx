@@ -20,7 +20,7 @@ export default async function SignInPage({
   const common = await getTranslations({ locale, namespace: 'common' })
 
   return (
-    <div className="grid min-h-screen bg-[#111923] lg:grid-cols-[1.15fr_0.85fr]">
+    <main className="grid min-h-screen bg-[#111923] lg:grid-cols-[1.15fr_0.85fr]">
       <section
         className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between lg:p-12"
         style={{ backgroundImage: "linear-gradient(180deg, rgba(8,15,24,.2), rgba(8,15,24,.94)), url('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1800&q=85')", backgroundSize: 'cover', backgroundPosition: 'center' }}
@@ -61,6 +61,6 @@ export default async function SignInPage({
           )}
         </div>
       </section>
-    </div>
+    </main>
   )
 }

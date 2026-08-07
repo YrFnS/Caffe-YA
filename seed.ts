@@ -30,7 +30,7 @@ const productImages = {
   espresso: 'https://images.unsplash.com/photo-1510707577719-ae7c14805e3a?auto=format&fit=crop&w=900&q=80',
   cappuccino: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&w=900&q=80',
   latte: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=900&q=80',
-  croissant: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=900&q=80',
+  croissant: 'https://images.pexels.com/photos/14252751/pexels-photo-14252751.jpeg?auto=compress&cs=tinysrgb&w=900',
 }
 
 const permissionRows = [
@@ -188,7 +188,7 @@ async function seed() {
     await tx.insert(schema.resourceCategories).values({ id: ids.resourceCategory, name: 'Gaming Stations', isTimed: true, hourlyRate: '5000', minimumMinutes: 30, graceMinutes: 5 })
     await tx.insert(schema.resources).values([
       { id: ids.ps5, categoryId: ids.resourceCategory, name: 'PS5 Lounge 01', status: 'occupied', localImageName: 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?auto=format&fit=crop&w=1000&q=80' },
-      { id: ids.pc, categoryId: ids.resourceCategory, name: 'Gaming PC 01', status: 'available', localImageName: 'https://images.unsplash.com/photo-1598550476439-6847785fcea6?auto=format&fit=crop&w=1000&q=80' },
+      { id: ids.pc, categoryId: ids.resourceCategory, name: 'Gaming PC 01', status: 'available', localImageName: 'https://images.pexels.com/photos/6125337/pexels-photo-6125337.jpeg?auto=compress&cs=tinysrgb&w=1000' },
       { id: ids.vip, categoryId: ids.resourceCategory, name: 'VIP Booth', status: 'available', localImageName: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1000&q=80' },
       { id: ids.maintenanceResource, categoryId: ids.resourceCategory, name: 'Gaming PC 02', status: 'maintenance', isActive: false },
     ])

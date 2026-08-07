@@ -13,6 +13,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { requirePermission } from '@/features/admin/_actions/adminActions'
 import { toCents } from '@/lib/currency'
+import { isAllowedImageReference } from '@/lib/image'
 
 const productTypes = ['standard', 'recipe', 'service'] as const
 type ProductType = (typeof productTypes)[number]
@@ -28,6 +29,12 @@ function parseProductType(value: FormDataEntryValue | null): ProductType {
     throw new Error('INVALID_INPUT')
   }
   return value as ProductType
+}
+
+function parseImageReference(value: FormDataEntryValue | null, emptyValue: string | null | undefined) {
+  const image = typeof value === 'string' ? value.trim() : ''
+  if (!isAllowedImageReference(image)) throw new Error('INVALID_IMAGE_URL')
+  return image || emptyValue
 }
 
 function parseRecipeIngredients(value: FormDataEntryValue | null, type: ProductType): RecipeInput[] {
@@ -101,7 +108,7 @@ export async function createProductAction(formData: FormData) {
       stockQty,
       lowStockThreshold,
       costPerUnit,
-      localImageName: (formData.get('localImageName') as string | null)?.trim() || undefined,
+      localImageName: parseImageReference(formData.get('localImageName'), '') || undefined,
       recipeIngredients: parseRecipeIngredients(formData.get('recipeIngredients'), type),
     })
     revalidateProductViews()
@@ -146,7 +153,7 @@ export async function updateProductAction(formData: FormData) {
       trackStock,
       stockQty,
       lowStockThreshold,
-      localImageName: (formData.get('localImageName') as string | null)?.trim() || null,
+      localImageName: parseImageReference(formData.get('localImageName'), null),
     }, costPerUnit, parseRecipeIngredients(formData.get('recipeIngredients'), type))
     revalidateProductViews()
     return { success: true }

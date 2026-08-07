@@ -5,6 +5,7 @@ import { Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Product } from '../_types'
 import { formatCurrency } from '@/lib/currency'
+import { resolveImageSource } from '@/lib/image'
 
 interface ProductCardProps {
   product: Product
@@ -14,9 +15,7 @@ interface ProductCardProps {
 export default function ProductCard({ product, onAdd }: ProductCardProps) {
   const locale = useLocale()
   const displayName = locale === 'ar' ? product.nameAr || product.name : product.name
-  const imageSrc = product.localImageName?.startsWith('http')
-    ? product.localImageName
-    : `/uploads/products/${product.localImageName}`
+  const imageSrc = resolveImageSource(product.localImageName, 'products')
 
   return (
     <button
@@ -29,11 +28,15 @@ export default function ProductCard({ product, onAdd }: ProductCardProps) {
       )}
     >
       <div className="mb-3 flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl bg-surface-container-low">
-        {product.localImageName ? (
+        {imageSrc ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={imageSrc}
             alt={displayName}
+            width={900}
+            height={900}
+            loading="lazy"
+            decoding="async"
             className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
           />
         ) : (

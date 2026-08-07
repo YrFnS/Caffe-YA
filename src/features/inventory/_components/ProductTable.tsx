@@ -8,6 +8,7 @@ import { Table, type TableColumn } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import type { Product, ProductCategory } from '@/features/inventory/_types'
 import { formatCurrency } from '@/lib/currency'
+import { resolveImageSource } from '@/lib/image'
 
 interface ProductTableProps {
   products: (Product & { categoryName: string })[]
@@ -42,15 +43,13 @@ export default function ProductTable({ products, categories = [] }: ProductTable
       render: row => {
         const displayName = locale === 'ar' ? row.nameAr || row.name : row.name
         const secondaryName = locale === 'ar' ? row.name : row.nameAr
-        const imageSrc = row.localImageName
-          ? row.localImageName.startsWith('http') ? row.localImageName : `/uploads/products/${row.localImageName}`
-          : ''
+        const imageSrc = resolveImageSource(row.localImageName, 'products')
         return (
           <div className="flex min-w-48 items-center gap-3">
             <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-surface-container-low">
               {imageSrc ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={imageSrc} alt="" className="h-full w-full object-cover" />
+                <img src={imageSrc} alt={displayName} width={900} height={900} loading="lazy" decoding="async" className="h-full w-full object-cover" />
               ) : <span className="font-semibold text-on-surface-variant">{displayName.charAt(0)}</span>}
             </div>
             <div className="min-w-0">

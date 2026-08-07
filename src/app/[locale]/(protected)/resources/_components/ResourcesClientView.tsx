@@ -11,6 +11,7 @@ import { assignAvailableResourceAction } from '@/features/pos/_actions/resource'
 import { useTimer } from '@/features/pos/_hooks/useTimer'
 import type { ResourceCategory, ResourceOperationsView } from '@/features/pos/_types'
 import { formatCurrency } from '@/lib/currency'
+import { resolveImageSource } from '@/lib/image'
 
 interface ResourcesClientViewProps {
   resources: ResourceOperationsView[]
@@ -43,7 +44,7 @@ function ResourceOperationsCard({
     startedAt: activeOrder?.timerStartedAt ?? null,
     isRunning: timerRunning,
   })
-  const imageSrc = resource.localImageName?.startsWith('http') ? resource.localImageName : null
+  const imageSrc = resolveImageSource(resource.localImageName, 'resources')
 
   const statusStyles = {
     available: 'border-s-secondary bg-surface-container-lowest',
@@ -64,7 +65,7 @@ function ResourceOperationsCard({
       {imageSrc && (
         <div className="-mx-4 -mt-4 mb-4 h-32 overflow-hidden bg-surface-container-low">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imageSrc} alt="" className="h-full w-full object-cover" />
+          <img src={imageSrc} alt={resource.name} width={1000} height={700} loading="lazy" decoding="async" className="h-full w-full object-cover" />
         </div>
       )}
 

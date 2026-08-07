@@ -5,6 +5,7 @@ import { Monitor } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Resource } from '../_types'
 import { formatCurrency } from '@/lib/currency'
+import { resolveImageSource } from '@/lib/image'
 
 interface ResourceCardProps {
   resource: Resource & { category?: { isTimed: boolean; hourlyRate: string | null } }
@@ -14,7 +15,7 @@ interface ResourceCardProps {
 
 export default function ResourceCard({ resource, onClick, disabled }: ResourceCardProps) {
   const t = useTranslations('pos')
-  const imageSrc = resource.localImageName?.startsWith('http') ? resource.localImageName : null
+  const imageSrc = resolveImageSource(resource.localImageName, 'resources')
   const unavailable = resource.status !== 'available'
 
   const statusStyles = {
@@ -38,7 +39,7 @@ export default function ResourceCard({ resource, onClick, disabled }: ResourceCa
       {imageSrc && (
         <div className="mb-3 h-28 overflow-hidden rounded-xl">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imageSrc} alt="" className="h-full w-full object-cover" />
+          <img src={imageSrc} alt={resource.name} width={1000} height={700} loading="lazy" decoding="async" className="h-full w-full object-cover" />
         </div>
       )}
       <div className="mb-3 flex items-center justify-between">
