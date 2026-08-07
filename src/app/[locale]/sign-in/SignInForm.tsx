@@ -5,6 +5,7 @@ import { createAuthClient } from 'better-auth/client'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { validateSignInSession } from './actions'
 import { LockKeyhole, Mail } from 'lucide-react'
 
 const authClient = createAuthClient({
@@ -36,6 +37,12 @@ export default function SignInForm({ locale }: SignInFormProps) {
       })
       if (authError) {
         setError(authError.message || 'Invalid credentials')
+        setLoading(false)
+        return
+      }
+      if (!await validateSignInSession()) {
+        await authClient.signOut()
+        setError(t('accountUnavailable'))
         setLoading(false)
         return
       }

@@ -60,7 +60,8 @@
     "welcomeBack": "مرحباً بعودتك",
     "signInToOperations": "تسجيل الدخول إلى العمليات",
     "signInDescription": "تابع وردية اليوم ونظرة الصالة المباشرة.",
-    "demo": "تجريبي"
+    "demo": "تجريبي",
+    "accountUnavailable": "هذا الحساب معطل أو غير متاح."
   },
   "validation": {
     "required": "هذا الحقل مطلوب",

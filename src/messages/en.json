@@ -60,7 +60,8 @@
     "welcomeBack": "WELCOME BACK",
     "signInToOperations": "Sign in to operations",
     "signInDescription": "Continue to today's shift and live floor overview.",
-    "demo": "Demo"
+    "demo": "Demo",
+    "accountUnavailable": "This account is disabled or unavailable."
   },
   "validation": {
     "required": "This field is required",
