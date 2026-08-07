@@ -42,15 +42,16 @@ export default function JournalEntriesList({ entries, accounts }: JournalEntries
     setLines(prev => prev.map((l, idx) => idx === i ? { ...l, [field]: value } : l))
   }
 
-  async function handleSubmit() {
-    const validLines = lines.filter(l => l.accountId && l.amount)
-    await createJournalEntryAction({ reference: reference || undefined, description: description || undefined, lines: validLines })
-    window.location.reload()
-  }
-
   const totalDebit = lines.filter(line => line.type === 'debit').reduce((sum, line) => sum + lineAmount(line.amount), 0)
   const totalCredit = lines.filter(line => line.type === 'credit').reduce((sum, line) => sum + lineAmount(line.amount), 0)
   const isBalanced = totalDebit === totalCredit
+  const canSubmit = totalDebit > 0 && isBalanced && lines.every(line => line.accountId && lineAmount(line.amount) > 0)
+
+  async function handleSubmit() {
+    if (!canSubmit) return
+    await createJournalEntryAction({ reference: reference || undefined, description: description || undefined, lines })
+    window.location.reload()
+  }
 
   return (
     <>
@@ -136,7 +137,7 @@ export default function JournalEntriesList({ entries, accounts }: JournalEntries
 
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowForm(false)} className="flex-1 px-4 py-2 rounded-lg border border-outline text-on-surface">{t('cancel')}</button>
-                <button type="button" onClick={handleSubmit} disabled={!isBalanced} className="flex-1 px-4 py-2 rounded-lg bg-primary text-on-primary font-medium disabled:opacity-50">{t('save')}</button>
+                <button type="button" onClick={handleSubmit} disabled={!canSubmit} className="flex-1 px-4 py-2 rounded-lg bg-primary text-on-primary font-medium disabled:opacity-50">{t('save')}</button>
               </div>
             </div>
           </div>

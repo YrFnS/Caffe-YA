@@ -91,6 +91,13 @@ export default function CheckoutModal({
   const remaining = fromCents(toCents(total) - paid)
   const remainingAmount = toCents(remaining)
   const invalidReference = payments.some(payment => payment.method !== 'cash' && !payment.reference?.trim())
+  const invalidAmount = payments.some(payment => {
+    try {
+      return !payment.amount.trim() || toCents(payment.amount) <= 0
+    } catch {
+      return true
+    }
+  })
 
   const handleConfirm = async () => {
     setIsProcessing(true)
@@ -175,7 +182,7 @@ export default function CheckoutModal({
                       aria-label={t('amount')}
                       inputMode="decimal"
                       value={payment.amount}
-                      onChange={event => updatePayment(index, { amount: event.target.value })}
+                      onInput={event => updatePayment(index, { amount: event.currentTarget.value })}
                       className="h-12 min-w-0 rounded-lg bg-surface-container-lowest px-3 text-end font-mono text-sm text-on-surface outline-none focus:ring-4 focus:ring-secondary/15"
                     />
                     <Button
@@ -221,7 +228,7 @@ export default function CheckoutModal({
             size="lg"
             className="w-full"
             onClick={handleConfirm}
-            disabled={isProcessing || remainingAmount !== 0 || invalidReference}
+            disabled={isProcessing || remainingAmount !== 0 || invalidReference || invalidAmount}
           >
             {isProcessing ? t('processing') : t('confirmPayment')}
           </Button>

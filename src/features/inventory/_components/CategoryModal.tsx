@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { Modal } from '@/components/ui/modal'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -16,36 +16,44 @@ interface CategoryModalProps {
 
 export default function CategoryModal({ category, editId }: CategoryModalProps) {
   const t = useTranslations('inventory')
+  const common = useTranslations('common')
+  const locale = useLocale()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [form, setForm] = useState({
     name: category?.name || '',
     nameAr: category?.nameAr || '',
   })
 
   const handleClose = () => {
-    router.push('/inventory/categories')
+    router.push(`/${locale}/inventory/categories`)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError('')
     try {
       const formData = new FormData()
       if (editId) {
-        formData.set('id', editId)
+        formData.set('categoryId', editId)
       }
       formData.set('name', form.name)
       formData.set('nameAr', form.nameAr)
 
-      if (editId) {
-        await updateCategoryAction(formData)
-      } else {
-        await createCategoryAction(formData)
+      const result = editId
+        ? await updateCategoryAction(formData)
+        : await createCategoryAction(formData)
+      if (result.error) {
+        setError(common('error_description'))
+        return
       }
-      router.push('/inventory/categories')
+      router.push(`/${locale}/inventory/categories`)
       router.refresh()
     } catch {
+      setError(common('error_description'))
+    } finally {
       setLoading(false)
     }
   }
@@ -67,6 +75,7 @@ export default function CategoryModal({ category, editId }: CategoryModalProps) 
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <p role="alert" className="text-sm text-error">{error}</p>}
         <Input
           label={t('name')}
           value={form.name}

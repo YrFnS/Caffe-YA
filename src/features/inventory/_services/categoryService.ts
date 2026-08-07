@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import { eq } from 'drizzle-orm'
+import { and, eq, ne } from 'drizzle-orm'
 import { productCategories, products } from '@/lib/schema'
 import type { ProductCategory } from '../_types'
 
@@ -22,6 +22,9 @@ export async function createCategory(data: {
   nameAr?: string
   parentId?: string
 }): Promise<ProductCategory> {
+  const duplicate = await db.query.productCategories.findFirst({ where: eq(productCategories.name, data.name) })
+  if (duplicate) throw new Error('CATEGORY_ALREADY_EXISTS')
+
   const [category] = await db.insert(productCategories).values({
     name: data.name,
     nameAr: data.nameAr ?? null,
@@ -40,6 +43,13 @@ export async function updateCategory(
     isActive?: boolean
   },
 ): Promise<ProductCategory> {
+  if (data.name) {
+    const duplicate = await db.query.productCategories.findFirst({
+      where: and(eq(productCategories.name, data.name), ne(productCategories.id, id)),
+    })
+    if (duplicate) throw new Error('CATEGORY_ALREADY_EXISTS')
+  }
+
   const [category] = await db.update(productCategories).set(data).where(eq(productCategories.id, id)).returning()
   if (!category) throw new Error('NOT_FOUND')
   return category
